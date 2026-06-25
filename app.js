@@ -3222,6 +3222,30 @@ const mockPrinters = [
 let activeWebBluetoothDevice = null;
 let activeWebBluetoothCharacteristic = null;
 
+function requestAndroidBluetoothPermissions(successCallback, failureCallback) {
+  if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.permissions) {
+    const permissions = cordova.plugins.permissions;
+    const list = [
+      permissions.ACCESS_FINE_LOCATION,
+      'android.permission.BLUETOOTH_SCAN',
+      'android.permission.BLUETOOTH_CONNECT'
+    ];
+    permissions.requestPermissions(list, function(status) {
+      if (status.hasPermission) {
+        successCallback();
+      } else {
+        console.warn('Bluetooth permissions denied, trying to proceed anyway...');
+        successCallback(); // Try to proceed anyway as fallback
+      }
+    }, function() {
+      console.error('Error requesting permissions, trying to proceed anyway...');
+      successCallback();
+    });
+  } else {
+    successCallback();
+  }
+}
+
 function renderPrinterDevicesList() {
   const container = document.getElementById('printer-device-list-container');
   const list = document.getElementById('printer-devices-list');
@@ -3248,43 +3272,105 @@ function renderPrinterDevicesList() {
   `;
   if (countEl) countEl.textContent = '0';
 
-  // Check if Native Cordova Bluetooth Serial is available
-  if (typeof window.bluetoothSerial !== 'undefined') {
-    // 1. Classic Bluetooth SPP scanning
-    window.bluetoothSerial.list(function(paired) {
-      window.bluetoothSerial.discoverUnpaired(function(unpaired) {
-        const allDevices = [...paired, ...unpaired];
-        populateScannedDevicesList(allDevices);
-      }, function() {
-        populateScannedDevicesList(paired);
-      });
-    }, function() {
-      showMockPrinters();
-    });
-  } else if (typeof window.ble !== 'undefined') {
-    // 2. Cordova BLE Central scanning
-    const discovered = [];
-    window.ble.startScan([], function(device) {
-      if (device.name && !discovered.some(d => d.id === device.id)) {
-        discovered.push({
-          name: device.name,
-          mac: device.id,
-          strength: device.rssi || -75,
-          type: 'ble'
-        });
-        populateScannedDevicesList(discovered);
-      }
-    }, function() {
-      showMockPrinters();
-    });
+  const discoveredDevices = [];
 
-    // Stop BLE scan after 5 seconds to preserve power
-    setTimeout(() => {
-      window.ble.stopScan();
-    }, 5000);
-  } else {
-    // 3. Fallback to simulator for offline preview
+  // Helper to add/update devices in the list
+  function addDiscoveredDevice(device) {
+    if (!discoveredDevices.some(d => d.mac.toLowerCase() === device.mac.toLowerCase())) {
+      discoveredDevices.push(device);
+      populateScannedDevicesList(discoveredDevices);
+    }
+  }
+
+  const classicActive = typeof window.bluetoothSerial !== 'undefined';
+  const bleActive = typeof window.ble !== 'undefined';
+
+  if (!classicActive && !bleActive) {
+    // If not in Cordova, show mock printers for simulator/testing
     showMockPrinters();
+    return;
+  }
+
+  // Request Android Bluetooth permissions before starting
+  requestAndroidBluetoothPermissions(() => {
+    // Enable Bluetooth if disabled
+    if (bleActive) {
+      window.ble.enable(() => {
+        startNativeScans();
+      }, () => {
+        startNativeScans(); // Proceed anyway
+      });
+    } else if (classicActive) {
+      window.bluetoothSerial.enable(() => {
+        startNativeScans();
+      }, () => {
+        startNativeScans(); // Proceed anyway
+      });
+    } else {
+      startNativeScans();
+    }
+  }, () => {
+    showMockPrinters();
+  });
+
+  function startNativeScans() {
+    list.innerHTML = ''; // Clear spinner
+
+    // A. BLE Scan (specifically for portable thermal printers)
+    if (bleActive) {
+      window.ble.startScan([], function(device) {
+        if (device.name) {
+          addDiscoveredDevice({
+            name: device.name,
+            mac: device.id,
+            strength: device.rssi || -70,
+            type: 'ble'
+          });
+        }
+      }, function(err) {
+        console.error('BLE Scan Error:', err);
+      });
+
+      // Stop BLE scan after 8 seconds to save battery
+      setTimeout(() => {
+        if (typeof window.ble !== 'undefined') {
+          window.ble.stopScan();
+        }
+      }, 8000);
+    }
+
+    // B. Classic Bluetooth Scan
+    if (classicActive) {
+      // List paired devices first (instant on Android)
+      window.bluetoothSerial.list(function(paired) {
+        paired.forEach(device => {
+          addDiscoveredDevice({
+            name: device.name || 'Classic Printer',
+            mac: device.address || device.id,
+            strength: -55,
+            type: 'classic'
+          });
+        });
+
+        // Scan for unpaired devices (takes longer)
+        window.bluetoothSerial.discoverUnpaired(function(unpaired) {
+          unpaired.forEach(device => {
+            if (device.name) {
+              addDiscoveredDevice({
+                name: device.name,
+                mac: device.address || device.id,
+                strength: -75,
+                type: 'classic'
+              });
+            }
+          });
+        }, function(err) {
+          console.error('Classic discoverUnpaired Error:', err);
+        });
+      }, function(err) {
+        console.error('Classic list Error:', err);
+      });
+    }
   }
 
   function showMockPrinters() {
@@ -3336,7 +3422,7 @@ function renderPrinterDevicesList() {
       item.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 2px; text-align: right;">
           <span style="font-weight: 700; font-size: 13px; color: var(--color-primary);">${name}</span>
-          <span style="font-size: 10px; color: var(--color-text-muted); font-family: monospace;">${mac} (${type === 'ble' ? 'BLE' : 'Classic'})</span>
+          <span style="font-size: 10px; color: var(--color-text-muted); font-family: monospace;">${mac} (${type === 'ble' ? 'BLE طابعة محمولة' : 'Classic بلوتوث'})</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--color-text-muted);">
           <span>${signalBar}</span>
@@ -3483,7 +3569,9 @@ function connectToPrinterDevice(printer) {
       let writeChar = null;
       if (device.services && device.characteristics) {
         for (const char of device.characteristics) {
-          if (char.properties.indexOf('Write') !== -1 || char.properties.indexOf('WriteWithoutResponse') !== -1) {
+          const props = Array.isArray(char.properties) ? char.properties : [];
+          const hasWrite = props.some(p => typeof p === 'string' && (p.toLowerCase().indexOf('write') !== -1));
+          if (hasWrite) {
             bleWriteServiceUUID = char.service;
             bleWriteCharUUID = char.characteristic;
             writeChar = char;
@@ -3491,6 +3579,14 @@ function connectToPrinterDevice(printer) {
           }
         }
       }
+      
+      // Fallback to standard thermal printer GATT UUIDs if characteristics weren't properly reported
+      if (!writeChar || !bleWriteCharUUID) {
+        console.warn('Could not auto-detect BLE write characteristic, using standard thermal printer fallback UUIDs');
+        bleWriteServiceUUID = '000018f0-0000-1000-8000-00805f9b34fb';
+        bleWriteCharUUID = '00002af1-0000-1000-8000-00805f9b34fb';
+      }
+      
       establishSuccessState();
     }, function(err) {
       establishFailureState(err);
@@ -4051,14 +4147,33 @@ async function executePrintJob(saleId) {
     });
     isWriteSuccess = true; // Classic serial write is non-blocking fire-and-forget
   } else if (typeof window.ble !== 'undefined' && bleConnectedDeviceId && bleWriteServiceUUID && bleWriteCharUUID) {
-    // 3. Send via BLE Central plugin
-    const buffer = payloadBytes.buffer;
-    window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
-      // success callback
-    }, function(err) {
-      console.error('BLE Central write failure:', err);
-    });
+    // 3. Send via BLE Central plugin (chunked write for thermal printers)
     isWriteSuccess = true;
+    const chunkSize = 20;
+    let offset = 0;
+    
+    function sendNextBleChunk() {
+      if (offset >= payloadBytes.length) {
+        console.log('BLE printing native write completed successfully');
+        return;
+      }
+      const chunk = payloadBytes.slice(offset, offset + chunkSize);
+      const buffer = chunk.buffer;
+      
+      window.ble.writeWithoutResponse(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
+        offset += chunkSize;
+        setTimeout(sendNextBleChunk, 15); // 15ms delay between BLE chunks
+      }, function(err) {
+        window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
+          offset += chunkSize;
+          setTimeout(sendNextBleChunk, 15);
+        }, function(writeErr) {
+          console.error('BLE Central write failure on chunk:', writeErr);
+        });
+      });
+    }
+    
+    sendNextBleChunk();
   } else {
     // 4. Fallback/Mock simulator mode
     isWriteSuccess = true;

@@ -1,0 +1,10 @@
+{
+  "appId": "com.alwa.app",
+  "appName": "Alwa",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "cordova-plugin-bluetooth-serial": {},
+    "cordova-plugin-ble-central": {}
+  }
+}
