@@ -3230,6 +3230,8 @@ function renderPrinterDevicesList() {
 
   if (!container || !list) return;
 
+  isManualScanning = true;
+
   container.style.display = 'flex';
   list.innerHTML = '';
 
@@ -3494,7 +3496,14 @@ function connectToPrinterDevice(printer) {
   function establishSuccessState() {
     isPrinterConnected = true;
     bleConnectedDeviceId = printer.mac;
+    connectedDeviceAddress = printer.mac;
     isCordovaSerialActive = (printer.type === 'classic');
+    isManualScanning = false;
+
+    // Cache the printer settings for future background auto-connections
+    localStorage.setItem('alwa_printer_address', printer.mac);
+    localStorage.setItem('alwa_printer_type', printer.type);
+    localStorage.setItem('alwa_printer_name', printer.name);
 
     if (statusText) {
       statusText.textContent = currentLanguage === 'ar' ? `متصل بـ ${printer.name} (جاهز)` : `Connected to ${printer.name} (Ready)`;
@@ -3512,6 +3521,11 @@ function connectToPrinterDevice(printer) {
     }
     if (container) {
       container.style.display = 'none';
+    }
+
+    // Auto-reconnect worker initialization
+    if (!autoConnectIntervalId) {
+      initAutoConnect();
     }
 
     playSound('success');
@@ -3550,6 +3564,19 @@ function disconnectPrinter() {
   isPrinterConnected = false;
   bleConnectedDeviceId = null;
   isCordovaSerialActive = false;
+  connectedDeviceAddress = null;
+  isManualScanning = false;
+
+  // Clear connection details so we do not auto-reconnect immediately after intentional disconnection
+  localStorage.removeItem('alwa_printer_address');
+  localStorage.removeItem('alwa_printer_type');
+  localStorage.removeItem('alwa_printer_name');
+
+  if (autoConnectIntervalId) {
+    clearInterval(autoConnectIntervalId);
+    autoConnectIntervalId = null;
+  }
+  isAutoConnecting = false;
 
   if (statusText) {
     statusText.textContent = currentLanguage === 'ar' ? 'الطابعة غير متصلة' : 'Printer Disconnected';
@@ -3570,6 +3597,112 @@ function disconnectPrinter() {
   }
 
   showToast(currentLanguage === 'ar' ? 'تم إلغاء اقتران طابعة البلوتوث بنجاح.' : 'Bluetooth printer disconnected successfully.');
+}
+
+function initAutoConnect() {
+  const savedAddress = localStorage.getItem('alwa_printer_address');
+  const savedType = localStorage.getItem('alwa_printer_type');
+  const savedName = localStorage.getItem('alwa_printer_name');
+
+  if (!savedAddress || !savedType || !savedName) return;
+
+  connectedDeviceAddress = savedAddress;
+
+  if (autoConnectIntervalId) {
+    clearInterval(autoConnectIntervalId);
+  }
+
+  autoConnectIntervalId = setInterval(async () => {
+    // Skip if already connected, if a manual scan is in progress, or if currently auto-connecting
+    if (isPrinterConnected || isManualScanning || isAutoConnecting) return;
+
+    isAutoConnecting = true;
+    console.log(`Auto-reconnecting worker attempting connection to ${savedName} (${savedAddress})...`);
+
+    const statusText = document.getElementById('printer-status-text');
+    if (statusText) {
+      statusText.textContent = currentLanguage === 'ar' 
+        ? `جاري إعادة الاتصال التلقائي بالطابعة ${savedName}...` 
+        : `Auto-reconnecting to ${savedName}...`;
+    }
+
+    // Cordova Classic Bluetooth Serial Reconnect
+    if (typeof window.bluetoothSerial !== 'undefined' && savedType === 'classic') {
+      window.bluetoothSerial.connect(savedAddress, function() {
+        isAutoConnecting = false;
+        establishAutoConnectSuccess(savedName, savedAddress, savedType);
+      }, function(err) {
+        isAutoConnecting = false;
+        console.error('Auto-connect classic mode failure, retrying soon:', err);
+      });
+      return;
+    }
+
+    // Cordova BLE Central Reconnect
+    if (typeof window.ble !== 'undefined' && savedType === 'ble') {
+      window.ble.connect(savedAddress, function(device) {
+        let writeChar = null;
+        if (device.services && device.characteristics) {
+          for (const char of device.characteristics) {
+            if (char.properties.indexOf('Write') !== -1 || char.properties.indexOf('WriteWithoutResponse') !== -1) {
+              bleWriteServiceUUID = char.service;
+              bleWriteCharUUID = char.characteristic;
+              writeChar = char;
+              break;
+            }
+          }
+        }
+        isAutoConnecting = false;
+        establishAutoConnectSuccess(savedName, savedAddress, savedType);
+      }, function(err) {
+        isAutoConnecting = false;
+        console.error('Auto-connect BLE mode failure, retrying soon:', err);
+      });
+      return;
+    }
+
+    // In-browser preview / simulator auto-connect
+    setTimeout(() => {
+      isAutoConnecting = false;
+      establishAutoConnectSuccess(savedName, savedAddress, savedType);
+    }, 1500);
+
+  }, 10000); // Check and attempt reconnect every 10 seconds
+}
+
+function establishAutoConnectSuccess(name, mac, type) {
+  isPrinterConnected = true;
+  bleConnectedDeviceId = mac;
+  connectedDeviceAddress = mac;
+  isCordovaSerialActive = (type === 'classic');
+  isManualScanning = false;
+
+  const statusText = document.getElementById('printer-status-text');
+  const statusDot = document.getElementById('printer-status-dot');
+  const testPrintBtn = document.getElementById('btn-test-print');
+  const scanBtn = document.getElementById('btn-scan-printer');
+  const container = document.getElementById('printer-device-list-container');
+
+  if (statusText) {
+    statusText.textContent = currentLanguage === 'ar' ? `متصل بـ ${name} (تلقائي)` : `Connected to ${name} (Auto)`;
+  }
+  if (statusDot) {
+    statusDot.classList.add('connected');
+  }
+  if (testPrintBtn) {
+    testPrintBtn.removeAttribute('disabled');
+    testPrintBtn.style.opacity = '1';
+  }
+  if (scanBtn) {
+    scanBtn.textContent = currentLanguage === 'ar' ? "إلغاء الاقتران" : "Disconnect";
+    scanBtn.style.backgroundColor = "var(--color-danger)";
+  }
+  if (container) {
+    container.style.display = 'none';
+  }
+
+  playSound('success');
+  showToast(currentLanguage === 'ar' ? `تم إعادة الاتصال التلقائي بالطابعة ${name}!` : `Auto-connected to ${name} successfully!`, 'bluetooth');
 }
 
 async function handleScanAndConnect() {
@@ -4650,6 +4783,9 @@ async function startApp() {
 
     // Run first check
     await checkDueClaims();
+
+    // 22. Initialize automatic Bluetooth/BLE printer reconnection
+    initAutoConnect();
 
   } catch (err) {
     console.error('Fatal initialization error:', err);
