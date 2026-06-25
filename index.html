@@ -1067,6 +1067,31 @@
       </div>
     </div>
 
+    <!-- Iframe Bluetooth Warning Dialog -->
+    <div id="dialog-iframe-bluetooth" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop" style="max-width: 380px; text-align: center;">
+        <div class="dialog-icon-container" style="background-color: rgba(255, 186, 8, 0.1); color: #ffba08;">
+          <span class="material-icons-round dialog-icon" style="font-size: 32px;">bluetooth_disabled</span>
+        </div>
+        <h3 class="dialog-title" style="margin-top: 12px; font-weight: 700; color: var(--color-primary-dark);">مطلوب تشغيل التطبيق في نافذة مستقلة</h3>
+        <p class="dialog-message" style="font-size: 11px; line-height: 1.6; color: var(--color-text-muted); margin: 12px 0 16px 0;">
+          حماية المتصفحات الصارمة تمنع تشغيل واجهة اقتران البلوتوث (Web Bluetooth) داخل الإطارات البرمجية المدمجة (iFrames) في منصة AI Studio.
+          <br><br>
+          لتوصيل طابعتك الحرارية الحقيقية والطباعة بنجاح، يرجى النقر على زر <strong>"فتح في نافذة جديدة" (Open in New Tab)</strong> أعلى يسار منصة AI Studio، أو نسخ الرابط بالأسفل وفتحه مباشرة في متصفح Google Chrome أو Edge.
+        </p>
+        <div class="form-group" style="width: 100%; margin-bottom: 16px;">
+          <input type="text" class="form-input" id="iframe-app-url" readonly style="text-align: center; font-size: 11px; background: rgba(0,0,0,0.03); font-family: monospace;" onclick="this.select();">
+        </div>
+        <div class="dialog-actions" style="gap: 8px; width: 100%;">
+          <button class="btn-secondary" id="btn-iframe-copy-url" style="flex: 1; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 10px;">
+            <span class="material-icons-round" style="font-size: 14px;">content_copy</span>
+            نسخ الرابط
+          </button>
+          <button class="btn-primary" id="btn-iframe-ok" style="flex: 1; font-size: 11px; background: var(--color-primary); padding: 10px;">حسناً، فهمت</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Audio sounds for notifications -->

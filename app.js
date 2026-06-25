@@ -3259,7 +3259,6 @@ function renderPrinterDevicesList() {
         populateScannedDevicesList(paired);
       });
     }, function() {
-      // Fallback to mock if list fails
       showMockPrinters();
     });
   } else if (typeof window.ble !== 'undefined') {
@@ -3283,25 +3282,8 @@ function renderPrinterDevicesList() {
     setTimeout(() => {
       window.ble.stopScan();
     }, 5000);
-  } else if (navigator.bluetooth) {
-    // 3. Web Bluetooth API capability indicator
-    list.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:8px; padding:6px;">
-        <p style="font-size:11px; color:var(--color-text-muted); text-align:center;">
-          ${currentLanguage === 'ar' ? 'أنت تعمل على المتصفح. يمكنك استخدام Web Bluetooth للاقتران بالطابعة مباشرة.' : 'You are on browser. Use Web Bluetooth to request direct access.'}
-        </p>
-        <button class="btn-primary" id="btn-web-bluetooth-request" style="font-size:11px; padding:8px;">
-          ${currentLanguage === 'ar' ? 'اقتران مباشر عبر المتصفح (Web Bluetooth)' : 'Pair with Web Bluetooth'}
-        </button>
-      </div>
-    `;
-    const webBtBtn = document.getElementById('btn-web-bluetooth-request');
-    if (webBtBtn) {
-      webBtBtn.addEventListener('click', triggerWebBluetoothPairing);
-    }
-    if (countEl) countEl.textContent = 'Web';
   } else {
-    // 4. Default Mock implementation
+    // 3. Fallback to simulator for offline preview
     showMockPrinters();
   }
 
@@ -3383,11 +3365,21 @@ async function triggerWebBluetoothPairing() {
   const container = document.getElementById('printer-device-list-container');
 
   try {
-    if (statusText) statusText.textContent = currentLanguage === 'ar' ? 'جاري تفعيل Web Bluetooth...' : 'Activating Web Bluetooth...';
+    if (statusText) statusText.textContent = currentLanguage === 'ar' ? 'جاري البحث واقتران طابعة بلوتوث...' : 'Scanning & pairing bluetooth printer...';
     
+    // Web Bluetooth connection prompt - filters for any BLE devices with common printer services
     const device = await navigator.bluetooth.requestDevice({
       acceptAllDevices: true,
-      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '00001101-0000-1000-8000-00805f9b34fb', '000018f1-0000-1000-8000-00805f9b34fb']
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb', // general raw spp service
+        '00001101-0000-1000-8000-00805f9b34fb', // classic spp UUID
+        '000018f1-0000-1000-8000-00805f9b34fb',
+        '000018f2-0000-1000-8000-00805f9b34fb',
+        '000018f3-0000-1000-8000-00805f9b34fb',
+        '0000fee7-0000-1000-8000-00805f9b34fb',
+        '00004953-5441-5254-4543-484c49544530',
+        'e7810a71-73ae-499d-8c15-faa9ae0c2c61'
+      ]
     });
 
     if (statusText) statusText.textContent = currentLanguage === 'ar' ? `جاري الاتصال بـ ${device.name}...` : `Connecting to ${device.name}...`;
@@ -3420,9 +3412,15 @@ async function triggerWebBluetoothPairing() {
     isPrinterConnected = true;
     bleConnectedDeviceId = device.id;
     isCordovaSerialActive = false;
+    connectedDeviceAddress = device.id;
+
+    // Cache the printer settings for future background auto-connections
+    localStorage.setItem('alwa_printer_address', device.id);
+    localStorage.setItem('alwa_printer_type', 'web_ble');
+    localStorage.setItem('alwa_printer_name', device.name || 'Bluetooth Printer');
 
     if (statusText) {
-      statusText.textContent = currentLanguage === 'ar' ? `متصل بـ ${device.name} (WebBT)` : `Connected to ${device.name} (WebBT)`;
+      statusText.textContent = currentLanguage === 'ar' ? `متصل بـ ${device.name || 'طابعة بلوتوث'} (WebBT)` : `Connected to ${device.name || 'Bluetooth Printer'} (WebBT)`;
     }
     if (statusDot) statusDot.classList.add('connected');
     if (testPrintBtn) {
@@ -3435,13 +3433,25 @@ async function triggerWebBluetoothPairing() {
     }
     if (container) container.style.display = 'none';
 
+    // Auto-reconnect worker initialization
+    if (!autoConnectIntervalId) {
+      initAutoConnect();
+    }
+
     playSound('success');
-    showToast(currentLanguage === 'ar' ? `تم الاتصال بطابعة ${device.name} بنجاح!` : `Connected to ${device.name} successfully!`, 'bluetooth');
+    showToast(currentLanguage === 'ar' ? `تم الاتصال بطابعة ${device.name || 'بلوتوث'} بنجاح!` : `Connected to ${device.name || 'Bluetooth'} successfully!`, 'bluetooth');
 
   } catch (err) {
     console.error('Web Bluetooth Error:', err);
-    if (statusText) statusText.textContent = currentLanguage === 'ar' ? 'فشل اتصال Web Bluetooth' : 'Web Bluetooth connection failed';
-    showToast(currentLanguage === 'ar' ? 'تعذر إتمام الاقتران عبر المتصفح' : 'Could not establish browser pairing', 'error', true);
+    if (statusText) statusText.textContent = currentLanguage === 'ar' ? 'الطابعة غير متصلة' : 'Printer Disconnected';
+    
+    // Check if the error is due to Iframe security restrictions
+    const isIframe = window.self !== window.top;
+    if (isIframe) {
+      showIframeBluetoothWarningDialog();
+    } else {
+      showToast(currentLanguage === 'ar' ? 'تم إلغاء الاتصال أو البلوتوث غير متوفر' : 'Connection cancelled or Bluetooth unavailable', 'warning', true);
+    }
   }
 }
 
@@ -3620,14 +3630,55 @@ function initAutoConnect() {
     console.log(`Auto-reconnecting worker attempting connection to ${savedName} (${savedAddress})...`);
 
     const statusText = document.getElementById('printer-status-text');
-    if (statusText) {
-      statusText.textContent = currentLanguage === 'ar' 
-        ? `جاري إعادة الاتصال التلقائي بالطابعة ${savedName}...` 
-        : `Auto-reconnecting to ${savedName}...`;
+
+    // Web Bluetooth Reconnect
+    if (navigator.bluetooth && navigator.bluetooth.getDevices && savedType === 'web_ble') {
+      try {
+        const devices = await navigator.bluetooth.getDevices();
+        const device = devices.find(d => d.id === savedAddress);
+        if (device) {
+          if (statusText) {
+            statusText.textContent = currentLanguage === 'ar' 
+              ? `جاري إعادة الاتصال التلقائي بالطابعة ${savedName}...` 
+              : `Auto-reconnecting to ${savedName}...`;
+          }
+          const server = await device.gatt.connect();
+          const services = await server.getPrimaryServices();
+          let writableChar = null;
+          for (const service of services) {
+            const chars = await service.getCharacteristics();
+            for (const char of chars) {
+              if (char.properties.write || char.properties.writeWithoutResponse) {
+                writableChar = char;
+                bleWriteServiceUUID = service.uuid;
+                bleWriteCharUUID = char.uuid;
+                break;
+              }
+            }
+            if (writableChar) break;
+          }
+          if (writableChar) {
+            activeWebBluetoothDevice = device;
+            activeWebBluetoothCharacteristic = writableChar;
+            isAutoConnecting = false;
+            establishAutoConnectSuccess(savedName, savedAddress, savedType);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Auto-connect Web Bluetooth failure:', err);
+      }
+      isAutoConnecting = false;
+      return;
     }
 
     // Cordova Classic Bluetooth Serial Reconnect
     if (typeof window.bluetoothSerial !== 'undefined' && savedType === 'classic') {
+      if (statusText) {
+        statusText.textContent = currentLanguage === 'ar' 
+          ? `جاري إعادة الاتصال التلقائي بالطابعة ${savedName}...` 
+          : `Auto-reconnecting to ${savedName}...`;
+      }
       window.bluetoothSerial.connect(savedAddress, function() {
         isAutoConnecting = false;
         establishAutoConnectSuccess(savedName, savedAddress, savedType);
@@ -3640,6 +3691,11 @@ function initAutoConnect() {
 
     // Cordova BLE Central Reconnect
     if (typeof window.ble !== 'undefined' && savedType === 'ble') {
+      if (statusText) {
+        statusText.textContent = currentLanguage === 'ar' 
+          ? `جاري إعادة الاتصال التلقائي بالطابعة ${savedName}...` 
+          : `Auto-reconnecting to ${savedName}...`;
+      }
       window.ble.connect(savedAddress, function(device) {
         let writeChar = null;
         if (device.services && device.characteristics) {
@@ -3661,7 +3717,7 @@ function initAutoConnect() {
       return;
     }
 
-    // In-browser preview / simulator auto-connect
+    // Fallback to offline preview simulator auto-connect
     setTimeout(() => {
       isAutoConnecting = false;
       establishAutoConnectSuccess(savedName, savedAddress, savedType);
@@ -3709,7 +3765,93 @@ async function handleScanAndConnect() {
   if (isPrinterConnected) {
     disconnectPrinter();
   } else {
-    renderPrinterDevicesList();
+    // Check if we are running inside an iframe (like AI Studio preview frame)
+    const isIframe = window.self !== window.top;
+    
+    if (isIframe) {
+      // Browser safety blocks Bluetooth inside cross-origin iframes. Show beautiful helper modal.
+      showIframeBluetoothWarningDialog();
+    } else {
+      // Standalone browser / native app environment:
+      if (typeof window.bluetoothSerial !== 'undefined' || typeof window.ble !== 'undefined') {
+        // Cordova / native environment: list devices
+        renderPrinterDevicesList();
+      } else if (navigator.bluetooth) {
+        // Standalone Web Browser: trigger real Web Bluetooth connection dialog directly!
+        await triggerWebBluetoothPairing();
+      } else {
+        // Browser without Web Bluetooth support (e.g. Safari, Firefox): show clear fallback explanation and run simulator
+        const list = document.getElementById('printer-devices-list');
+        const container = document.getElementById('printer-device-list-container');
+        if (container && list) {
+          container.style.display = 'flex';
+          list.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:8px; padding:8px; text-align:center;">
+              <p style="font-size:11px; color:var(--color-danger); line-height:1.5;">
+                ${currentLanguage === 'ar' 
+                  ? 'المتصفح الحالي لا يدعم الاتصال المباشر بالطابعات (مثل Safari أو Firefox). يرجى فتح التطبيق على متصفح Google Chrome أو Edge.' 
+                  : 'Your current browser does not support Web Bluetooth (e.g., Safari or Firefox). Please open this app in Google Chrome or Microsoft Edge.'}
+              </p>
+              <div style="height:1px; background:rgba(0,0,0,0.06); margin:6px 0;"></div>
+              <p style="font-size:10px; color:var(--color-text-muted);">
+                ${currentLanguage === 'ar' ? 'للتجربة والاختبار السريع، يمكنك استخدام المحاكي المدمج أدناه:' : 'For testing, you can use the built-in printer simulator below:'}
+              </p>
+            </div>
+          `;
+          // Fallback scan & populate mock printers for testing
+          setTimeout(() => {
+            const countEl = document.getElementById('printer-device-count');
+            if (countEl) countEl.textContent = String(mockPrinters.length);
+            
+            mockPrinters.forEach(printer => {
+              const mac = printer.mac;
+              const name = printer.name;
+              const type = printer.type;
+              
+              const item = document.createElement('div');
+              item.style.cssText = `
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 12px;
+                background: var(--color-white);
+                border: 1px solid rgba(0,0,0,0.06);
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+              `;
+              item.className = 'printer-device-item';
+
+              item.addEventListener('mouseenter', () => {
+                item.style.backgroundColor = 'rgba(82, 183, 136, 0.08)';
+                item.style.borderColor = 'var(--color-primary-light)';
+              });
+              item.addEventListener('mouseleave', () => {
+                item.style.backgroundColor = 'var(--color-white)';
+                item.style.borderColor = 'rgba(0,0,0,0.06)';
+              });
+
+              item.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 2px; text-align: right;">
+                  <span style="font-weight: 700; font-size: 13px; color: var(--color-primary);">${name}</span>
+                  <span style="font-size: 10px; color: var(--color-text-muted); font-family: monospace;">${mac} (Simulator)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--color-text-muted);">
+                  <span>📶 قوي</span>
+                  <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-light);">bluetooth</span>
+                </div>
+              `;
+
+              item.addEventListener('click', () => {
+                connectToPrinterDevice({ name, mac, type });
+              });
+
+              list.appendChild(item);
+            });
+          }, 800);
+        }
+      }
+    }
   }
 }
 
@@ -4149,6 +4291,48 @@ function openCustomCropDialog(inputElementToUpdate, callback) {
 
   confirmBtn.addEventListener('click', onConfirm);
   cancelBtn.addEventListener('click', onCancel);
+}
+
+function showIframeBluetoothWarningDialog() {
+  const dialog = document.getElementById('dialog-iframe-bluetooth');
+  const urlInput = document.getElementById('iframe-app-url');
+  const copyBtn = document.getElementById('btn-iframe-copy-url');
+  const okBtn = document.getElementById('btn-iframe-ok');
+
+  if (!dialog) return;
+
+  if (urlInput) {
+    urlInput.value = window.location.href.split('?')[0]; // Clean URL without query params
+  }
+
+  dialog.style.display = 'flex';
+
+  const onCopy = async () => {
+    try {
+      if (urlInput) {
+        urlInput.select();
+        urlInput.setSelectionRange(0, 99999); // For mobile devices
+        await navigator.clipboard.writeText(urlInput.value);
+        showToast(currentLanguage === 'ar' ? 'تم نسخ رابط التطبيق بنجاح!' : 'App URL copied successfully!', 'check_circle');
+      }
+    } catch (err) {
+      console.error('Clipboard copy error:', err);
+      showToast(currentLanguage === 'ar' ? 'يرجى تحديد الرابط ونسخه يدوياً' : 'Please select and copy the link manually', 'warning', true);
+    }
+  };
+
+  const onOk = () => {
+    dialog.style.display = 'none';
+    cleanup();
+  };
+
+  const cleanup = () => {
+    if (copyBtn) copyBtn.removeEventListener('click', onCopy);
+    if (okBtn) okBtn.removeEventListener('click', onOk);
+  };
+
+  if (copyBtn) copyBtn.addEventListener('click', onCopy);
+  if (okBtn) okBtn.addEventListener('click', onOk);
 }
 
 // ==============================================
