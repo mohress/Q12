@@ -1,0 +1,6 @@
+{
+  "name": "Alwa Accounts Manager",
+  "description": "An offline-first fruits and vegetables market accounts manager with IndexedDB persistence, billing, thermal print preview, and statistics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
