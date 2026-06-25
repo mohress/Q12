@@ -608,9 +608,10 @@ body:has(input:focus:not([readonly]), textarea:focus, select:focus) .bottom-nav 
   z-index: 1000;
   transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   overflow: hidden;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .bottom-sheet.open {
@@ -670,14 +671,15 @@ body.sheet-open {
 
 .bottom-sheet-body {
   padding: 20px 24px;
-  overflow-y: auto;
-  max-height: calc(90vh - 80px);
+  overflow-y: auto !important;
+  max-height: calc(85vh - 75px);
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: calc(24px + var(--safe-padding-bottom));
+  padding-bottom: 120px !important;
   -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
 /* Form Styles & Inputs */

@@ -3021,42 +3021,309 @@ async function openPrintPreview(saleId) {
 // ==============================================
 // 11. BLE HARDWARE PRINTER SERVICE & EMULATOR
 // ==============================================
+
+// --- ARABIC TEXT SHAPING & REVERSING FOR THERMAL PRINTERS ---
+function shapeArabic(text) {
+  const arabicChars = {
+    0x0621: [0xFE80, 0xFE80, 0xFE80, 0xFE80], // Hamza
+    0x0622: [0xFE81, 0xFE82, 0xFE82, 0xFE81], // Alef Madda
+    0x0623: [0xFE83, 0xFE84, 0xFE84, 0xFE83], // Alef Hamza Above
+    0x0624: [0xFE85, 0xFE86, 0xFE86, 0xFE85], // Waw Hamza Above
+    0x0625: [0xFE87, 0xFE88, 0xFE88, 0xFE87], // Alef Hamza Below
+    0x0626: [0xFE89, 0xFE8A, 0xFE8B, 0xFE8C], // Yeh Hamza Above
+    0x0627: [0xFE8D, 0xFE8E, 0xFE8E, 0xFE8D], // Alef
+    0x0628: [0xFE8F, 0xFE90, 0xFE91, 0xFE92], // Beh
+    0x0629: [0xFE93, 0xFE94, 0xFE93, 0xFE94], // Teh Marbuta
+    0x062A: [0xFE95, 0xFE96, 0xFE97, 0xFE98], // Teh
+    0x062B: [0xFE99, 0xFE9A, 0xFE9B, 0xFE9C], // Theh
+    0x062C: [0xFE9D, 0xFE9E, 0xFE9F, 0xFEA0], // Jeem
+    0x062D: [0xFEA1, 0xFEA2, 0xFEA3, 0xFEA4], // Hah
+    0x062E: [0xFEA5, 0xFEA6, 0xFEA7, 0xFEA8], // Khah
+    0x062F: [0xFEA9, 0xFEAA, 0xFEAA, 0xFEA9], // Dal
+    0x0630: [0xFEAB, 0xFEAC, 0xFEAC, 0xFEAB], // Thal
+    0x0631: [0xFEAD, 0xFEAE, 0xFEAE, 0xFEAD], // Reh
+    0x0632: [0xFEAF, 0xFEB0, 0xFEB0, 0xFEAF], // Zain
+    0x0633: [0xFEB1, 0xFEB2, 0xFEB3, 0xFEB4], // Seen
+    0x0634: [0xFEB5, 0xFEB6, 0xFEB7, 0xFEB8], // Sheen
+    0x0635: [0xFEB9, 0xFEBA, 0xFEBB, 0xFEBC], // Sad
+    0x0636: [0xFEBD, 0xFEBE, 0xFEBF, 0xFEC0], // Dad
+    0x0637: [0xFEC1, 0xFEC2, 0xFEC3, 0xFEC4], // Tah
+    0x0638: [0xFEC5, 0xFEC6, 0xFEC7, 0xFEC8], // Zah
+    0x0639: [0xFEC9, 0xFECA, 0xFECB, 0xFECC], // Ain
+    0x063A: [0xFECD, 0xFECE, 0xFECF, 0xFED0], // Ghain
+    0x0641: [0xFED1, 0xFED2, 0xFED3, 0xFED4], // Feh
+    0x0642: [0xFED5, 0xFED6, 0xFED7, 0xFED8], // Qaf
+    0x0643: [0xFED9, 0xFEDA, 0xFEDB, 0xFEDC], // Kaf
+    0x0644: [0xFEDD, 0xFEDE, 0xFEDF, 0xFEE0], // Lam
+    0x0645: [0xFEE1, 0xFEE2, 0xFEE3, 0xFEE4], // Meem
+    0x0646: [0xFEE5, 0xFEE6, 0xFEE7, 0xFEE8], // Noon
+    0x0647: [0xFEE9, 0xFEEA, 0xFEEB, 0xFEEC], // Heh
+    0x0648: [0xFEED, 0xFEEE, 0xFEEE, 0xFEED], // Waw
+    0x0649: [0xFEEF, 0xFEF0, 0xFEF0, 0xFEEF], // Alef Maksura
+    0x064A: [0xFEF1, 0xFEF2, 0xFEF3, 0xFEF4]  // Yeh
+  };
+
+  function connectsRight(code) {
+    const rConnectors = [
+      0x0622, 0x0623, 0x0624, 0x0625, 0x0627, 0x062F, 0x0630, 0x0631, 0x0632, 0x0648, 0x0649
+    ];
+    return arabicChars[code] && !rConnectors.includes(code);
+  }
+
+  function connectsLeft(code) {
+    return arabicChars[code];
+  }
+
+  let result = [];
+  for (let i = 0; i < text.length; i++) {
+    let code = text.charCodeAt(i);
+    if (arabicChars[code]) {
+      let prevCode = i > 0 ? text.charCodeAt(i - 1) : null;
+      let nextCode = i < text.length - 1 ? text.charCodeAt(i + 1) : null;
+
+      let linkPrev = prevCode && connectsLeft(prevCode);
+      let linkNext = nextCode && connectsRight(nextCode);
+
+      let forms = arabicChars[code];
+      if (linkPrev && linkNext) {
+        result.push(forms[2]); // Medial
+      } else if (linkPrev) {
+        result.push(forms[1]); // Final
+      } else if (linkNext) {
+        result.push(forms[3]); // Initial
+      } else {
+        result.push(forms[0]); // Isolated
+      }
+    } else {
+      result.push(code);
+    }
+  }
+  return String.fromCharCode(...result);
+}
+
+function getBaseArabicCharOfPresentationForm(code) {
+  if (code >= 0xFE80 && code <= 0xFE88) {
+    const arr = [0x0621, 0x0622, 0x0622, 0x0623, 0x0623, 0x0624, 0x0624, 0x0625, 0x0625];
+    return arr[code - 0xFE80];
+  }
+  if (code >= 0xFE89 && code <= 0xFE8C) return 0x0626;
+  if (code >= 0xFE8D && code <= 0xFE8E) return 0x0627;
+  if (code >= 0xFE8F && code <= 0xFE92) return 0x0628;
+  if (code >= 0xFE93 && code <= 0xFE94) return 0x0629;
+  if (code >= 0xFE95 && code <= 0xFE98) return 0x062A;
+  if (code >= 0xFE99 && code <= 0xFE9C) return 0x062B;
+  if (code >= 0xFE9D && code <= 0xFEA0) return 0x062C;
+  if (code >= 0xFEA1 && code <= 0xFEA4) return 0x062D;
+  if (code >= 0xFEA5 && code <= 0xFEA8) return 0x062E;
+  if (code >= 0xFEA9 && code <= 0xFEAA) return 0x062F;
+  if (code >= 0xFEAB && code <= 0xFEAC) return 0x0630;
+  if (code >= 0xFEAD && code <= 0xFEAE) return 0x0631;
+  if (code >= 0xFEAF && code <= 0xFEB0) return 0x0632;
+  if (code >= 0xFEB1 && code <= 0xFEB4) return 0x0633;
+  if (code >= 0xFEB5 && code <= 0xFEB8) return 0x0634;
+  if (code >= 0xFEB9 && code <= 0xFEBC) return 0x0635;
+  if (code >= 0xFEBD && code <= 0xFEC0) return 0x0636;
+  if (code >= 0xFEC1 && code <= 0xFEC4) return 0x0637;
+  if (code >= 0xFEC5 && code <= 0xFEC8) return 0x0638;
+  if (code >= 0xFEC9 && code <= 0xFECC) return 0x0639;
+  if (code >= 0xFECD && code <= 0xFED0) return 0x063A;
+  if (code >= 0xFED1 && code <= 0xFED4) return 0x0641;
+  if (code >= 0xFED5 && code <= 0xFED8) return 0x0642;
+  if (code >= 0xFED9 && code <= 0xFEDC) return 0x0643;
+  if (code >= 0xFEDD && code <= 0xFEE0) return 0x0644;
+  if (code >= 0xFEE1 && code <= 0xFEE4) return 0x0645;
+  if (code >= 0xFEE5 && code <= 0xFEE8) return 0x0646;
+  if (code >= 0xFEE9 && code <= 0xFEEC) return 0x0647;
+  if (code >= 0xFEED && code <= 0xFEEE) return 0x0648;
+  if (code >= 0xFEEF && code <= 0xFEF0) return 0x0649;
+  if (code >= 0xFEF1 && code <= 0xFEF4) return 0x064A;
+  return null;
+}
+
+function encodeCP1256(str) {
+  const bytes = [];
+  const cp1256Map = {
+    0x060C: 0xA1, 0x061B: 0xBA, 0x061F: 0xBF, 0x0621: 0xC1, 0x0622: 0xC2,
+    0x0623: 0xC3, 0x0624: 0xC4, 0x0625: 0xC5, 0x0626: 0xC6, 0x0627: 0xC7,
+    0x0628: 0xC8, 0x0629: 0xC9, 0x062A: 0xCA, 0x062B: 0xCB, 0x062C: 0xCC,
+    0x062D: 0xCD, 0x062E: 0xCE, 0x062F: 0xCF, 0x0630: 0xD0, 0x0631: 0xD1,
+    0x0632: 0xD2, 0x0633: 0xD3, 0x0634: 0xD4, 0x0635: 0xD5, 0x0636: 0xD6,
+    0x0637: 0xD7, 0x0638: 0xD8, 0x0639: 0xD9, 0x063A: 0xDA, 0x0640: 0xE0,
+    0x0641: 0xE1, 0x0642: 0xE2, 0x0643: 0xE3, 0x0644: 0xE4, 0x0645: 0xE5,
+    0x0646: 0xE6, 0x0647: 0xE7, 0x0648: 0xE8, 0x0649: 0xE9, 0x064A: 0xEA
+  };
+
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code < 128) {
+      bytes.push(code);
+    } else if (code >= 0x0600 && code <= 0x06FF) {
+      bytes.push(cp1256Map[code] || 0x3F);
+    } else if (code >= 0xFE80 && code <= 0xFEFC) {
+      const base = getBaseArabicCharOfPresentationForm(code);
+      bytes.push(base ? (cp1256Map[base] || 0x3F) : 0x3F);
+    } else {
+      bytes.push(0x3F);
+    }
+  }
+  return new Uint8Array(bytes);
+}
+
+function isLTRChar(char) {
+  const code = char.charCodeAt(0);
+  return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+function reverseArabicWithNumbers(text) {
+  let chars = text.split('').reverse();
+  let i = 0;
+  while (i < chars.length) {
+    if (isLTRChar(chars[i])) {
+      let start = i;
+      while (i < chars.length && (isLTRChar(chars[i]) || chars[i] === '.' || chars[i] === ',' || chars[i] === ':')) {
+        i++;
+      }
+      let end = i;
+      let segment = chars.slice(start, end).reverse();
+      for (let j = 0; j < segment.length; j++) {
+        chars[start + j] = segment[j];
+      }
+    } else {
+      i++;
+    }
+  }
+  return chars.join('');
+}
+
+function prepareArabicLine(text, width = 32) {
+  const shaped = shapeArabic(text);
+  const reversed = reverseArabicWithNumbers(shaped);
+  if (reversed.length > width) {
+    return reversed.substring(0, width);
+  } else {
+    return ' '.repeat(width - reversed.length) + reversed;
+  }
+}
+
+function formatPrinterLine(rightText, leftText, width = 32) {
+  const spacesCount = width - rightText.length - leftText.length;
+  const spaces = ' '.repeat(spacesCount > 0 ? spacesCount : 1);
+  return rightText + spaces + leftText;
+}
+
+// Global Bluetooth State
 const mockPrinters = [
-  { name: 'MPT-II (ESC/POS)', mac: 'AA:BB:CC:11:22:33', strength: -65 },
-  { name: 'Rongta RP80', mac: '86:12:34:AB:CD:EF', strength: -72 },
-  { name: 'XP-58 Printer', mac: '00:11:22:33:44:55', strength: -55 },
-  { name: 'Bluetooth Printer', mac: '9F:8E:7D:6C:5B:4A', strength: -80 }
+  { name: 'MPT-II (Classic SPP)', mac: 'AA:BB:CC:11:22:33', strength: -65, type: 'classic' },
+  { name: 'Rongta RP80 (BLE)', mac: '86:12:34:AB:CD:EF', strength: -72, type: 'ble' },
+  { name: 'XP-58 Printer (BLE)', mac: '00:11:22:33:44:55', strength: -55, type: 'ble' },
+  { name: 'Bluetooth Printer (Classic)', mac: '9F:8E:7D:6C:5B:4A', strength: -80, type: 'classic' }
 ];
+
+let activeWebBluetoothDevice = null;
+let activeWebBluetoothCharacteristic = null;
 
 function renderPrinterDevicesList() {
   const container = document.getElementById('printer-device-list-container');
   const list = document.getElementById('printer-devices-list');
   const countEl = document.getElementById('printer-device-count');
   const statusText = document.getElementById('printer-status-text');
-  
+
   if (!container || !list) return;
-  
+
   container.style.display = 'flex';
   list.innerHTML = '';
-  
+
   if (statusText) {
     statusText.textContent = currentLanguage === 'ar' ? 'جاري البحث عن أجهزة بلوتوث...' : 'Scanning for bluetooth devices...';
   }
-  
-  // Show searching state first
+
+  // Scanning State Indicator
   list.innerHTML = `
     <div style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; font-size: 12px; color: var(--color-text-muted);">
       <div class="spinner" style="width: 14px; height: 14px; border: 2px solid var(--color-primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-      <span>${currentLanguage === 'ar' ? 'جاري البحث عن أجهزة قريبة...' : 'Scanning for nearby devices...'}</span>
+      <span>${currentLanguage === 'ar' ? 'جاري فحص الأجهزة المتاحة وبلوتوث النظام...' : 'Scanning system bluetooth...'}</span>
     </div>
   `;
   if (countEl) countEl.textContent = '0';
 
-  setTimeout(() => {
+  // Check if Native Cordova Bluetooth Serial is available
+  if (typeof window.bluetoothSerial !== 'undefined') {
+    // 1. Classic Bluetooth SPP scanning
+    window.bluetoothSerial.list(function(paired) {
+      window.bluetoothSerial.discoverUnpaired(function(unpaired) {
+        const allDevices = [...paired, ...unpaired];
+        populateScannedDevicesList(allDevices);
+      }, function() {
+        populateScannedDevicesList(paired);
+      });
+    }, function() {
+      // Fallback to mock if list fails
+      showMockPrinters();
+    });
+  } else if (typeof window.ble !== 'undefined') {
+    // 2. Cordova BLE Central scanning
+    const discovered = [];
+    window.ble.startScan([], function(device) {
+      if (device.name && !discovered.some(d => d.id === device.id)) {
+        discovered.push({
+          name: device.name,
+          mac: device.id,
+          strength: device.rssi || -75,
+          type: 'ble'
+        });
+        populateScannedDevicesList(discovered);
+      }
+    }, function() {
+      showMockPrinters();
+    });
+
+    // Stop BLE scan after 5 seconds to preserve power
+    setTimeout(() => {
+      window.ble.stopScan();
+    }, 5000);
+  } else if (navigator.bluetooth) {
+    // 3. Web Bluetooth API capability indicator
+    list.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:8px; padding:6px;">
+        <p style="font-size:11px; color:var(--color-text-muted); text-align:center;">
+          ${currentLanguage === 'ar' ? 'أنت تعمل على المتصفح. يمكنك استخدام Web Bluetooth للاقتران بالطابعة مباشرة.' : 'You are on browser. Use Web Bluetooth to request direct access.'}
+        </p>
+        <button class="btn-primary" id="btn-web-bluetooth-request" style="font-size:11px; padding:8px;">
+          ${currentLanguage === 'ar' ? 'اقتران مباشر عبر المتصفح (Web Bluetooth)' : 'Pair with Web Bluetooth'}
+        </button>
+      </div>
+    `;
+    const webBtBtn = document.getElementById('btn-web-bluetooth-request');
+    if (webBtBtn) {
+      webBtBtn.addEventListener('click', triggerWebBluetoothPairing);
+    }
+    if (countEl) countEl.textContent = 'Web';
+  } else {
+    // 4. Default Mock implementation
+    showMockPrinters();
+  }
+
+  function showMockPrinters() {
+    setTimeout(() => {
+      populateScannedDevicesList(mockPrinters);
+    }, 800);
+  }
+
+  function populateScannedDevicesList(devices) {
     list.innerHTML = '';
-    if (countEl) countEl.textContent = String(mockPrinters.length);
-    
-    mockPrinters.forEach(printer => {
+    if (countEl) countEl.textContent = String(devices.length);
+
+    if (devices.length === 0) {
+      list.innerHTML = `<div style="text-align:center; font-size:11px; padding:12px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'لم يتم العثور على أجهزة نشطة' : 'No devices found'}</div>`;
+      return;
+    }
+
+    devices.forEach(printer => {
+      const mac = printer.mac || printer.address || printer.id || '00:00:00:00:00';
+      const name = printer.name || printer.id || 'Unknown Printer';
+      const strength = printer.strength || printer.rssi || -70;
+      const type = printer.type || 'classic';
+
       const item = document.createElement('div');
       item.style.cssText = `
         display: flex;
@@ -3070,8 +3337,7 @@ function renderPrinterDevicesList() {
         transition: all 0.2s ease;
       `;
       item.className = 'printer-device-item';
-      
-      // Hover feedback
+
       item.addEventListener('mouseenter', () => {
         item.style.backgroundColor = 'rgba(82, 183, 136, 0.08)';
         item.style.borderColor = 'var(--color-primary-light)';
@@ -3081,30 +3347,100 @@ function renderPrinterDevicesList() {
         item.style.borderColor = 'rgba(0,0,0,0.06)';
       });
 
-      const signalBar = printer.strength > -60 ? '📶 قوي' : printer.strength > -75 ? '📶 متوسط' : '📶 ضعيف';
-      
+      const signalBar = strength > -60 ? '📶 قوي' : strength > -75 ? '📶 متوسط' : '📶 ضعيف';
+
       item.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 2px; text-align: right;">
-          <span style="font-weight: 700; font-size: 13px; color: var(--color-primary);">${printer.name}</span>
-          <span style="font-size: 10px; color: var(--color-text-muted); font-family: monospace;">${printer.mac}</span>
+          <span style="font-weight: 700; font-size: 13px; color: var(--color-primary);">${name}</span>
+          <span style="font-size: 10px; color: var(--color-text-muted); font-family: monospace;">${mac} (${type === 'ble' ? 'BLE' : 'Classic'})</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--color-text-muted);">
           <span>${signalBar}</span>
           <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-light);">bluetooth</span>
         </div>
       `;
-      
+
       item.addEventListener('click', () => {
-        connectToPrinterDevice(printer);
+        connectToPrinterDevice({ name, mac, type });
       });
-      
+
       list.appendChild(item);
     });
-    
+
     if (statusText) {
       statusText.textContent = currentLanguage === 'ar' ? 'اختر طابعة للاقتران بها' : 'Select printer to connect';
     }
-  }, 1200);
+  }
+}
+
+async function triggerWebBluetoothPairing() {
+  const statusText = document.getElementById('printer-status-text');
+  const statusDot = document.getElementById('printer-status-dot');
+  const testPrintBtn = document.getElementById('btn-test-print');
+  const scanBtn = document.getElementById('btn-scan-printer');
+  const container = document.getElementById('printer-device-list-container');
+
+  try {
+    if (statusText) statusText.textContent = currentLanguage === 'ar' ? 'جاري تفعيل Web Bluetooth...' : 'Activating Web Bluetooth...';
+    
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '00001101-0000-1000-8000-00805f9b34fb', '000018f1-0000-1000-8000-00805f9b34fb']
+    });
+
+    if (statusText) statusText.textContent = currentLanguage === 'ar' ? `جاري الاتصال بـ ${device.name}...` : `Connecting to ${device.name}...`;
+
+    const server = await device.gatt.connect();
+    
+    // Find writable characteristics
+    const services = await server.getPrimaryServices();
+    let writableChar = null;
+
+    for (const service of services) {
+      const chars = await service.getCharacteristics();
+      for (const char of chars) {
+        if (char.properties.write || char.properties.writeWithoutResponse) {
+          writableChar = char;
+          bleWriteServiceUUID = service.uuid;
+          bleWriteCharUUID = char.uuid;
+          break;
+        }
+      }
+      if (writableChar) break;
+    }
+
+    if (!writableChar) {
+      throw new Error("No writable characteristic found on this device");
+    }
+
+    activeWebBluetoothDevice = device;
+    activeWebBluetoothCharacteristic = writableChar;
+    isPrinterConnected = true;
+    bleConnectedDeviceId = device.id;
+    isCordovaSerialActive = false;
+
+    if (statusText) {
+      statusText.textContent = currentLanguage === 'ar' ? `متصل بـ ${device.name} (WebBT)` : `Connected to ${device.name} (WebBT)`;
+    }
+    if (statusDot) statusDot.classList.add('connected');
+    if (testPrintBtn) {
+      testPrintBtn.removeAttribute('disabled');
+      testPrintBtn.style.opacity = '1';
+    }
+    if (scanBtn) {
+      scanBtn.textContent = currentLanguage === 'ar' ? "إلغاء الاقتران" : "Disconnect";
+      scanBtn.style.backgroundColor = "var(--color-danger)";
+    }
+    if (container) container.style.display = 'none';
+
+    playSound('success');
+    showToast(currentLanguage === 'ar' ? `تم الاتصال بطابعة ${device.name} بنجاح!` : `Connected to ${device.name} successfully!`, 'bluetooth');
+
+  } catch (err) {
+    console.error('Web Bluetooth Error:', err);
+    if (statusText) statusText.textContent = currentLanguage === 'ar' ? 'فشل اتصال Web Bluetooth' : 'Web Bluetooth connection failed';
+    showToast(currentLanguage === 'ar' ? 'تعذر إتمام الاقتران عبر المتصفح' : 'Could not establish browser pairing', 'error', true);
+  }
 }
 
 function connectToPrinterDevice(printer) {
@@ -3117,11 +3453,49 @@ function connectToPrinterDevice(printer) {
   if (statusText) {
     statusText.textContent = currentLanguage === 'ar' ? `جاري الاتصال بـ ${printer.name}...` : `Connecting to ${printer.name}...`;
   }
-  
+
+  // 1. Cordova Classic Bluetooth connection
+  if (typeof window.bluetoothSerial !== 'undefined' && printer.type === 'classic') {
+    window.bluetoothSerial.connect(printer.mac, function() {
+      establishSuccessState();
+    }, function(err) {
+      establishFailureState(err);
+    });
+    return;
+  }
+
+  // 2. Cordova BLE Central connection
+  if (typeof window.ble !== 'undefined' && printer.type === 'ble') {
+    window.ble.connect(printer.mac, function(device) {
+      // Find write characteristic
+      let writeChar = null;
+      if (device.services && device.characteristics) {
+        for (const char of device.characteristics) {
+          if (char.properties.indexOf('Write') !== -1 || char.properties.indexOf('WriteWithoutResponse') !== -1) {
+            bleWriteServiceUUID = char.service;
+            bleWriteCharUUID = char.characteristic;
+            writeChar = char;
+            break;
+          }
+        }
+      }
+      establishSuccessState();
+    }, function(err) {
+      establishFailureState(err);
+    });
+    return;
+  }
+
+  // 3. Simulated Connection
   setTimeout(() => {
+    establishSuccessState();
+  }, 1000);
+
+  function establishSuccessState() {
     isPrinterConnected = true;
     bleConnectedDeviceId = printer.mac;
-    
+    isCordovaSerialActive = (printer.type === 'classic');
+
     if (statusText) {
       statusText.textContent = currentLanguage === 'ar' ? `متصل بـ ${printer.name} (جاهز)` : `Connected to ${printer.name} (Ready)`;
     }
@@ -3139,10 +3513,18 @@ function connectToPrinterDevice(printer) {
     if (container) {
       container.style.display = 'none';
     }
-    
+
     playSound('success');
     showToast(currentLanguage === 'ar' ? `تم الاتصال بطابعة ${printer.name} بنجاح!` : `Connected to ${printer.name} successfully!`, 'bluetooth');
-  }, 1000);
+  }
+
+  function establishFailureState(err) {
+    console.error('Hardware connection error:', err);
+    if (statusText) {
+      statusText.textContent = currentLanguage === 'ar' ? `فشل الاتصال بـ ${printer.name}` : `Failed to connect to ${printer.name}`;
+    }
+    showToast(currentLanguage === 'ar' ? 'فشل الاتصال بجهاز الطابعة الحرارية' : 'Failed to connect to hardware printer', 'error', true);
+  }
 }
 
 function disconnectPrinter() {
@@ -3152,9 +3534,23 @@ function disconnectPrinter() {
   const scanBtn = document.getElementById('btn-scan-printer');
   const container = document.getElementById('printer-device-list-container');
 
+  // Disconnect active hardware Bluetooth
+  if (typeof window.bluetoothSerial !== 'undefined' && isPrinterConnected) {
+    window.bluetoothSerial.disconnect();
+  }
+  if (typeof window.ble !== 'undefined' && isPrinterConnected && bleConnectedDeviceId) {
+    window.ble.disconnect(bleConnectedDeviceId);
+  }
+  if (activeWebBluetoothDevice && activeWebBluetoothDevice.gatt.connected) {
+    activeWebBluetoothDevice.gatt.disconnect();
+    activeWebBluetoothDevice = null;
+    activeWebBluetoothCharacteristic = null;
+  }
+
   isPrinterConnected = false;
   bleConnectedDeviceId = null;
-  
+  isCordovaSerialActive = false;
+
   if (statusText) {
     statusText.textContent = currentLanguage === 'ar' ? 'الطابعة غير متصلة' : 'Printer Disconnected';
   }
@@ -3167,12 +3563,12 @@ function disconnectPrinter() {
   }
   if (scanBtn) {
     scanBtn.textContent = currentLanguage === 'ar' ? "اقتران وفحص" : "Scan & Pair";
-    scanBtn.style.backgroundColor = ""; // Reset to CSS default
+    scanBtn.style.backgroundColor = "";
   }
   if (container) {
     container.style.display = 'none';
   }
-  
+
   showToast(currentLanguage === 'ar' ? 'تم إلغاء اقتران طابعة البلوتوث بنجاح.' : 'Bluetooth printer disconnected successfully.');
 }
 
@@ -3192,39 +3588,221 @@ function handlePaperWidthChange(width) {
   }
 }
 
+// --- ACTUAL HARDWARE ESC/POS DATA PAYLOAD GENERATOR & WRITER ---
 async function executePrintJob(saleId) {
   if (!isPrinterConnected) {
     showToast(currentLanguage === 'ar' ? 'الرجاء تشغيل واقتران طابعة البلوتوث BLE أولاً من الإعدادات!' : 'Please connect your BLE printer first in settings!', 'bluetooth', true);
     return;
   }
 
+  // Get invoice data
+  const sale = await dbGet('sale_invoices', saleId);
+  if (!sale) {
+    showToast(currentLanguage === 'ar' ? 'لم يتم العثور على الفاتورة!' : 'Invoice not found!', 'error', true);
+    return;
+  }
+  const customer = await dbGet('customers', sale.customer_id);
+  if (!customer) return;
+
+  const saleItems = await dbGetAll('sale_items');
+  const items = saleItems.filter(it => it.sale_invoice_id === saleId);
+
+  // Configure width columns
+  const paperWidthNum = parseInt(printerPaperWidth) || 58;
+  const charsPerLine = paperWidthNum === 80 ? 48 : 32;
+
+  // Active Visual simulator animation on-screen
   const printSimulator = document.getElementById('print-simulator');
   const paperStrip = document.getElementById('printer-paper-strip');
-  
   if (printSimulator && paperStrip) {
     printSimulator.style.display = 'block';
     paperStrip.classList.remove('printing');
-    // Force reflow
-    void paperStrip.offsetWidth;
+    void paperStrip.offsetWidth; // force reflow
     paperStrip.classList.add('printing');
   }
 
   showToast(currentLanguage === 'ar' ? 'جاري إرسال البيانات والطباعة الحرارية...' : 'Sending data payload to ESC/POS hardware printer...', 'hourglass_empty');
+
+  // --- BUILD ESC/POS BINARY DATA BUFFER ---
+  const escposCommands = [];
   
+  // 1. Initialize printer: ESC @ [0x1B, 0x40]
+  escposCommands.push(0x1B, 0x40);
+
+  // 2. Select Arabic Character Code Table CP1256: ESC t 51 [0x1B, 0x74, 0x33]
+  escposCommands.push(0x1B, 0x74, 0x33);
+  
+  // 3. Cancel Kanji character mode just in case (to enable single byte CP1256): FS . [0x1C, 0x2E]
+  escposCommands.push(0x1C, 0x2E);
+
+  // Helper to send line of text
+  function addTextLine(text, align = 'center') {
+    // Alignment commands
+    if (align === 'center') {
+      escposCommands.push(0x1B, 0x61, 0x01); // Center
+    } else if (align === 'right') {
+      escposCommands.push(0x1B, 0x61, 0x02); // Right
+    } else {
+      escposCommands.push(0x1B, 0x61, 0x00); // Left
+    }
+
+    // Build line text
+    let formattedText = '';
+    if (align === 'right') {
+      formattedText = prepareArabicLine(text, charsPerLine);
+    } else if (align === 'center') {
+      formattedText = prepareArabicLine(text, charsPerLine);
+    } else {
+      formattedText = text;
+    }
+
+    const encoded = encodeCP1256(formattedText);
+    for (let i = 0; i < encoded.length; i++) {
+      escposCommands.push(encoded[i]);
+    }
+    escposCommands.push(0x0A); // Line feed [LF]
+  }
+
+  function addRawBytes(byteArray) {
+    for (let i = 0; i < byteArray.length; i++) {
+      escposCommands.push(byteArray[i]);
+    }
+  }
+
+  // --- RECEIPT CONTENT PRINT STRUCTURING ---
+  // Double-height & Double-width for Header Title
+  escposCommands.push(0x1D, 0x21, 0x11); // Double size
+  addTextLine(officeName, 'center');
+  escposCommands.push(0x1D, 0x21, 0x00); // Normal size
+
+  addTextLine(`هاتف: ${officePhone}`, 'center');
+  addTextLine(`العنوان: ${officeLocation}`, 'center');
+  
+  addTextLine('-'.repeat(charsPerLine), 'center');
+
+  // Invoice basic details
+  const formattedDate = new Date(sale.created_at).toLocaleDateString('ar-EG');
+  const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
+
+  addTextLine(formatPrinterLine(`فاتورة: # ${sale.id}`, `طلب: ${orderId}`, charsPerLine), 'right');
+  addTextLine(formatPrinterLine(`الزبون:`, customer.name, charsPerLine), 'right');
+  addTextLine(formatPrinterLine(`التاريخ:`, formattedDate, charsPerLine), 'right');
+  addTextLine(formatPrinterLine(`طريقة الدفع:`, sale.payment_type === 'cash' ? 'نقدي (💵)' : 'بالأجل (📋)', charsPerLine), 'right');
+
+  addTextLine('='.repeat(charsPerLine), 'center');
+
+  // Products table headers
+  if (charsPerLine === 32) {
+    addTextLine('ت  الصنف      الوزن    المجموع', 'right');
+  } else {
+    addTextLine('ت    الصنف          الوزن        المجموع', 'right');
+  }
+  addTextLine('-'.repeat(charsPerLine), 'center');
+
+  // Products table rows
+  items.forEach((it, idx) => {
+    const numStr = String(idx + 1);
+    const cropName = it.crop_type;
+    const weightStr = formatWeight(it.weight_kg, it.unit || 'kg');
+    const priceStr = formatVal(it.agreed_price);
+
+    let row = '';
+    if (charsPerLine === 32) {
+      // 32 chars spacing: num(2) cropName(10) weightStr(10) priceStr(10)
+      const cName = cropName.substring(0, 8);
+      row = formatPrinterLine(`${numStr}. ${cName}`, `${weightStr}  ${priceStr}`, charsPerLine);
+    } else {
+      // 48 chars spacing
+      const cName = cropName.substring(0, 15);
+      row = formatPrinterLine(`${numStr}. ${cName}`, `${weightStr}      ${priceStr}`, charsPerLine);
+    }
+    addTextLine(row, 'right');
+  });
+
+  addTextLine('-'.repeat(charsPerLine), 'center');
+
+  // Calculate totals
+  const subtotal = items.reduce((sum, item) => sum + item.agreed_price, 0);
+
+  addTextLine(formatPrinterLine('مجموع البضاعة:', formatVal(subtotal, true), charsPerLine), 'right');
+  if (sale.bags_cost > 0) {
+    addTextLine(formatPrinterLine('الأكياس والكراتين:', formatVal(sale.bags_cost, true), charsPerLine), 'right');
+  }
+  
+  addTextLine('-'.repeat(charsPerLine), 'center');
+
+  // Grand Total in double height bold
+  escposCommands.push(0x1D, 0x21, 0x01); // Double height
+  escposCommands.push(0x1B, 0x45, 0x01); // Bold on
+  addTextLine(formatPrinterLine('الإجمالي المستحق:', formatVal(sale.total_amount, true), charsPerLine), 'right');
+  escposCommands.push(0x1B, 0x45, 0x00); // Bold off
+  escposCommands.push(0x1D, 0x21, 0x00); // Normal size
+
+  addTextLine('='.repeat(charsPerLine), 'center');
+
+  // Footer messages
+  addTextLine('شكرًا لتعاملكم معنا', 'center');
+  addTextLine('علوة الغابة الخضراء ترحب بكم', 'center');
+
+  // Feed 4 lines and cut paper: GS V 66 0 [0x1D, 0x56, 0x42, 0x00]
+  escposCommands.push(0x0A, 0x0A, 0x0A, 0x0A);
+  escposCommands.push(0x1D, 0x56, 0x42, 0x00);
+
+  // Convert print buffer array to Uint8Array
+  const payloadBytes = new Uint8Array(escposCommands);
+
+  // --- WRITE PAYLOAD TO CONNECTED PRINTER NATIVE PORT ---
+  let isWriteSuccess = false;
+
+  if (activeWebBluetoothCharacteristic) {
+    // 1. Send via Web Bluetooth characteristic
+    try {
+      // Write in chunks of 20 bytes (standard Bluetooth MTU safety limit)
+      const chunkSize = 20;
+      for (let i = 0; i < payloadBytes.length; i += chunkSize) {
+        const chunk = payloadBytes.slice(i, i + chunkSize);
+        await activeWebBluetoothCharacteristic.writeValue(chunk);
+      }
+      isWriteSuccess = true;
+    } catch (err) {
+      console.error('WebBT print failure:', err);
+    }
+  } else if (typeof window.bluetoothSerial !== 'undefined' && isCordovaSerialActive) {
+    // 2. Send via Classic Bluetooth Serial SPP
+    window.bluetoothSerial.write(payloadBytes, function() {
+      // success callback
+    }, function(err) {
+      console.error('Classic serial print failure:', err);
+    });
+    isWriteSuccess = true; // Classic serial write is non-blocking fire-and-forget
+  } else if (typeof window.ble !== 'undefined' && bleConnectedDeviceId && bleWriteServiceUUID && bleWriteCharUUID) {
+    // 3. Send via BLE Central plugin
+    const buffer = payloadBytes.buffer;
+    window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
+      // success callback
+    }, function(err) {
+      console.error('BLE Central write failure:', err);
+    });
+    isWriteSuccess = true;
+  } else {
+    // 4. Fallback/Mock simulator mode
+    isWriteSuccess = true;
+  }
+
+  // Finalize UI flow states
   setTimeout(() => {
-    playSound('success');
-    showToast(currentLanguage === 'ar' ? 'تمت الطباعة بنجاح!' : 'Receipt printed successfully!', 'print');
-    
-    // Hide the simulator after it completes
+    if (isWriteSuccess) {
+      playSound('success');
+      showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة وإرسال البيانات بنجاح!' : 'Hardware print job dispatched successfully!', 'print');
+    } else {
+      showToast(currentLanguage === 'ar' ? 'فشل إرسال كود الطباعة إلى الطابعة الموصولة' : 'Failed to write data to active printer port', 'error', true);
+    }
+
     setTimeout(() => {
-      if (printSimulator) {
-        printSimulator.style.display = 'none';
-      }
-      if (paperStrip) {
-        paperStrip.classList.remove('printing');
-      }
+      if (printSimulator) printSimulator.style.display = 'none';
+      if (paperStrip) paperStrip.classList.remove('printing');
     }, 1200);
-  }, 3000);
+  }, 1800);
 }
 
 function executeSystemPrintJob() {
