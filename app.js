@@ -4010,13 +4010,43 @@ async function executePrintJob(saleId) {
     return;
   }
 
+  // To solve horizontal shifting, offsets, and margins in html2canvas (especially for centered/RTL layouts),
+  // we temporarily clone the element, place it at absolute (0,0) with reset margin/padding, and render the clone.
+  const clone = container.cloneNode(true);
+  clone.style.position = 'fixed';
+  clone.style.left = '0';
+  clone.style.top = '0';
+  clone.style.margin = '0';
+  clone.style.padding = '4px 2px';
+  clone.style.boxSizing = 'border-box';
+  clone.style.width = is58mm ? '272px' : '380px';
+  clone.style.maxWidth = is58mm ? '272px' : '380px';
+  clone.style.zIndex = '-9999';
+  clone.style.backgroundColor = '#FFFFFF';
+  clone.style.transform = 'none';
+
+  // Deep clone does not copy canvas contents (e.g. the QR code), so we manually copy them now.
+  const originalCanvases = container.querySelectorAll('canvas');
+  const clonedCanvases = clone.querySelectorAll('canvas');
+  originalCanvases.forEach((origCanvas, i) => {
+    const destCanvas = clonedCanvases[i];
+    if (destCanvas) {
+      destCanvas.width = origCanvas.width;
+      destCanvas.height = origCanvas.height;
+      const destCtx = destCanvas.getContext('2d');
+      destCtx.drawImage(origCanvas, 0, 0);
+    }
+  });
+
+  document.body.appendChild(clone);
+
   // Calculate high quality scale factor
   const renderScale = canvasWidth / designWidth;
 
   const html2canvasFn = window.html2canvas || html2canvas;
   let rawCanvas;
   try {
-    rawCanvas = await html2canvasFn(container, {
+    rawCanvas = await html2canvasFn(clone, {
       scale: renderScale,
       width: designWidth,
       windowWidth: designWidth,
@@ -4029,7 +4059,12 @@ async function executePrintJob(saleId) {
   } catch (canvasErr) {
     console.error('html2canvas rendering failed:', canvasErr);
     showToast(currentLanguage === 'ar' ? 'فشل توليد صورة الفاتورة للطباعة' : 'Failed to generate invoice image for printing', 'error', true);
+    document.body.removeChild(clone);
     return;
+  } finally {
+    if (document.body.contains(clone)) {
+      document.body.removeChild(clone);
+    }
   }
 
   // Create an exact-sized canvas to prevent any rounding/alignment discrepancies
