@@ -2077,9 +2077,8 @@ async function submitSaleInvoice() {
   const customerAddress = document.getElementById('sale-customer-address').value.trim() || 'بغداد';
   const bagsCost = parseNumberInput(document.getElementById('sale-bags-cost').value) || 0;
   
-  const paymentMethodSelect = document.querySelector('.payment-method-selector .btn-secondary.active');
+  const paymentMethodSelect = document.querySelector('.toggle-switch-group .toggle-switch-btn.active');
   const paymentType = paymentMethodSelect ? paymentMethodSelect.dataset.method : 'cash';
-  const claimDateInput = document.getElementById('sale-debt-due-date').value;
 
   if (!customerName) {
     showToast(currentLanguage === 'ar' ? 'الرجاء إدخال اسم الزبون' : 'Please input customer name', 'warning', true);
@@ -2258,7 +2257,9 @@ async function submitSaleInvoice() {
 
   // Handle debt ledger entry
   if (paymentType === 'debt') {
-    const dueTime = claimDateInput ? new Date(claimDateInput).getTime() : (Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days fallback
+    const activeDebtDaysBtn = document.querySelector('#group-debt-options .segmented-control-btn.active');
+    const debtDays = activeDebtDaysBtn ? parseInt(activeDebtDaysBtn.dataset.days) : 5;
+    const dueTime = Date.now() + debtDays * 24 * 60 * 60 * 1000;
     await dbAdd('debts', {
       customer_id: customer.id,
       sale_invoice_id: saleInvoiceId,
@@ -2280,7 +2281,6 @@ async function submitSaleInvoice() {
   document.getElementById('sale-customer-address').value = '';
   document.getElementById('sale-bags-cost').value = '';
   document.getElementById('sale-items-container').innerHTML = '';
-  document.getElementById('sale-debt-due-date').value = '';
   
   // Reset totals
   document.getElementById('lbl-subtotal-val').textContent = formatVal(0, true);
@@ -2921,13 +2921,21 @@ async function openPrintPreview(saleId) {
   const formattedDate = new Date(sale.created_at).toLocaleString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
   const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
 
+  const is58mm = printerPaperWidth === '58';
+  const fontSizeClass = is58mm ? 'font-size: 14.5px; line-height: 1.35;' : 'font-size: 17px; line-height: 1.45;';
+  const tableFontSizeClass = is58mm ? 'font-size: 13.5px; line-height: 1.3;' : 'font-size: 15.5px; line-height: 1.4;';
+  const headerFontSizeClass = is58mm ? 'font-size: 20px;' : 'font-size: 24px;';
+  const paddingClass = is58mm ? 'padding: 3px 0;' : 'padding: 5px 0;';
+  const borderStyle = 'border-bottom: 1.2px dashed #000;';
+
   let itemsRowsHtml = items.map((it, idx) => {
+    const cropName = it.crop_type;
     return `
-      <tr>
-        <td style="text-align: right;">${formatVal(idx + 1)}</td>
-        <td style="text-align: right;">${it.crop_type}</td>
-        <td style="text-align: center;">${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
-        <td style="text-align: left;">${formatVal(it.agreed_price)}</td>
+      <tr style="${borderStyle} height: auto;">
+        <td style="text-align: right; width: 10%; ${paddingClass}">${formatVal(idx + 1)}</td>
+        <td style="text-align: right; width: 40%; ${paddingClass} white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${cropName}">${cropName}</td>
+        <td style="text-align: center; width: 25%; ${paddingClass}">${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
+        <td style="text-align: left; width: 25%; ${paddingClass} font-weight: 700;">${formatVal(it.agreed_price)}</td>
       </tr>
     `;
   }).join('');
@@ -2936,40 +2944,40 @@ async function openPrintPreview(saleId) {
   const subtotal = items.reduce((sum, item) => sum + item.agreed_price, 0);
   const carrying = items.reduce((sum, item) => sum + item.porter_fee, 0);
 
-  // Render Receipt Preview HTML
+  // Render Receipt Preview HTML with pixel-perfect, highly responsive layout for 58mm/80mm
   container.innerHTML = `
-    <div style="text-align: center; border-bottom: 1.5px dashed var(--color-border); padding-bottom: 8px; margin-bottom: 8px;">
-      <h2 style="font-size: 17px; font-weight: 800; color: var(--color-primary); margin: 0 0 2px 0;">${officeName}</h2>
-      <p style="font-size: 11px; color: var(--color-text-dark); margin: 0 0 2px 0;">هاتف: ${officePhone}</p>
-      <p style="font-size: 10px; color: var(--color-text-muted); margin: 0;">العنوان: ${officeLocation}</p>
+    <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
+      <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
+      <p style="${fontSizeClass} color: #000; margin: 0 0 2px 0;">هاتف: ${officePhone}</p>
+      <p style="${fontSizeClass} color: #000; margin: 0;">العنوان: ${officeLocation}</p>
     </div>
 
-    <div style="font-size: 11px; border-bottom: 1px dashed var(--color-border); padding-bottom: 6px; margin-bottom: 6px; line-height: 1.4;">
-      <div style="display:flex; justify-content:space-between;">
+    <div style="${fontSizeClass} border-bottom: 1.5px dashed #000; padding-bottom: 6px; margin-bottom: 6px; line-height: 1.4; direction: rtl;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>رقم الفاتورة:</span>
         <span style="font-weight:700;"># ${formatVal(sale.id)} (${orderId})</span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>الزبون:</span>
         <span style="font-weight:700;">${customer.name}</span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>التاريخ:</span>
         <span>${formattedDate}</span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>طريقة الدفع:</span>
         <span style="font-weight:700;">${sale.payment_type === 'cash' ? 'نقد (💵)' : 'بالأجل (📋)'}</span>
       </div>
     </div>
 
-    <table class="receipt-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+    <table class="receipt-table" style="width: 100%; border-collapse: collapse; ${tableFontSizeClass} table-layout: fixed; direction: rtl; margin-bottom: 6px;">
       <thead>
-        <tr style="border-bottom: 1px dashed var(--color-border);">
-          <th style="text-align: right; font-weight:700;">ت</th>
-          <th style="text-align: right; font-weight:700;">الصنف</th>
-          <th style="text-align: center; font-weight:700;">الوزن الكلي</th>
-          <th style="text-align: left; font-weight:700;">المجموع</th>
+        <tr style="border-bottom: 1.5px dashed #000; height: 24px;">
+          <th style="text-align: right; font-weight:700; width: 10%; padding-bottom: 2px;">ت</th>
+          <th style="text-align: right; font-weight:700; width: 40%; padding-bottom: 2px;">الصنف</th>
+          <th style="text-align: center; font-weight:700; width: 25%; padding-bottom: 2px;">الوزن</th>
+          <th style="text-align: left; font-weight:700; width: 25%; padding-bottom: 2px;">المجموع</th>
         </tr>
       </thead>
       <tbody>
@@ -2977,27 +2985,27 @@ async function openPrintPreview(saleId) {
       </tbody>
     </table>
 
-    <div style="font-size: 11px; border-top: 1px dashed var(--color-border); margin-top: 6px; padding-top: 6px; line-height: 1.4;">
-      <div style="display:flex; justify-content:space-between;">
+    <div style="${fontSizeClass} border-top: 1px dashed #000; margin-top: 4px; padding-top: 6px; line-height: 1.4; direction: rtl;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>مجموع البضاعة:</span>
-        <span>${formatVal(subtotal, true)}</span>
+        <span style="font-weight:600;">${formatVal(subtotal, true)}</span>
       </div>
       ${sale.bags_cost > 0 ? `
-        <div style="display:flex; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
           <span>تكلفة الأكياس والكراتين:</span>
-          <span>${formatVal(sale.bags_cost, true)}</span>
+          <span style="font-weight:600;">${formatVal(sale.bags_cost, true)}</span>
         </div>
       ` : ''}
-      <div style="display:flex; justify-content:space-between; font-size: 13px; font-weight: 800; border-top: 1.5px dashed var(--color-border); margin-top: 4px; padding-top: 4px;">
+      <div style="display:flex; justify-content:space-between; font-weight: 800; border-top: 1.5px dashed #000; margin-top: 4px; padding-top: 4px;">
         <span>الإجمالي المستحق:</span>
-        <span style="color:var(--color-primary);">${formatVal(sale.total_amount, true)}</span>
+        <span style="font-size: 1.1em;">${formatVal(sale.total_amount, true)}</span>
       </div>
     </div>
 
     <!-- Generates dynamic offline QR-code with QRious inside preview -->
-    <div style="text-align: center; margin-top: 12px; padding-top: 6px; border-top: 1px dashed var(--color-border);">
-      <canvas id="receipt-qr-canvas" style="display: inline-block;"></canvas>
-      <div style="font-size: 8px; color: var(--color-text-muted); margin-top: 4px;">شكرًا لتعاملكم معنا - علوة الغابة الخضراء</div>
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; direction: rtl;">
+      <canvas id="receipt-qr-canvas" style="display: inline-block; margin-bottom: 4px;"></canvas>
+      <div style="font-size: 11.5px; color: #000; font-weight: 700; margin-top: 4px;">شكرًا لتعاملكم معنا - علوة الغابة الخضراء</div>
     </div>
   `;
 
@@ -3008,9 +3016,9 @@ async function openPrintPreview(saleId) {
       new window.QRious({
         element: qrCanvas,
         value: `ALWA_REC|ID:${sale.id}|TOTAL:${sale.total_amount}|CUST:${customer.name}`,
-        size: 85,
+        size: is58mm ? 220 : 310,
         background: '#ffffff',
-        foreground: '#1b4332'
+        foreground: '#000000'
       });
     }
   }, 150);
@@ -5052,7 +5060,7 @@ async function startApp() {
     document.getElementById('setting-sound-alerts').checked = soundEnabled;
 
     // 20. Bind customer payment trigger select (cash/debt) in sale form
-    const paymentBtns = document.querySelectorAll('.payment-method-selector .btn-secondary');
+    const paymentBtns = document.querySelectorAll('.toggle-switch-group .toggle-switch-btn');
     paymentBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         paymentBtns.forEach(b => b.classList.remove('active'));
@@ -5065,6 +5073,15 @@ async function startApp() {
           debtGroup.style.display = 'none';
         }
         updateSaleInvoiceOverallTotal();
+      });
+    });
+
+    // Bind Segmented Control Buttons (e.g. Debt Due Options)
+    const debtDaysBtns = document.querySelectorAll('#group-debt-options .segmented-control-btn');
+    debtDaysBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        debtDaysBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
       });
     });
 

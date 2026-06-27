@@ -1132,25 +1132,28 @@ body.sheet-open {
 
 .thermal-paper {
   font-family: var(--font-family) !important;
-  font-size: 19px; /* Handjet is variable pixel font, 19px is clean & highly readable */
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.35;
   color: #000;
   background-color: #FFF;
   width: 100%;
-  padding: 0px 4px; /* Minimize margins for maximum content space */
+  padding: 4px 2px !important;
   box-sizing: border-box;
   letter-spacing: normal !important; /* Ensure cursive joining works perfectly in Arabic globally! */
+  direction: rtl !important;
+  text-align: right;
 }
 
 .thermal-paper.w-58 {
-  max-width: 280px;
+  max-width: 272px;
   margin: 0 auto;
+  font-size: 14px !important;
 }
 
 .thermal-paper.w-80 {
   max-width: 380px;
   margin: 0 auto;
+  font-size: 16.5px !important;
 }
 
 .receipt-header {
@@ -1608,7 +1611,7 @@ input:checked + .slider:before {
     border: none !important;
     box-shadow: none !important;
     margin: 0 !important;
-    padding: 10px !important;
+    padding: 2px !important;
     background: #FFFFFF !important;
   }
   
