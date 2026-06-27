@@ -3986,10 +3986,6 @@ async function executePrintJob(saleId) {
   const saleItems = await dbGetAll('sale_items');
   const items = saleItems.filter(it => it.sale_invoice_id === saleId);
 
-  // Configure width columns
-  const paperWidthNum = parseInt(printerPaperWidth) || 58;
-  const charsPerLine = paperWidthNum === 80 ? 48 : 32;
-
   // Active Visual simulator animation on-screen
   const printSimulator = document.getElementById('print-simulator');
   const paperStrip = document.getElementById('printer-paper-strip');
@@ -4000,147 +3996,256 @@ async function executePrintJob(saleId) {
     paperStrip.classList.add('printing');
   }
 
-  showToast(currentLanguage === 'ar' ? 'جاري إرسال البيانات والطباعة الحرارية...' : 'Sending data payload to ESC/POS hardware printer...', 'hourglass_empty');
+  showToast(currentLanguage === 'ar' ? 'جاري توليد الصورة والطباعة الرسومية...' : 'Generating high-contrast bitmap for ESC/POS printing...', 'hourglass_empty');
 
-  // --- BUILD ESC/POS BINARY DATA BUFFER ---
-  const escposCommands = [];
+  // --- PROGRAMMATIC CANVAS RENDERING (RTL & CUSTOM TYPOGRAPHY) ---
+  const is58mm = printerPaperWidth === '58';
+  const canvasWidth = is58mm ? 384 : 576;
   
-  // 1. Initialize printer: ESC @ [0x1B, 0x40]
-  escposCommands.push(0x1B, 0x40);
+  // Create an offscreen temporary large canvas
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvasWidth;
+  tempCanvas.height = 8000; // sufficiently tall to hold any list
+  const ctx = tempCanvas.getContext('2d');
 
-  // 2. Select Arabic Character Code Table CP1256: ESC t 51 [0x1B, 0x74, 0x33]
-  escposCommands.push(0x1B, 0x74, 0x33);
-  
-  // 3. Cancel Kanji character mode just in case (to enable single byte CP1256): FS . [0x1C, 0x2E]
-  escposCommands.push(0x1C, 0x2E);
+  // Fill white background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-  // Helper to send line of text
-  function addTextLine(text, align = 'center') {
-    // Alignment commands
-    if (align === 'center') {
-      escposCommands.push(0x1B, 0x61, 0x01); // Center
-    } else if (align === 'right') {
-      escposCommands.push(0x1B, 0x61, 0x02); // Right
-    } else {
-      escposCommands.push(0x1B, 0x61, 0x00); // Left
-    }
+  // Typography settings
+  const fontSans = 'Cairo, system-ui, -apple-system, sans-serif';
+  let currentY = 15;
 
-    // Build line text
-    let formattedText = '';
+  // Helper to draw text line
+  function drawText(text, fontSize, isBold, align, spaceAfter = 6) {
+    ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px ${fontSans}`;
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'top';
+    ctx.direction = 'rtl';
+    ctx.textAlign = align;
+
+    let x = canvasWidth / 2;
     if (align === 'right') {
-      formattedText = prepareArabicLine(text, charsPerLine);
-    } else if (align === 'center') {
-      formattedText = prepareArabicLine(text, charsPerLine);
+      x = canvasWidth - 10;
+    } else if (align === 'left') {
+      x = 10;
+    }
+
+    ctx.fillText(text, x, currentY);
+    currentY += fontSize + spaceAfter;
+  }
+
+  // Helper to draw split key-value line
+  function drawSplitLine(key, value, fontSize, isBold = false, spaceAfter = 6) {
+    ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px ${fontSans}`;
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'top';
+    ctx.direction = 'rtl';
+
+    // Key on the right side
+    ctx.textAlign = 'right';
+    ctx.fillText(key, canvasWidth - 10, currentY);
+
+    // Value on the left side
+    ctx.textAlign = 'left';
+    ctx.fillText(value, 10, currentY);
+
+    currentY += fontSize + spaceAfter;
+  }
+
+  // Helper to draw dashed divider line
+  function drawDivider(isSolid = false) {
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    if (!isSolid) {
+      ctx.setLineDash([5, 4]);
     } else {
-      formattedText = text;
+      ctx.setLineDash([]);
     }
-
-    const encoded = encodeCP1256(formattedText);
-    for (let i = 0; i < encoded.length; i++) {
-      escposCommands.push(encoded[i]);
-    }
-    escposCommands.push(0x0A); // Line feed [LF]
+    ctx.moveTo(8, currentY + 4);
+    ctx.lineTo(canvasWidth - 8, currentY + 4);
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset
+    currentY += 12;
   }
 
-  function addRawBytes(byteArray) {
-    for (let i = 0; i < byteArray.length; i++) {
-      escposCommands.push(byteArray[i]);
-    }
-  }
-
-  // --- RECEIPT CONTENT PRINT STRUCTURING ---
-  // Double-height & Double-width for Header Title
-  escposCommands.push(0x1D, 0x21, 0x11); // Double size
-  addTextLine(officeName, 'center');
-  escposCommands.push(0x1D, 0x21, 0x00); // Normal size
-
-  addTextLine(`هاتف: ${officePhone}`, 'center');
-  addTextLine(`العنوان: ${officeLocation}`, 'center');
+  // 1. Draw Office Header Info
+  drawText(officeName, is58mm ? 22 : 28, true, 'center', 4);
+  drawText(`هاتف: ${officePhone}`, is58mm ? 13 : 16, false, 'center', 2);
+  drawText(`العنوان: ${officeLocation}`, is58mm ? 12 : 15, false, 'center', 6);
   
-  addTextLine('-'.repeat(charsPerLine), 'center');
+  drawDivider(false);
 
-  // Invoice basic details
-  const formattedDate = new Date(sale.created_at).toLocaleDateString('ar-EG');
+  // 2. Draw Metadata
+  const formattedDate = new Date(sale.created_at).toLocaleString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
   const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
 
-  addTextLine(formatPrinterLine(`فاتورة: # ${sale.id}`, `طلب: ${orderId}`, charsPerLine), 'right');
-  addTextLine(formatPrinterLine(`الزبون:`, customer.name, charsPerLine), 'right');
-  addTextLine(formatPrinterLine(`التاريخ:`, formattedDate, charsPerLine), 'right');
-  addTextLine(formatPrinterLine(`طريقة الدفع:`, sale.payment_type === 'cash' ? 'نقدي (💵)' : 'بالأجل (📋)', charsPerLine), 'right');
+  drawSplitLine(`رقم الفاتورة:`, `# ${sale.id} (${orderId})`, is58mm ? 13.5 : 16.5, true);
+  drawSplitLine(`الزبون:`, customer.name, is58mm ? 13.5 : 16.5, true);
+  drawSplitLine(`التاريخ:`, formattedDate, is58mm ? 13 : 16);
+  drawSplitLine(`طريقة الدفع:`, sale.payment_type === 'cash' ? 'نقد (💵)' : 'بالأجل (📋)', is58mm ? 13.5 : 16.5, true);
 
-  addTextLine('='.repeat(charsPerLine), 'center');
+  drawDivider(true);
 
-  // Products table headers
-  if (charsPerLine === 32) {
-    addTextLine('ت  الصنف      الوزن    المجموع', 'right');
-  } else {
-    addTextLine('ت    الصنف          الوزن        المجموع', 'right');
-  }
-  addTextLine('-'.repeat(charsPerLine), 'center');
+  // 3. Draw Table Headers
+  ctx.font = `bold ${is58mm ? 13 : 16}px ${fontSans}`;
+  ctx.fillStyle = '#000000';
+  ctx.textBaseline = 'top';
+  ctx.direction = 'rtl';
 
-  // Products table rows
+  // Draw headers
+  ctx.textAlign = 'right';
+  ctx.fillText('ت', canvasWidth - 10, currentY);
+  ctx.fillText('الصنف', canvasWidth - 50, currentY);
+  
+  ctx.textAlign = 'center';
+  ctx.fillText('الوزن', is58mm ? 165 : 240, currentY);
+
+  ctx.textAlign = 'left';
+  ctx.fillText('المجموع', 10, currentY);
+
+  currentY += (is58mm ? 13 : 16) + 8;
+  drawDivider(false);
+
+  // 4. Draw Table Rows
   items.forEach((it, idx) => {
-    const numStr = String(idx + 1);
-    const cropName = it.crop_type;
-    const weightStr = formatWeight(it.weight_kg, it.unit || 'kg');
-    const priceStr = formatVal(it.agreed_price);
+    ctx.font = `bold ${is58mm ? 13.5 : 16.5}px ${fontSans}`;
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'top';
+    ctx.direction = 'rtl';
 
-    let row = '';
-    if (charsPerLine === 32) {
-      // 32 chars spacing: num(2) cropName(10) weightStr(10) priceStr(10)
-      const cName = cropName.substring(0, 8);
-      row = formatPrinterLine(`${numStr}. ${cName}`, `${weightStr}  ${priceStr}`, charsPerLine);
-    } else {
-      // 48 chars spacing
-      const cName = cropName.substring(0, 15);
-      row = formatPrinterLine(`${numStr}. ${cName}`, `${weightStr}      ${priceStr}`, charsPerLine);
-    }
-    addTextLine(row, 'right');
+    // Col 1: Index
+    ctx.textAlign = 'right';
+    ctx.fillText(String(idx + 1), canvasWidth - 10, currentY);
+
+    // Col 2: Crop Type
+    ctx.textAlign = 'right';
+    const cropName = it.crop_type;
+    const maxChars = is58mm ? 11 : 17;
+    const truncatedCrop = cropName.length > maxChars ? cropName.substring(0, maxChars) + '..' : cropName;
+    ctx.fillText(truncatedCrop, canvasWidth - 50, currentY);
+
+    // Col 3: Weight
+    ctx.textAlign = 'center';
+    ctx.fillText(formatWeight(it.weight_kg, it.unit || 'kg'), is58mm ? 165 : 240, currentY);
+
+    // Col 4: Price
+    ctx.textAlign = 'left';
+    ctx.fillText(formatVal(it.agreed_price), 10, currentY);
+
+    currentY += (is58mm ? 13.5 : 16.5) + 10;
   });
 
-  addTextLine('-'.repeat(charsPerLine), 'center');
+  drawDivider(false);
 
-  // Calculate totals
+  // 5. Draw Totals
   const subtotal = items.reduce((sum, item) => sum + item.agreed_price, 0);
 
-  addTextLine(formatPrinterLine('مجموع البضاعة:', formatVal(subtotal, true), charsPerLine), 'right');
+  drawSplitLine('مجموع البضاعة:', formatVal(subtotal, true), is58mm ? 13.5 : 16.5, false, 4);
   if (sale.bags_cost > 0) {
-    addTextLine(formatPrinterLine('الأكياس والكراتين:', formatVal(sale.bags_cost, true), charsPerLine), 'right');
+    drawSplitLine('الأكياس والكراتين:', formatVal(sale.bags_cost, true), is58mm ? 13.5 : 16.5, false, 4);
   }
+
+  drawDivider(true);
+
+  // Grand Total (Highly Emphasized)
+  drawSplitLine('الإجمالي المستحق:', formatVal(sale.total_amount, true), is58mm ? 16.5 : 20.5, true, 8);
+
+  drawDivider(true);
+
+  // 6. Draw QR Code directly from DOM preview
+  const qrCanvas = document.getElementById('receipt-qr-canvas');
+  if (qrCanvas) {
+    const qrSize = is58mm ? 160 : 240;
+    const qrX = (canvasWidth - qrSize) / 2;
+    ctx.drawImage(qrCanvas, qrX, currentY, qrSize, qrSize);
+    currentY += qrSize + 12;
+  }
+
+  // 7. Footer Greetings
+  drawText('شكرًا لتعاملكم معنا', is58mm ? 13.5 : 16.5, true, 'center', 4);
+  drawText('علوة الغابة الخضراء ترحب بكم دائمًا', is58mm ? 11.5 : 14.5, false, 'center', 15);
+
+  // Final height crop calculations
+  const finalHeight = currentY + 15;
+
+  // Create clean cropped canvas of exact size
+  const finalCanvas = document.createElement('canvas');
+  finalCanvas.width = canvasWidth;
+  finalCanvas.height = finalHeight;
+  const finalCtx = finalCanvas.getContext('2d');
+
+  // Fill clean white background
+  finalCtx.fillStyle = '#FFFFFF';
+  finalCtx.fillRect(0, 0, canvasWidth, finalHeight);
+
+  // Copy elements onto final canvas
+  finalCtx.drawImage(tempCanvas, 0, 0);
+
+  // Convert canvas graphics into ESC/POS monochrome bitmap
+  const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
+  const pixels = imgData.data;
+  const widthBytes = canvasWidth / 8;
+  const bitmapData = [];
+
+  for (let y = 0; y < finalHeight; y++) {
+    for (let xByte = 0; xByte < widthBytes; xByte++) {
+      let byteVal = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        const x = xByte * 8 + bit;
+        const idx = (y * canvasWidth + x) * 4;
+        const r = pixels[idx];
+        const g = pixels[idx + 1];
+        const b = pixels[idx + 2];
+        const a = pixels[idx + 3];
+
+        let isBlack = 0; // Default white
+        if (a > 128) {
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (gray < 200) {
+            isBlack = 1; // 1 represents black in ESC/POS
+          }
+        }
+        byteVal = (byteVal << 1) | isBlack;
+      }
+      bitmapData.push(byteVal);
+    }
+  }
+
+  // --- CONSTRUCT THE ESC/POS GRAPHIC CMD: GS v 0 m xL xH yL yH d1...dk ---
+  const escposCommands = [];
   
-  addTextLine('-'.repeat(charsPerLine), 'center');
+  // Initialize printer
+  escposCommands.push(0x1B, 0x40);
 
-  // Grand Total in double height bold
-  escposCommands.push(0x1D, 0x21, 0x01); // Double height
-  escposCommands.push(0x1B, 0x45, 0x01); // Bold on
-  addTextLine(formatPrinterLine('الإجمالي المستحق:', formatVal(sale.total_amount, true), charsPerLine), 'right');
-  escposCommands.push(0x1B, 0x45, 0x00); // Bold off
-  escposCommands.push(0x1D, 0x21, 0x00); // Normal size
+  // GS v 0 0 command header
+  escposCommands.push(0x1D, 0x76, 0x30, 0x00);
+  escposCommands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (horizontal bytes)
+  escposCommands.push(finalHeight & 0xFF, (finalHeight >> 8) & 0xFF); // yL, yH (vertical height)
 
-  addTextLine('='.repeat(charsPerLine), 'center');
+  // Append binary image raster payload
+  for (let i = 0; i < bitmapData.length; i++) {
+    escposCommands.push(bitmapData[i]);
+  }
 
-  // Footer messages
-  addTextLine('شكرًا لتعاملكم معنا', 'center');
-  addTextLine('علوة الغابة الخضراء ترحب بكم', 'center');
-
-  // Feed 4 lines and cut paper: GS V 66 0 [0x1D, 0x56, 0x42, 0x00]
+  // Feed paper (4 lines) and trigger cutter
   escposCommands.push(0x0A, 0x0A, 0x0A, 0x0A);
   escposCommands.push(0x1D, 0x56, 0x42, 0x00);
 
-  // Convert print buffer array to Uint8Array
+  // Convert array to binary package
   const payloadBytes = new Uint8Array(escposCommands);
 
-  // --- WRITE PAYLOAD TO CONNECTED PRINTER NATIVE PORT ---
+  // --- ASYNC CHUNKED BLE PACKETS WRITE (20 BYTES WITH 5MS DELAY) ---
   let isWriteSuccess = false;
 
   if (activeWebBluetoothCharacteristic) {
-    // 1. Send via Web Bluetooth characteristic
     try {
-      // Write in chunks of 20 bytes (standard Bluetooth MTU safety limit)
       const chunkSize = 20;
       for (let i = 0; i < payloadBytes.length; i += chunkSize) {
         const chunk = payloadBytes.slice(i, i + chunkSize);
         await activeWebBluetoothCharacteristic.writeValue(chunk);
+        await new Promise(resolve => setTimeout(resolve, 5)); // Reliable 5ms pacing delay
       }
       isWriteSuccess = true;
     } catch (err) {
@@ -4153,9 +4258,8 @@ async function executePrintJob(saleId) {
     }, function(err) {
       console.error('Classic serial print failure:', err);
     });
-    isWriteSuccess = true; // Classic serial write is non-blocking fire-and-forget
+    isWriteSuccess = true;
   } else if (typeof window.ble !== 'undefined' && bleConnectedDeviceId && bleWriteServiceUUID && bleWriteCharUUID) {
-    // 3. Send via BLE Central plugin (chunked write for thermal printers)
     isWriteSuccess = true;
     const chunkSize = 20;
     let offset = 0;
@@ -4170,11 +4274,11 @@ async function executePrintJob(saleId) {
       
       window.ble.writeWithoutResponse(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
         offset += chunkSize;
-        setTimeout(sendNextBleChunk, 15); // 15ms delay between BLE chunks
+        setTimeout(sendNextBleChunk, 5); // 5ms pacing delay for stable BLE transfers
       }, function(err) {
         window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
           offset += chunkSize;
-          setTimeout(sendNextBleChunk, 15);
+          setTimeout(sendNextBleChunk, 5);
         }, function(writeErr) {
           console.error('BLE Central write failure on chunk:', writeErr);
         });
@@ -4183,15 +4287,15 @@ async function executePrintJob(saleId) {
     
     sendNextBleChunk();
   } else {
-    // 4. Fallback/Mock simulator mode
+    // Mock simulation mode
     isWriteSuccess = true;
   }
 
-  // Finalize UI flow states
+  // Finalize UI state flow
   setTimeout(() => {
     if (isWriteSuccess) {
       playSound('success');
-      showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة وإرسال البيانات بنجاح!' : 'Hardware print job dispatched successfully!', 'print');
+      showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة الرسومية بنجاح!' : 'Hardware raster print job dispatched successfully!', 'print');
     } else {
       showToast(currentLanguage === 'ar' ? 'فشل إرسال كود الطباعة إلى الطابعة الموصولة' : 'Failed to write data to active printer port', 'error', true);
     }
