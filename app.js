@@ -3999,40 +3999,214 @@ async function executePrintJob(saleId) {
 
   showToast(currentLanguage === 'ar' ? 'جاري توليد الصورة والطباعة الرسومية...' : 'Generating high-contrast bitmap for ESC/POS printing...', 'hourglass_empty');
 
-  // --- PROGRAMMATIC CANVAS RENDERING USING HTML2CANVAS ---
+  // --- PROGRAMMATIC CANVAS RENDERING (RTL & CUSTOM TYPOGRAPHY) ---
   const is58mm = printerPaperWidth === '58';
   const canvasWidth = is58mm ? 384 : 576;
   
-  const container = document.getElementById('receipt-paper');
-  if (!container) {
-    showToast(currentLanguage === 'ar' ? 'فشل العثور على معاينة الفاتورة!' : 'Failed to find invoice preview!', 'error', true);
-    return;
+  // Create an offscreen temporary large canvas
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvasWidth;
+  tempCanvas.height = 8000; // sufficiently tall to hold any list
+  const ctx = tempCanvas.getContext('2d');
+
+  // Fill white background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+  // Typography settings
+  const fontSans = 'Cairo, system-ui, -apple-system, sans-serif';
+  let currentY = 20;
+
+  // Helper to draw text line
+  function drawText(text, fontSize, isBold, align, spaceAfter = 6) {
+    ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px ${fontSans}`;
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'top';
+    ctx.direction = 'rtl';
+    ctx.textAlign = align;
+
+    let x = canvasWidth / 2;
+    if (align === 'right') {
+      x = canvasWidth - 12;
+    } else if (align === 'left') {
+      x = 12;
+    }
+
+    ctx.fillText(text, x, currentY);
+    currentY += fontSize + spaceAfter;
   }
 
-  // Calculate scaling factor to scale element width directly to exact printer print-width pixels
-  const elementWidth = container.offsetWidth || (is58mm ? 272 : 384);
-  const renderScale = canvasWidth / elementWidth;
+  // Helper to draw split key-value line
+  function drawSplitLine(key, value, fontSize, isValueBold = false, spaceAfter = 6) {
+    ctx.textBaseline = 'top';
+    ctx.direction = 'rtl';
 
-  let finalCanvas;
-  try {
-    finalCanvas = await html2canvas(container, {
-      scale: renderScale,
-      backgroundColor: '#FFFFFF',
-      logging: false,
-      useCORS: true,
-      allowTaint: true,
-      windowWidth: elementWidth,
-      // Mini delay to let fonts and nested elements stabilize
-      delay: 50
-    });
-  } catch (canvasErr) {
-    console.error('html2canvas rendering failed:', canvasErr);
-    showToast(currentLanguage === 'ar' ? 'فشل توليد صورة الفاتورة للطباعة' : 'Failed to generate invoice image for printing', 'error', true);
-    return;
+    // Key on the right side
+    ctx.font = `normal ${fontSize}px ${fontSans}`;
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'right';
+    ctx.fillText(key, canvasWidth - 12, currentY);
+
+    // Value on the left side
+    ctx.font = `${isValueBold ? 'bold' : 'normal'} ${fontSize}px ${fontSans}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(value, 12, currentY);
+
+    currentY += fontSize + spaceAfter;
   }
 
-  const finalHeight = finalCanvas.height;
+  // Helper to draw dashed divider line
+  function drawDivider(isSolid = false) {
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (!isSolid) {
+      ctx.setLineDash([4, 4]);
+    } else {
+      ctx.setLineDash([]);
+    }
+    ctx.moveTo(12, currentY + 4);
+    ctx.lineTo(canvasWidth - 12, currentY + 4);
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset
+    currentY += 12;
+  }
+
+  // Helper to truncate text to fit a column width
+  function truncateText(text, maxWidth, fontSize, isBold) {
+    ctx.font = `${isBold ? 'bold' : 'normal'} ${fontSize}px ${fontSans}`;
+    let result = text;
+    while (ctx.measureText(result).width > maxWidth && result.length > 3) {
+      result = result.substring(0, result.length - 1);
+    }
+    if (result !== text) {
+      result += '..';
+    }
+    return result;
+  }
+
+  // 1. Draw Office Header Info
+  drawText(officeName, is58mm ? 20 : 24, true, 'center', 4);
+  drawText(`هاتف: ${officePhone}`, is58mm ? 14 : 17, false, 'center', 2);
+  drawText(`العنوان: ${officeLocation}`, is58mm ? 13 : 16, false, 'center', 8);
+  
+  drawDivider(false);
+
+  // 2. Draw Metadata
+  const formattedDate = new Date(sale.created_at).toLocaleString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+  const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
+
+  drawSplitLine(`رقم الفاتورة:`, `# ${formatVal(sale.id)} (${orderId})`, is58mm ? 14.5 : 17, true, 4);
+  drawSplitLine(`الزبون:`, customer.name, is58mm ? 14.5 : 17, true, 4);
+  drawSplitLine(`التاريخ:`, formattedDate, is58mm ? 14 : 16, false, 4);
+  drawSplitLine(`طريقة الدفع:`, sale.payment_type === 'cash' ? 'نقد' : 'بالأجل', is58mm ? 14.5 : 17, true, 6);
+
+  drawDivider(false);
+
+  // 3. Draw Table Headers
+  const printableWidth = canvasWidth - 24;
+  const rightMargin = canvasWidth - 12;
+  const leftMargin = 12;
+  const tableHeaderFontSize = is58mm ? 14 : 16;
+  const tableBodyFontSize = is58mm ? 13.5 : 15.5;
+
+  ctx.font = `bold ${tableHeaderFontSize}px ${fontSans}`;
+  ctx.fillStyle = '#000000';
+  ctx.textBaseline = 'top';
+  ctx.direction = 'rtl';
+
+  // Col 1 (ت): right aligned
+  ctx.textAlign = 'right';
+  ctx.fillText('ت', rightMargin, currentY);
+
+  // Col 2 (الصنف): right aligned
+  ctx.fillText('الصنف', rightMargin - (printableWidth * 0.12), currentY);
+
+  // Col 3 (الوزن): center aligned
+  ctx.textAlign = 'center';
+  ctx.fillText('الوزن', leftMargin + (printableWidth * 0.375), currentY);
+
+  // Col 4 (المجموع): left aligned
+  ctx.textAlign = 'left';
+  ctx.fillText('المجموع', leftMargin, currentY);
+
+  currentY += tableHeaderFontSize + 8;
+  drawDivider(false);
+
+  // 4. Draw Table Rows
+  items.forEach((it, idx) => {
+    ctx.textBaseline = 'top';
+    ctx.direction = 'rtl';
+
+    // Col 1: Index (regular font)
+    ctx.font = `normal ${tableBodyFontSize}px ${fontSans}`;
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(idx + 1), rightMargin, currentY);
+
+    // Col 2: Crop Type (regular font)
+    const cropName = truncateText(it.crop_type, printableWidth * 0.40, tableBodyFontSize, false);
+    ctx.font = `normal ${tableBodyFontSize}px ${fontSans}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(cropName, rightMargin - (printableWidth * 0.12), currentY);
+
+    // Col 3: Weight (regular font)
+    const weightStr = formatWeight(it.weight_kg, it.unit || 'kg');
+    ctx.textAlign = 'center';
+    ctx.fillText(weightStr, leftMargin + (printableWidth * 0.375), currentY);
+
+    // Col 4: Price (bold font)
+    const priceStr = formatVal(it.agreed_price);
+    ctx.font = `bold ${tableBodyFontSize}px ${fontSans}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(priceStr, leftMargin, currentY);
+
+    currentY += tableBodyFontSize + 6;
+  });
+
+  drawDivider(false);
+
+  // 5. Draw Totals
+  const subtotal = items.reduce((sum, item) => sum + item.agreed_price, 0);
+
+  drawSplitLine('مجموع البضاعة:', formatVal(subtotal, true), is58mm ? 14.5 : 17, true, 4);
+  if (sale.bags_cost > 0) {
+    drawSplitLine('تكلفة الأكياس والكراتين:', formatVal(sale.bags_cost, true), is58mm ? 14.5 : 17, true, 4);
+  }
+
+  // Grand Total in double height bold
+  drawDivider(true);
+  drawSplitLine('الإجمالي المستحق:', formatVal(sale.total_amount, true), is58mm ? 16.5 : 20, true, 8);
+  drawDivider(true);
+
+  // 6. Draw QR Code directly from DOM preview
+  const qrCanvas = document.getElementById('receipt-qr-canvas');
+  if (qrCanvas) {
+    const qrSize = is58mm ? 180 : 240;
+    const qrX = (canvasWidth - qrSize) / 2;
+    ctx.drawImage(qrCanvas, qrX, currentY, qrSize, qrSize);
+    currentY += qrSize + 12;
+  }
+
+  // 7. Footer Greetings
+  drawText('شكرًا لتعاملكم معنا', is58mm ? 14 : 16.5, true, 'center', 4);
+  drawText('علوة الغابة الخضراء ترحب بكم دائمًا', is58mm ? 12 : 14, false, 'center', 20);
+
+  // Final height crop calculations
+  const finalHeight = currentY + 15;
+
+  // Create clean cropped canvas of exact size
+  const finalCanvas = document.createElement('canvas');
+  finalCanvas.width = canvasWidth;
+  finalCanvas.height = finalHeight;
   const finalCtx = finalCanvas.getContext('2d');
+
+  // Fill clean white background
+  finalCtx.fillStyle = '#FFFFFF';
+  finalCtx.fillRect(0, 0, canvasWidth, finalHeight);
+
+  // Copy elements onto final canvas
+  finalCtx.drawImage(tempCanvas, 0, 0);
 
   // Convert canvas graphics into ESC/POS monochrome bitmap
   const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
