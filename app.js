@@ -79,6 +79,10 @@ document.getElementById = function(id) {
     'lbl-commission-text': 'lbl-commission-7',
     'lbl-carrying-text': 'lbl-carrying-total',
     'lbl-total-text': 'lbl-total-calc',
+    'lbl-subtotal-val': 'val-subtotal',
+    'lbl-commission-val': 'val-commission-7',
+    'lbl-carrying-val': 'val-carrying-total',
+    'lbl-total-val': 'val-total-calc',
     'btn-submit-sale': 'btn-submit-sale',
     'sheet-payment-title-h3': 'txt-pay-title',
     'lbl-payment-amount-label': 'lbl-pay-amount',
@@ -170,6 +174,87 @@ function generateOrderId() {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+function logAppEvent(actionAr, actionEn, amount = 0) {
+  let logs = [];
+  try {
+    const stored = localStorage.getItem('alwa_app_logs');
+    if (stored) logs = JSON.parse(stored);
+  } catch (e) {}
+
+  const now = new Date();
+  const todayStr = now.toDateString();
+
+  // Filter out logs that are older than today (daily reset!)
+  logs = logs.filter(item => {
+    const d = new Date(item.timestamp);
+    return d.toDateString() === todayStr;
+  });
+
+  // Append new log
+  logs.push({
+    actionAr,
+    actionEn,
+    amount,
+    timestamp: Date.now()
+  });
+
+  // Save back to localStorage
+  localStorage.setItem('alwa_app_logs', JSON.stringify(logs));
+  
+  // Render logs immediately
+  renderAppLogs();
+}
+
+function renderAppLogs() {
+  const container = document.getElementById('app-logs-container');
+  if (!container) return;
+
+  let logs = [];
+  try {
+    const stored = localStorage.getItem('alwa_app_logs');
+    if (stored) logs = JSON.parse(stored);
+  } catch (e) {}
+
+  const now = new Date();
+  const todayStr = now.toDateString();
+
+  // Ensure only today's logs are shown (daily reset!)
+  logs = logs.filter(item => {
+    const d = new Date(item.timestamp);
+    return d.toDateString() === todayStr;
+  });
+
+  if (logs.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 16px; color: var(--color-text-muted); font-size: 11px; font-weight: 600;">
+        ${currentLanguage === 'ar' ? 'لا توجد سجلات عمليات لليوم حتى الآن' : 'No application logs recorded for today yet'}
+      </div>
+    `;
+    return;
+  }
+
+  // Sort newest first
+  logs.sort((a, b) => b.timestamp - a.timestamp);
+
+  container.innerHTML = logs.map(log => {
+    const d = new Date(log.timestamp);
+    const timeStr = d.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const actionText = currentLanguage === 'ar' ? log.actionAr : log.actionEn;
+    const amountText = log.amount > 0 ? ` +${formatVal(log.amount)} د.ع` : '';
+    const amountColor = log.amount > 0 ? 'var(--color-success)' : 'var(--color-text-muted)';
+
+    return `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 11px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+          <span style="color: var(--color-primary-mid); font-weight: 800; font-family: monospace;">[${timeStr}]</span>
+          <span style="font-weight: 700; color: var(--color-text-dark);">${actionText}</span>
+        </div>
+        ${log.amount > 0 ? `<span style="font-weight: 800; color: ${amountColor}; margin-right: 8px;">${amountText}</span>` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
 // Common fruits & vegetables dictionary with icons
@@ -354,22 +439,16 @@ function isCountOnly(cropName) {
 function formatWeight(weight, unit = 'kg') {
   const formattedNum = formatVal(weight);
   let unitStr = '';
-  if (unit === 'mixed') {
-    if (currentLanguage === 'ar') {
-      return `\u202B${formattedNum} وحدة مختلطة\u202C`;
-    } else {
-      return `\u202A${formattedNum} mixed units\u202C`;
-    }
-  }
+  let activeUnit = unit === 'mixed' ? 'kg' : unit;
   if (numeralSystem === 'ar') {
-    if (unit === 'kg') unitStr = 'كغم';
-    else if (unit === 'liter') unitStr = 'لتر';
-    else if (unit === 'count') unitStr = 'عدد';
+    if (activeUnit === 'kg') unitStr = 'كغم';
+    else if (activeUnit === 'liter') unitStr = 'لتر';
+    else if (activeUnit === 'count') unitStr = 'عدد';
     return `\u202B${formattedNum} ${unitStr}\u202C`;
   } else {
-    if (unit === 'kg') unitStr = 'Kg';
-    else if (unit === 'liter') unitStr = 'Ltr';
-    else if (unit === 'count') unitStr = 'Qty';
+    if (activeUnit === 'kg') unitStr = 'Kg';
+    else if (activeUnit === 'liter') unitStr = 'Ltr';
+    else if (activeUnit === 'count') unitStr = 'Qty';
     return `\u202A${formattedNum} ${unitStr}\u202C`;
   }
 }
@@ -378,22 +457,16 @@ function formatWeightFraction(rem, total, unit = 'kg') {
   const formattedRem = formatVal(rem);
   const formattedTotal = formatVal(total);
   let unitStr = '';
-  if (unit === 'mixed') {
-    if (currentLanguage === 'ar') {
-      return `\u202B${formattedRem} / ${formattedTotal} وحدات\u202C`;
-    } else {
-      return `\u202A${formattedRem} / ${formattedTotal} units\u202C`;
-    }
-  }
+  let activeUnit = unit === 'mixed' ? 'kg' : unit;
   if (numeralSystem === 'ar') {
-    if (unit === 'kg') unitStr = 'كغم';
-    else if (unit === 'liter') unitStr = 'لتر';
-    else if (unit === 'count') unitStr = 'عدد';
+    if (activeUnit === 'kg') unitStr = 'كغم';
+    else if (activeUnit === 'liter') unitStr = 'لتر';
+    else if (activeUnit === 'count') unitStr = 'عدد';
     return `\u202B${formattedRem} / ${formattedTotal} ${unitStr}\u202C`;
   } else {
-    if (unit === 'kg') unitStr = 'Kg';
-    else if (unit === 'liter') unitStr = 'Ltr';
-    else if (unit === 'count') unitStr = 'Qty';
+    if (activeUnit === 'kg') unitStr = 'Kg';
+    else if (activeUnit === 'liter') unitStr = 'Ltr';
+    else if (activeUnit === 'count') unitStr = 'Qty';
     return `\u202A${formattedRem} / ${formattedTotal} ${unitStr}\u202C`;
   }
 }
@@ -854,6 +927,25 @@ async function refreshGlobalCaches() {
     });
   }
   await checkDueClaims();
+}
+
+async function refreshAllUI() {
+  await refreshGlobalCaches();
+  renderImportsList();
+  renderSalesList();
+  renderDebtsList();
+  renderDuesList();
+  renderPortersList();
+  renderStatsPanel();
+  
+  const sheetImportsArchive = document.getElementById('sheet-imports-archive');
+  if (sheetImportsArchive && sheetImportsArchive.classList.contains('active')) {
+    renderArchiveList();
+  }
+  const sheetSalesArchive = document.getElementById('sheet-sales-archive');
+  if (sheetSalesArchive && sheetSalesArchive.classList.contains('active')) {
+    renderSalesArchiveList();
+  }
 }
 
 async function checkDueClaims() {
@@ -1334,10 +1426,7 @@ async function settleImportInvoice(impId) {
   await dbPut('import_invoices', imp);
   showToast(currentLanguage === 'ar' ? 'تم تسوية حساب فاتورة الاستيراد وإغلاقها بنجاح!' : 'Import invoice settled and closed successfully!', 'check_circle');
   
-  await refreshGlobalCaches();
-  renderImportsList();
-  renderDuesList();
-  renderStatsPanel();
+  await refreshAllUI();
 }
 
 function addImportCropRow() {
@@ -1384,21 +1473,7 @@ function addImportCropRow() {
       c.synonymsAr.some(syn => syn.toLowerCase().includes(val))
     );
 
-    if (matches.length === 0) {
-      // Append option to create custom crop
-      const div = document.createElement('div');
-      div.className = 'autocomplete-item';
-      div.textContent = currentLanguage === 'ar' ? `➕ إضافة "${selector.value}" كصنف جديد...` : `➕ Add "${selector.value}" as custom crop...`;
-      div.addEventListener('click', () => {
-        openCustomCropDialog(selector, () => {
-          autocomplete.style.display = 'none';
-        });
-      });
-      autocomplete.appendChild(div);
-      autocomplete.style.display = 'block';
-      return;
-    }
-
+    // Render matches
     matches.forEach(m => {
       const div = document.createElement('div');
       div.className = 'autocomplete-item';
@@ -1424,6 +1499,21 @@ function addImportCropRow() {
       });
       autocomplete.appendChild(div);
     });
+
+    // Always append "➕ إضافة صنف جديد" at the end
+    const addCustomDiv = document.createElement('div');
+    addCustomDiv.className = 'autocomplete-item';
+    addCustomDiv.style.borderTop = '1px dashed rgba(0,0,0,0.1)';
+    addCustomDiv.style.fontWeight = '700';
+    addCustomDiv.style.color = 'var(--color-primary)';
+    addCustomDiv.textContent = currentLanguage === 'ar' ? `➕ إضافة صنف جديد...` : `➕ Add new crop...`;
+    addCustomDiv.addEventListener('click', () => {
+      openCustomCropDialog(selector, () => {
+        autocomplete.style.display = 'none';
+      });
+    });
+    autocomplete.appendChild(addCustomDiv);
+
     autocomplete.style.display = 'block';
   });
 
@@ -1577,6 +1667,11 @@ async function submitImportInvoice() {
     });
   }
 
+  logAppEvent(
+    `تسجيل فاتورة استيراد جديدة للفلاح: ${farmerName} (${vehicleType})`,
+    `Recorded new import invoice for farmer: ${farmerName} (${vehicleType})`
+  );
+
   showToast(currentLanguage === 'ar' ? 'تم حفظ فاتورة الاستيراد بنجاح والبدء بعرضها!' : 'Import invoice recorded and ready for sales!', 'check_circle');
   
   document.getElementById('import-farmer-name').value = '';
@@ -1584,9 +1679,7 @@ async function submitImportInvoice() {
   document.getElementById('import-items-container').innerHTML = '';
   closeBottomSheet('sheet-new-import');
   
-  await refreshGlobalCaches();
-  renderImportsList();
-  renderDuesList();
+  await refreshAllUI();
 }
 
 // ==============================================
@@ -1893,17 +1986,30 @@ function addSaleCropRow() {
     </div>
 
     <div class="form-group">
-      <label class="sale-price-label">${currentLanguage === 'ar' ? 'سعر البيع الكلي المتفق عليه (دينار)' : 'Total Sale Price (IQD)'}</label>
-      <input type="number" class="form-input sale-crop-price" placeholder="${currentLanguage === 'ar' ? 'أدخل سعر البيع الكلي...' : 'Enter overall price...'}" required>
+      <label class="sale-unit-price-label">${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)'}</label>
+      <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required>
+    </div>
+
+    <div class="form-group sale-porter-rate-container" style="margin-top: 8px;">
+      <label class="sale-porter-rate-label">${currentLanguage === 'ar' ? 'عمولة الحمالية للصندوق الواحد (دينار)' : 'Porter Fee per Box (IQD)'}</label>
+      <div class="porter-options-row" style="display: flex; gap: 8px; margin-top: 4px; margin-bottom: 8px; flex-wrap: wrap;">
+        <button type="button" class="porter-opt-btn active" data-value="100" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; text-align: center; transition: all 0.2s;">100</button>
+        <button type="button" class="porter-opt-btn" data-value="200" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">200</button>
+        <button type="button" class="porter-opt-btn" data-value="250" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">250</button>
+        <button type="button" class="porter-opt-btn btn-custom-porter-trigger" data-value="custom" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">${currentLanguage === 'ar' ? 'مخصص' : 'Custom'}</button>
+      </div>
+      <input type="number" class="form-input sale-porter-rate" value="100" style="display: none; text-align: center; font-weight: 600;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}">
+      <span class="sale-row-porter-total-label" style="font-size:11px; font-weight:600; color:var(--color-primary-mid); display:block; margin-top:4px;"></span>
     </div>
   `;
 
   const cargoSelect = row.querySelector('.sale-cargo-select');
   const weightInput = row.querySelector('.sale-crop-weight');
   const boxInput = row.querySelector('.sale-box-count');
-  const priceInput = row.querySelector('.sale-crop-price');
+  const priceInput = row.querySelector('.sale-crop-unit-price');
   const remainingLabel = row.querySelector('.sale-row-remaining-label');
   const boxContainer = row.querySelector('.sale-box-count-container');
+  const porterRateContainer = row.querySelector('.sale-porter-rate-container');
 
   // Populate cargo select dynamically from active imports cache
   // Filter out fully sold items
@@ -1934,15 +2040,25 @@ function addSaleCropRow() {
     const remWeight = Math.max(0, (isCount ? (it.box_count || 0) : it.weight_kg) - soldWeight);
     const remBoxes = Math.max(0, (it.box_count || 0) - soldBoxes);
 
+    const unitPriceLabel = row.querySelector('.sale-unit-price-label');
+    const unitPriceInput = row.querySelector('.sale-crop-unit-price');
+
     if (isCount) {
       weightInput.closest('.form-group').style.display = 'none';
       weightInput.value = '';
       boxContainer.style.display = 'block';
       boxInput.setAttribute('max', remBoxes);
       remainingLabel.textContent = currentLanguage === 'ar' ? `المتبقي: ${formatVal(remBoxes)} مفرد` : `Remaining: ${formatVal(remBoxes)} qty`;
+      
+      unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للقطعة الواحدة (دينار)' : 'Sale Price per Piece (IQD)';
+      unitPriceInput.placeholder = currentLanguage === 'ar' ? 'أدخل سعر القطعة الواحدة...' : 'Enter price per piece...';
     } else {
       weightInput.closest('.form-group').style.display = 'block';
       weightInput.setAttribute('max', remWeight);
+      
+      unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)';
+      unitPriceInput.placeholder = currentLanguage === 'ar' ? 'أدخل سعر الكيلو الواحد...' : 'Enter price per Kg...';
+
       if (isWatermelonOrMelon(cropType)) {
         boxContainer.style.display = 'none';
         boxInput.value = '';
@@ -1953,11 +2069,55 @@ function addSaleCropRow() {
         remainingLabel.textContent = currentLanguage === 'ar' ? `المتبقي: ${formatWeight(remWeight, it.unit || 'kg')} (${remBoxes} ص)` : `Remaining: ${formatWeight(remWeight, it.unit || 'kg')} (${remBoxes} b)`;
       }
     }
+
+    const isSpecial = isWatermelonOrMelon(cropType);
+    if (isSpecial) {
+      porterRateContainer.style.display = 'none';
+    } else {
+      porterRateContainer.style.display = 'block';
+    }
+
+    updateSaleInvoiceOverallTotal();
+  });
+
+  const porterBtns = row.querySelectorAll('.porter-opt-btn');
+  const porterRateInput = row.querySelector('.sale-porter-rate');
+
+  porterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Deactivate all
+      porterBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'white';
+        b.style.color = 'var(--color-primary)';
+        b.style.borderColor = 'rgba(27,67,50,0.25)';
+        b.style.fontWeight = '600';
+      });
+
+      // Activate clicked
+      btn.classList.add('active');
+      btn.style.background = 'var(--color-primary)';
+      btn.style.color = 'white';
+      btn.style.borderColor = 'var(--color-primary)';
+      btn.style.fontWeight = '700';
+
+      const val = btn.dataset.value;
+      if (val === 'custom') {
+        porterRateInput.style.display = 'block';
+        porterRateInput.value = '';
+        porterRateInput.focus();
+      } else {
+        porterRateInput.style.display = 'none';
+        porterRateInput.value = val;
+      }
+      updateSaleInvoiceOverallTotal();
+    });
   });
 
   weightInput.addEventListener('input', updateSaleInvoiceOverallTotal);
   boxInput.addEventListener('input', updateSaleInvoiceOverallTotal);
   priceInput.addEventListener('input', updateSaleInvoiceOverallTotal);
+  porterRateInput.addEventListener('input', updateSaleInvoiceOverallTotal);
 
   row.querySelector('.delete-row-btn').addEventListener('click', () => {
     row.remove();
@@ -1998,31 +2158,41 @@ function updateSaleInvoiceOverallTotal() {
   const rows = document.querySelectorAll('#sale-items-container .dynamic-row');
   let subtotal = 0;
   let totalCommissions = 0; // 7% commission total
-  let totalCarrying = 0; // custom porter fees: 500 IQD per box, watermelon has no box count but 10,000 flat per vehicle? Let's check rule
+  let totalCarrying = 0; // calculated dynamically
   
   rows.forEach(row => {
     const cargoSelect = row.querySelector('.sale-cargo-select');
     if (!cargoSelect || !cargoSelect.value) return;
     
     const [, cropType] = cargoSelect.value.split('|');
-    const price = parseNumberInput(row.querySelector('.sale-crop-price').value) || 0;
+    const isCount = (getCropUnitType(cropType) === 'count');
+    const isSpecial = isWatermelonOrMelon(cropType);
+
+    const weight = parseNumberInput(row.querySelector('.sale-crop-weight').value) || 0;
     const boxCount = parseNumberInput(row.querySelector('.sale-box-count').value) || 0;
+    const unitPrice = parseNumberInput(row.querySelector('.sale-crop-unit-price').value) || 0;
     
+    const price = isCount ? (boxCount * unitPrice) : (weight * unitPrice);
     subtotal += price;
     
     // Alwa 7% commission
     totalCommissions += Math.round(price * 0.07);
     
     // Carrying cost (الحمالية): 
-    // Watermelon & melon: 0 IQD porter per row (handled as flat vehicle porter in stats or custom)
-    // Other crops: 500 IQD flat per box (الكرتونة والصندوق بـ 500 دينار)
-    if (!isWatermelonOrMelon(cropType)) {
-      totalCarrying += (boxCount * 500);
+    let rowPorterFee = 0;
+    if (!isSpecial) {
+      const porterRate = parseNumberInput(row.querySelector('.sale-porter-rate').value) || 0;
+      rowPorterFee = boxCount * porterRate;
+      row.querySelector('.sale-row-porter-total-label').textContent = 
+        currentLanguage === 'ar' ? `حمالية الصنف: ${formatVal(rowPorterFee)} دينار` : `Item porter: ${formatVal(rowPorterFee)} IQD`;
+    } else {
+      row.querySelector('.sale-row-porter-total-label').textContent = '';
     }
+    totalCarrying += rowPorterFee;
   });
 
   const bagsCost = parseNumberInput(document.getElementById('sale-bags-cost').value) || 0;
-  const grandTotal = subtotal + bagsCost;
+  const grandTotal = subtotal + totalCommissions + totalCarrying + bagsCost;
 
   document.getElementById('lbl-subtotal-val').textContent = formatVal(subtotal, true);
   document.getElementById('lbl-commission-val').textContent = formatVal(totalCommissions, true);
@@ -2105,17 +2275,19 @@ async function submitSaleInvoice() {
     const [invoiceIdStr, cropType] = cargoValue.split('|');
     const importInvoiceId = parseInt(invoiceIdStr);
     
-    const weight = parseNumberInput(row.querySelector('.sale-crop-weight').value);
+    const weight = parseNumberInput(row.querySelector('.sale-crop-weight').value) || 0;
     const boxCount = parseNumberInput(row.querySelector('.sale-box-count').value) || 0;
-    const totalPrice = parseNumberInput(row.querySelector('.sale-crop-price').value);
-
-    if (totalPrice <= 0) {
-      showToast(currentLanguage === 'ar' ? 'سعر البيع الكلي يجب أن يكون أكبر من الصفر' : 'Overall price must be greater than zero', 'warning', true);
-      return;
-    }
+    const unitPrice = parseNumberInput(row.querySelector('.sale-crop-unit-price').value) || 0;
 
     const isCount = (getCropUnitType(cropType) === 'count');
     const isSpecial = isWatermelonOrMelon(cropType);
+
+    const totalPrice = isCount ? (boxCount * unitPrice) : (weight * unitPrice);
+
+    if (totalPrice <= 0) {
+      showToast(currentLanguage === 'ar' ? 'السعر يجب أن يكون أكبر من الصفر' : 'Price must be greater than zero', 'warning', true);
+      return;
+    }
 
     // Fetch and verify stock
     const impInvoice = activeImportInvoices.find(imp => imp.id === importInvoiceId);
@@ -2161,8 +2333,9 @@ async function submitSaleInvoice() {
       }
     }
 
-    // Port fees: 500 IQD per box
-    const rowPorterFee = isWatermelonOrMelon(cropType) ? 0 : (boxCount * 500);
+    // Port fees: custom porter rate per box
+    const porterRate = isSpecial ? 0 : (parseNumberInput(row.querySelector('.sale-porter-rate').value) || 0);
+    const rowPorterFee = isSpecial ? 0 : (boxCount * porterRate);
 
     saleItemsToSave.push({
       import_invoice_id: importInvoiceId,
@@ -2172,7 +2345,8 @@ async function submitSaleInvoice() {
       agreed_price: totalPrice,
       unit: isCount ? 'count' : (impItem.unit || 'kg'),
       commission_amount: Math.round(totalPrice * 0.07), // 7% company fee
-      porter_fee: rowPorterFee
+      porter_fee: rowPorterFee,
+      unit_price: unitPrice
     });
   }
 
@@ -2198,7 +2372,7 @@ async function submitSaleInvoice() {
   const subtotal = saleItemsToSave.reduce((sum, item) => sum + item.agreed_price, 0);
   const totalCommissions = saleItemsToSave.reduce((sum, item) => sum + item.commission_amount, 0);
   const totalCarrying = saleItemsToSave.reduce((sum, item) => sum + item.porter_fee, 0);
-  const grandTotal = subtotal + bagsCost;
+  const grandTotal = subtotal + totalCommissions + totalCarrying + bagsCost;
 
   const orderId = generateOrderId();
 
@@ -2248,6 +2422,7 @@ async function submitSaleInvoice() {
       await dbAdd('porter_payouts', {
         sale_invoice_id: saleInvoiceId,
         sale_item_id: saleItemId,
+        crop_type: item.crop_type,
         box_count: item.box_count,
         amount: item.porter_fee,
         is_paid: false,
@@ -2274,6 +2449,12 @@ async function submitSaleInvoice() {
     playSound('success');
   }
 
+  logAppEvent(
+    `تسجيل فاتورة بيع جديدة للزبون: ${customer.name} (نوع الدفع: ${paymentType === 'cash' ? 'نقدي' : 'دين'})`,
+    `New sale invoice registered for customer: ${customer.name} (${paymentType === 'cash' ? 'Cash' : 'Debt'})`,
+    grandTotal
+  );
+
   showToast(currentLanguage === 'ar' ? 'تم إصدار فاتورة البيع والخصم التلقائي بنجاح!' : 'Sale invoice created and stats adjusted!', 'check_circle');
 
   // Reset Form
@@ -2291,21 +2472,89 @@ async function submitSaleInvoice() {
 
   closeBottomSheet('sheet-new-sale');
 
-  await refreshGlobalCaches();
-  renderSalesList();
-  renderImportsList();
-  renderDebtsList();
-  renderDuesList();
-  renderPortersList();
-  renderStatsPanel();
+  await refreshAllUI();
   
   // Show print preview directly after sale
   openPrintPreview(saleInvoiceId);
 }
 
 async function deleteSaleInvoice(saleId) {
-  const confirm = window.confirm(currentLanguage === 'ar' ? 'هل أنت متأكد من حذف فاتورة البيع هذه بالكامل؟ سيتم إلغاء تأثيرها المالي وحسابات الديون والعمولات ومستحقات الفلاحين.' : 'Are you sure you want to permanently delete this sales invoice? All ledger balances will roll back.');
-  if (!confirm) return;
+  // 1. Fetch the sale invoice first to get details
+  const invoice = await dbGet('sale_invoices', saleId);
+  if (!invoice) {
+    showToast(currentLanguage === 'ar' ? 'الفاتورة غير موجودة!' : 'Invoice not found!', 'warning', true);
+    return;
+  }
+
+  // Fetch all related entities once at function level
+  const allDebts = await dbGetAll('debts');
+  const allDues = await dbGetAll('farmer_dues');
+  const allPorters = await dbGetAll('porter_payouts');
+
+  // 2. Check associated debt if payment type is 'debt'
+  if (invoice.payment_type === 'debt') {
+    const associatedDebt = allDebts.find(d => d.sale_invoice_id === saleId);
+    if (associatedDebt) {
+      if (associatedDebt.is_paid) {
+        showToast(
+          currentLanguage === 'ar' 
+            ? 'لا يمكن حذف الفاتورة لأنه تم تسديد الدين المرتبط بها بالكامل!' 
+            : 'Cannot delete invoice because its associated debt has been fully paid!', 
+          'warning', 
+          true
+        );
+        return;
+      }
+      if (associatedDebt.amount < invoice.total_amount) {
+        showToast(
+          currentLanguage === 'ar' 
+            ? 'لا يمكن حذف الفاتورة لأنه تم تسديد جزء من الدين المرتبط بها بالفعل!' 
+            : 'Cannot delete invoice because a partial payment has already been made on its debt!', 
+          'warning', 
+          true
+        );
+        return;
+      }
+    }
+  }
+
+  // 3. Check associated farmer dues
+  const associatedDues = allDues.filter(d => d.sale_invoice_id === saleId);
+  for (const due of associatedDues) {
+    const originalNetDue = due.sold_price - due.commission_deducted - due.porter_deducted;
+    if (due.is_paid || due.net_due < originalNetDue) {
+      showToast(
+        currentLanguage === 'ar' 
+          ? 'لا يمكن حذف الفاتورة لأنه تم صرف مستحقات الفلاح الخاصة بهذه العملية أو جزء منها!' 
+          : 'Cannot delete invoice because associated farmer dues have been partially or fully paid!', 
+        'warning', 
+        true
+      );
+      return;
+    }
+  }
+
+  // 4. Check associated porter payouts
+  const associatedPorters = allPorters.filter(p => p.sale_invoice_id === saleId);
+  const hasPaidPorter = associatedPorters.some(p => p.is_paid);
+  if (hasPaidPorter) {
+    showToast(
+      currentLanguage === 'ar' 
+        ? 'لا يمكن حذف الفاتورة لأنه تم صرف مستحقات الحمالين الخاصة بها بالفعل!' 
+        : 'Cannot delete invoice because associated porter payouts have already been paid!', 
+      'warning', 
+      true
+    );
+    return;
+  }
+
+  const confirmTitle = currentLanguage === 'ar' ? 'حذف فاتورة البيع' : 'Delete Sale Invoice';
+  const confirmMessage = currentLanguage === 'ar' ? 
+    'هل أنت متأكد من حذف فاتورة البيع هذه بالكامل؟ سيتم إلغاء تأثيرها المالي وحسابات الديون والعمولات ومستحقات الفلاحين.' : 
+    'Are you sure you want to permanently delete this sales invoice? All ledger balances will roll back.';
+  
+  const isConfirmed = await showCustomConfirm(confirmTitle, confirmMessage);
+  if (!isConfirmed) return;
 
   const tx = db.transaction(['sale_invoices', 'sale_items', 'debts', 'farmer_dues', 'porter_payouts'], 'readwrite');
   
@@ -2321,47 +2570,73 @@ async function deleteSaleInvoice(saleId) {
 
   // Delete associated debt
   const debtsStore = tx.objectStore('debts');
-  const allDebts = await dbGetAll('debts');
   allDebts.filter(d => d.sale_invoice_id === saleId).forEach(d => {
     debtsStore.delete(d.id);
   });
 
   // Delete associated farmer dues
   const duesStore = tx.objectStore('farmer_dues');
-  const allDues = await dbGetAll('farmer_dues');
   allDues.filter(d => d.sale_invoice_id === saleId).forEach(d => {
     duesStore.delete(d.id);
   });
 
   // Delete associated porter payouts
   const porterStore = tx.objectStore('porter_payouts');
-  const allPorters = await dbGetAll('porter_payouts');
   allPorters.filter(p => p.sale_invoice_id === saleId).forEach(p => {
     porterStore.delete(p.id);
   });
 
   tx.oncomplete = async () => {
+    logAppEvent(
+      `حذف فاتورة بيع للزبون: ${invoice.customer_name}`,
+      `Deleted sale invoice for customer: ${invoice.customer_name}`
+    );
     showToast(currentLanguage === 'ar' ? 'تم حذف فاتورة البيع والخصومات المالية التابعة لها بنجاح!' : 'Sales invoice deleted and financial impacts rolled back!', 'delete');
-    await refreshGlobalCaches();
-    renderSalesList();
-    renderImportsList();
-    renderDebtsList();
-    renderDuesList();
-    renderPortersList();
-    renderStatsPanel();
+    await refreshAllUI();
   };
 }
 
 async function deleteImportInvoice(impId) {
-  const confirm = window.confirm(currentLanguage === 'ar' ? 'هل أنت متأكد من حذف فاتورة الاستيراد هذه؟ سيؤدي ذلك أيضاً لحذف أصناف المحاصيل التابعة لها بالكامل.' : 'Are you sure you want to delete this import invoice and its items?');
-  if (!confirm) return;
+  // 1. Fetch import invoice
+  const invoice = await dbGet('import_invoices', impId);
+  if (!invoice) {
+    showToast(currentLanguage === 'ar' ? 'الفاتورة غير موجودة!' : 'Invoice not found!', 'warning', true);
+    return;
+  }
 
+  // 2. Check if invoice is settled
+  if (invoice.is_settled) {
+    showToast(
+      currentLanguage === 'ar' 
+        ? 'لا يمكن حذف الفاتورة لأنها مسواة ومغلقة بالكامل!' 
+        : 'Cannot delete invoice because it is already settled and closed!', 
+      'warning', 
+      true
+    );
+    return;
+  }
+
+  // 3. Check if there are active sales
   const allSales = await dbGetAll('sale_items');
   const hasSales = allSales.some(s => s.import_invoice_id === impId);
   if (hasSales) {
-    showToast(currentLanguage === 'ar' ? 'لا يمكن حذف الفاتورة لوجود مبيعات جارية مسجلة عليها بالفعـل!' : 'Cannot delete invoice as there are active sales logged against it!', 'warning', true);
+    showToast(
+      currentLanguage === 'ar' 
+        ? 'لا يمكن حذف الفاتورة لوجود مبيعات جارية مسجلة عليها بالفعـل!' 
+        : 'Cannot delete invoice as there are active sales logged against it!', 
+      'warning', 
+      true
+    );
     return;
   }
+
+  const confirmTitle = currentLanguage === 'ar' ? 'حذف فاتورة الاستيراد' : 'Delete Import Invoice';
+  const confirmMessage = currentLanguage === 'ar' ? 
+    'هل أنت متأكد من حذف فاتورة الاستيراد هذه؟ سيؤدي ذلك أيضاً لحذف أصناف المحاصيل التابعة لها بالكامل.' : 
+    'Are you sure you want to delete this import invoice and its items?';
+  
+  const isConfirmed = await showCustomConfirm(confirmTitle, confirmMessage);
+  if (!isConfirmed) return;
 
   const tx = db.transaction(['import_invoices', 'import_items'], 'readwrite');
   tx.objectStore('import_invoices').delete(impId);
@@ -2373,10 +2648,14 @@ async function deleteImportInvoice(impId) {
   });
 
   tx.oncomplete = async () => {
+    const farmer = await dbGet('farmers', invoice.farmer_id);
+    const farmerName = farmer ? farmer.name : '';
+    logAppEvent(
+      `حذف فاتورة استيراد للفلاح: ${farmerName}`,
+      `Deleted import invoice for farmer: ${farmerName}`
+    );
     showToast(currentLanguage === 'ar' ? 'تم حذف فاتورة الاستيراد بنجاح!' : 'Import invoice deleted successfully!', 'delete');
-    await refreshGlobalCaches();
-    renderImportsList();
-    renderDuesList();
+    await refreshAllUI();
   };
 }
 
@@ -2391,6 +2670,8 @@ async function renderDebtsList() {
   
   const debts = await dbGetAll('debts');
   const customers = await dbGetAll('customers');
+  const allSaleItems = await dbGetAll('sale_items');
+  const allSaleInvoices = await dbGetAll('sale_invoices');
 
   // Filter out paid debts
   const activeDebts = debts.filter(d => !d.is_paid);
@@ -2401,44 +2682,85 @@ async function renderDebtsList() {
     const customer = customers.find(c => c.id === debt.customer_id);
     if (!customer) continue;
 
-    if (searchQuery && !customer.name.toLowerCase().includes(searchQuery)) {
+    const saleInvoice = allSaleInvoices.find(s => s.id === debt.sale_invoice_id);
+    const orderId = saleInvoice?.order_id || ('ALW-' + String(debt.sale_invoice_id).padStart(3, '0'));
+    const items = allSaleItems.filter(it => it.sale_invoice_id === debt.sale_invoice_id);
+    const itemNamesStr = items.map(it => it.crop_type).join('، ');
+
+    const matchId = '#' + debt.sale_invoice_id.toString();
+    const matchesSearch = customer.name.toLowerCase().includes(searchQuery) ||
+                          itemNamesStr.toLowerCase().includes(searchQuery) ||
+                          orderId.toLowerCase().includes(searchQuery) ||
+                          debt.sale_invoice_id.toString().includes(searchQuery) ||
+                          matchId.toLowerCase().includes(searchQuery);
+
+    if (searchQuery && !matchesSearch) {
       continue;
     }
-
-    const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
-    card.style.animationDelay = `${displayedCount * 0.08}s`;
 
     const now = Date.now();
     const isLate = now >= debt.due_date;
     const formattedDate = new Date(debt.due_date).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
 
+    const card = document.createElement('div');
+    card.className = 'premium-card stagger-item';
+    card.style.animationDelay = `${displayedCount * 0.08}s`;
+
+    let itemsDetailsHtml = items.map(it => {
+      return `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
+        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${formatWeight(it.weight_kg, it.unit || 'kg')})</span>
+        <span style="font-weight:700;">${formatVal(it.agreed_price, true)}</span>
+      </div>`;
+    }).join('');
+
+    if (!itemsDetailsHtml) {
+      itemsDetailsHtml = `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
+        <span>${currentLanguage === 'ar' ? 'تفاصيل المعاملة' : 'Transaction Detail'}</span>
+        <span>${currentLanguage === 'ar' ? 'دين مبيعات معلق بذمة الزبون' : 'Pending outstanding sales debt'}</span>
+      </div>`;
+    }
+
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: var(--color-danger-light); color: var(--color-danger); margin-bottom:4px; display:inline-block;">
-            # ${formatVal(debt.sale_invoice_id)}
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
+            ID: ${orderId}
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${customer.address} - هاتف: ${customer.phone}</span>
+          <span style="font-size:10px; color:var(--color-text-muted);">${customer.address || ''} ${customer.phone ? `• ${customer.phone}` : ''}</span>
         </div>
         <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
           <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
           ${isLate ? 
-            `<span class="debt-status-tag late" style="font-size:9px;">⚠️ متأخر عن السداد</span>` : 
-            `<span class="debt-status-tag unpaid" style="font-size:9px;">⏳ بانتظار التحصيل</span>`
+            `<span class="debt-status-tag late" style="font-size:9px;">⚠️ ${currentLanguage === 'ar' ? 'متأخر عن السداد' : 'Overdue'}</span>` : 
+            `<span class="debt-status-tag unpaid" style="font-size:9px;">⏳ ${currentLanguage === 'ar' ? 'بانتظار التحصيل' : 'Pending'}</span>`
           }
         </div>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+        ${itemsDetailsHtml}
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
         <div>
-          <span style="font-size:11px; color:var(--color-text-muted);">${translations[currentLanguage].lblSubtotal}</span>
-          <h3 style="font-size:16px; font-weight:700; color:var(--color-danger);">${formatVal(debt.amount, true)}</h3>
+          <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'إجمالي الدين' : 'Outstanding Debt'}</span>
+          <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(debt.amount, true)}</h3>
         </div>
-        <button class="btn-primary btn-open-payment" data-id="${debt.id}" style="padding:8px 16px; font-size:12px; background-color: var(--color-danger); box-shadow: none;">
-          ${currentLanguage === 'ar' ? 'تسجيل سداد نقدي' : 'Record payment'}
-        </button>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-secondary btn-debt-details" data-invoice-id="${debt.sale_invoice_id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
+            <span class="material-icons-round" style="font-size:14px;">visibility</span>
+            <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
+          </button>
+          <button class="btn-secondary btn-debt-partial" data-id="${debt.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-info); background: rgba(0, 119, 182, 0.04); color: var(--color-info); box-shadow: none;">
+            <span class="material-icons-round" style="font-size:14px;">payments</span>
+            <span>${currentLanguage === 'ar' ? 'تسديد جزئي' : 'Partial'}</span>
+          </button>
+          <button class="btn-secondary btn-debt-full" data-id="${debt.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
+            <span class="material-icons-round" style="font-size:14px;">check_circle</span>
+            <span>${currentLanguage === 'ar' ? 'تسديد' : 'Settle'}</span>
+          </button>
+        </div>
       </div>
     `;
 
@@ -2455,10 +2777,27 @@ async function renderDebtsList() {
     `;
   }
 
-  document.querySelectorAll('.btn-open-payment').forEach(btn => {
+  document.querySelectorAll('.btn-debt-details').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const debtId = parseInt(e.target.dataset.id);
+      const btnEl = e.currentTarget;
+      const invoiceId = parseInt(btnEl.dataset.invoiceId);
+      await showInvoiceDetails(invoiceId, 'sale');
+    });
+  });
+
+  document.querySelectorAll('.btn-debt-partial').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const btnEl = e.currentTarget;
+      const debtId = parseInt(btnEl.dataset.id);
       await openPaymentSheet(debtId);
+    });
+  });
+
+  document.querySelectorAll('.btn-debt-full').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const btnEl = e.currentTarget;
+      const debtId = parseInt(btnEl.dataset.id);
+      await settleFullDebtDirectly(debtId);
     });
   });
 }
@@ -2471,6 +2810,7 @@ async function renderDuesList() {
   
   const dues = await dbGetAll('farmer_dues');
   const farmers = await dbGetAll('farmers');
+  const saleItems = await dbGetAll('sale_items');
 
   // Group unpaid dues by farmer
   const unpaidDues = dues.filter(d => !d.is_paid);
@@ -2507,22 +2847,94 @@ async function renderDuesList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <h4 style="font-size:15px; font-weight:700; color:var(--color-primary);">${farmer.name}</h4>
-          <span style="font-size:11px; color:var(--color-text-muted);">هاتف: ${farmer.phone} • عدد الشحنات المباعة: ${formatVal(data.itemsCount)}</span>
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
+            ID: FMR-${farmerId}
+          </span>
+          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${farmer.name}</h4>
+          <span style="font-size:10px; color:var(--color-text-muted);">${farmer.phone ? `• ${farmer.phone}` : ''}</span>
         </div>
-        <span class="debt-status-tag unpaid" style="font-size:10px; background: rgba(0, 150, 199, 0.08); color: var(--color-primary); border: 1.5px solid rgba(0, 150, 199, 0.15);">
-          بانتظار الصرف
-        </span>
+        <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+          <span class="debt-status-tag unpaid" style="font-size:9px; background: rgba(0, 119, 182, 0.08); color: var(--color-info); border: 1px solid rgba(0, 119, 182, 0.15); border-radius: 4px; padding: 2px 6px;">
+            ⏳ ${currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout'}
+          </span>
+        </div>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-        <div>
-          <span style="font-size:11px; color:var(--color-text-muted);">صافي المستحقات للفلاح (بعد العمولات):</span>
-          <h3 style="font-size:18px; font-weight:700; color:var(--color-primary);">${formatVal(data.totalNetDue, true)}</h3>
+      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+        <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
+          <span>${currentLanguage === 'ar' ? 'عدد الشحنات المعلقة' : 'Pending Shipments'}</span>
+          <span style="font-weight:700;">${formatVal(data.itemsCount)} ${currentLanguage === 'ar' ? 'شحنة' : 'shipment(s)'}</span>
         </div>
-        <button class="btn-primary btn-pay-farmer-dues" data-farmer-id="${farmerId}" style="padding:8px 16px; font-size:12px;">
-          ${currentLanguage === 'ar' ? 'صرف المستحقات' : 'Pay Farmer'}
-        </button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
+        <div>
+          <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'صافي مستحقات الفلاح' : 'Net Farmer Dues'}</span>
+          <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(data.totalNetDue, true)}</h3>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-secondary btn-toggle-farmer-details" data-farmer-id="${farmerId}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
+            <span class="material-icons-round" style="font-size:14px;">list_alt</span>
+            <span>${currentLanguage === 'ar' ? 'الشحنات' : 'Shipments'}</span>
+          </button>
+          <button class="btn-secondary btn-pay-farmer-dues" data-farmer-id="${farmerId}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
+            <span class="material-icons-round" style="font-size:14px;">paid</span>
+            <span>${currentLanguage === 'ar' ? 'صرف' : 'Pay'}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible Details Container -->
+      <div id="farmer-details-${farmerId}" style="display:none; flex-direction:column; gap:8px; margin-top:8px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:8px;">
+        <h5 style="font-size:11px; font-weight:700; color:var(--color-primary); margin: 0 0 4px 0;">
+          ${currentLanguage === 'ar' ? 'تفاصيل المبيعات المستحقة:' : 'Detailed Dues:'}
+        </h5>
+        <div style="display: flex; flex-direction: column; gap: 6px; max-height: 250px; overflow-y: auto;">
+          ${data.rawItems.map(item => {
+            const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+            const cropIcon = getCropIcon(item.crop_type);
+            const saleItem = saleItems.find(si => si.id === item.sale_item_id);
+            let priceLabel = '';
+            let priceValue = 0;
+            
+            if (saleItem) {
+              const isCountUnit = saleItem.unit === 'count';
+              priceLabel = isCountUnit 
+                ? (currentLanguage === 'ar' ? 'سعر البيع/العدد:' : 'Sale Price/Qty:') 
+                : (currentLanguage === 'ar' ? 'سعر البيع/الكيلو:' : 'Sale Price/kg:');
+              priceValue = saleItem.unit_price || (isCountUnit 
+                ? (saleItem.box_count ? Math.round(saleItem.agreed_price / saleItem.box_count) : 0) 
+                : (saleItem.weight_kg ? Math.round(saleItem.agreed_price / saleItem.weight_kg) : 0));
+            } else {
+              const isCountUnit = !item.weight_kg || item.weight_kg === 0;
+              priceLabel = isCountUnit 
+                ? (currentLanguage === 'ar' ? 'سعر البيع/العدد:' : 'Sale Price/Qty:') 
+                : (currentLanguage === 'ar' ? 'سعر البيع/الكيلو:' : 'Sale Price/kg:');
+              priceValue = isCountUnit 
+                ? (item.box_count ? Math.round(item.sold_price / item.box_count) : 0) 
+                : (item.weight_kg ? Math.round(item.sold_price / item.weight_kg) : 0);
+            }
+
+            // Ultimate fallback: If priceValue is still 0 or empty, try to use the sold_price
+            if (!priceValue || priceValue === 0) {
+              priceValue = item.sold_price || (saleItem ? saleItem.agreed_price : 0);
+              priceLabel = currentLanguage === 'ar' ? 'إجمالي سعر البيع:' : 'Total Sale Price:';
+            }
+
+            return `
+              <div style="display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.02); border: 1px solid rgba(0, 0, 0, 0.04); padding: 8px; border-radius: 8px; gap: 4px; font-size:11px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <strong style="color: var(--color-primary);">${cropIcon} ${item.crop_type}</strong>
+                  <span style="font-size: 10px; color: var(--color-text-muted);">${itemDate}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: var(--color-text-muted); font-size:10px;">
+                  <span>${currentLanguage === 'ar' ? 'الكمية:' : 'Qty:'} ${item.box_count || 0} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}</span>
+                  <span>${priceLabel} <strong style="color:var(--color-primary-mid);">${formatVal(priceValue, true)}</strong></span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
     `;
 
@@ -2545,6 +2957,62 @@ async function renderDuesList() {
       await payFarmerDues(farmerId);
     });
   });
+
+  document.querySelectorAll('.btn-toggle-farmer-details').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const farmerId = btn.dataset.farmerId;
+      const detailsDiv = document.getElementById(`farmer-details-${farmerId}`);
+      if (detailsDiv) {
+        if (detailsDiv.style.display === 'none') {
+          detailsDiv.style.display = 'flex';
+          btn.style.background = 'rgba(45, 106, 79, 0.05)';
+        } else {
+          detailsDiv.style.display = 'none';
+          btn.style.background = 'white';
+        }
+      }
+    });
+  });
+}
+
+function showCustomConfirm(title, message) {
+  return new Promise((resolve) => {
+    const dialog = document.getElementById('custom-confirm-dialog');
+    if (!dialog) {
+      resolve(window.confirm(message));
+      return;
+    }
+    
+    const titleEl = document.getElementById('confirm-title');
+    const msgEl = document.getElementById('confirm-message');
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    
+    dialog.style.display = 'flex';
+    
+    const okBtn = document.getElementById('btn-confirm-ok');
+    const cancelBtn = document.getElementById('btn-confirm-cancel');
+    
+    const onOk = () => {
+      dialog.style.display = 'none';
+      cleanup();
+      resolve(true);
+    };
+    
+    const onCancel = () => {
+      dialog.style.display = 'none';
+      cleanup();
+      resolve(false);
+    };
+    
+    function cleanup() {
+      if (okBtn) okBtn.removeEventListener('click', onOk);
+      if (cancelBtn) cancelBtn.removeEventListener('click', onCancel);
+    }
+    
+    if (okBtn) okBtn.addEventListener('click', onOk);
+    if (cancelBtn) cancelBtn.addEventListener('click', onCancel);
+  });
 }
 
 async function renderPortersList() {
@@ -2559,59 +3027,235 @@ async function renderPortersList() {
   const totalUnpaidPorterAmount = unpaidPayouts.reduce((sum, p) => sum + p.amount, 0);
   const totalUnpaidBoxesCount = unpaidPayouts.reduce((sum, p) => sum + p.box_count, 0);
 
+  // Main Card
   const card = document.createElement('div');
   card.className = 'premium-card stagger-item';
-  card.style.background = 'linear-gradient(135deg, var(--color-primary) 0%, #03045e 100%)';
-  card.style.color = 'white';
 
   card.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
       <div>
-        <h4 style="font-size: 15px; font-weight: 700; color: var(--color-accent);">${currentLanguage === 'ar' ? 'صندوق أجور الحمالين (الجمعية)' : 'Porter Payouts Box'}</h4>
-        <span style="font-size: 11px; color: rgba(255,255,255,0.65);">${currentLanguage === 'ar' ? 'تجمع تلقائياً بمعدل 500 دينار لكل صندوق مباع من غير الرقي' : 'Aggregated at 500 IQD per sold box'}</span>
+        <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
+          ID: PORTER-BOX
+        </span>
+        <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${currentLanguage === 'ar' ? 'صندوق مستحقات الحمالين' : 'Porter Dues Box'}</h4>
+        <span style="font-size:10px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'تحتسب تلقائياً من عمولة التحميل لكل صندوق مبيع ومزامنتها' : 'Porter commission automatically calculated and synced'}</span>
       </div>
-      <span class="material-icons-round" style="font-size: 28px; color: var(--color-accent);">engineering</span>
+      <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+        <span class="debt-status-tag unpaid" style="font-size:9px; background: rgba(0, 119, 182, 0.08); color: var(--color-info); border: 1px solid rgba(0, 119, 182, 0.15); border-radius: 4px; padding: 2px 6px;">
+          ⏳ ${currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout'}
+        </span>
+      </div>
     </div>
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
-      <div>
-        <span style="font-size: 11px; color: rgba(255,255,255,0.7);">${currentLanguage === 'ar' ? 'إجمالي مستحقات الحمالين المعلقة:' : 'Total pending porter dues:'}</span>
-        <h3 style="font-size: 20px; font-weight: 800; color: var(--color-accent);">${formatVal(totalUnpaidPorterAmount, true)}</h3>
-        <span style="font-size: 10px; color: rgba(255,255,255,0.6);">${currentLanguage === 'ar' ? `المقابل لـ ${formatVal(totalUnpaidBoxesCount)} صندوق مباع` : `Equivalent to ${formatVal(totalUnpaidBoxesCount)} boxes sold`}</span>
+
+    <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+      <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
+        <span>${currentLanguage === 'ar' ? 'الكمية الإجمالية المعلقة' : 'Total Pending Qty'}</span>
+        <span style="font-weight:700;">${formatVal(totalUnpaidBoxesCount)} ${currentLanguage === 'ar' ? 'صندوق مباع' : 'boxes sold'}</span>
       </div>
-      ${totalUnpaidPorterAmount > 0 ? `
-        <button class="btn-primary btn-pay-porters-all" style="background: var(--color-accent); color: var(--color-primary); font-weight: 800; padding: 10px 20px; font-size: 12px; box-shadow: none;">
-          ${currentLanguage === 'ar' ? 'توزيع الأجور وصرفها' : 'Payout Porters'}
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
+      <div>
+        <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'إجمالي مستحقات الحمالين' : 'Total Porter Dues'}</span>
+        <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(totalUnpaidPorterAmount, true)}</h3>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="btn-secondary btn-toggle-porters-details" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
+          <span class="material-icons-round" style="font-size:14px;">list</span>
+          <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
         </button>
-      ` : `
-        <span style="font-size: 12px; color: rgba(255,255,255,0.4);">${currentLanguage === 'ar' ? 'لا توجد أجور معلقة' : 'No pending dues'}</span>
-      `}
+        ${totalUnpaidPorterAmount > 0 ? `
+          <button class="btn-secondary btn-open-porters-pay" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
+            <span class="material-icons-round" style="font-size:14px;">payments</span>
+            <span>${currentLanguage === 'ar' ? 'دفع' : 'Pay'}</span>
+          </button>
+        ` : ''}
+      </div>
     </div>
   `;
 
   portersList.appendChild(card);
 
-  const payBtn = card.querySelector('.btn-pay-porters-all');
-  if (payBtn) {
-    payBtn.addEventListener('click', async () => {
-      const confirm = window.confirm(currentLanguage === 'ar' ? `هل أنت متأكد من صرف كامل أجور الحمالين المعلقة وقدرها ${formatVal(totalUnpaidPorterAmount, true)} دينار عراقي وتوزيعها؟` : `Are you sure you want to distribute ${formatVal(totalUnpaidPorterAmount, true)} IQD to porters?`);
-      if (!confirm) return;
+  // 1. Details Section (Collapsible)
+  const detailsSection = document.createElement('div');
+  detailsSection.id = 'porters-details-section';
+  detailsSection.style.display = 'none';
+  detailsSection.style.marginTop = '12px';
+  detailsSection.className = 'premium-card stagger-item';
+  detailsSection.style.animationDelay = '0.05s';
 
-      const tx = db.transaction('porter_payouts', 'readwrite');
-      const store = tx.objectStore('porter_payouts');
-      unpaidPayouts.forEach(p => {
-        p.is_paid = true;
-        store.put(p);
-      });
+  // Populate Details
+  if (unpaidPayouts.length === 0) {
+    detailsSection.innerHTML = `
+      <h4 style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 6px;">
+        ${currentLanguage === 'ar' ? 'تفاصيل مستحقات الحمالين' : 'Porter Dues Details'}
+      </h4>
+      <p style="font-size: 11px; color: var(--color-text-muted); text-align: center; margin: 10px 0;">
+        ${currentLanguage === 'ar' ? 'لا توجد مستحقات معلقة لعرضها.' : 'No pending dues to display.'}
+      </p>
+    `;
+  } else {
+    let detailsHtml = `
+      <h4 style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <span>${currentLanguage === 'ar' ? 'تفاصيل مستحقات الحمالين المعلقة' : 'Pending Porter Dues Details'}</span>
+        <span style="font-size: 10px; font-weight: 600; background: rgba(0,0,0,0.05); color: var(--color-primary-mid); padding: 2px 6px; border-radius: 4px;">${unpaidPayouts.length} ${currentLanguage === 'ar' ? 'مبيعة معلقة' : 'pending items'}</span>
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 2px;">
+    `;
 
-      tx.oncomplete = async () => {
-        showToast(currentLanguage === 'ar' ? 'تم صرف وتوزيع أجور الحمالين وتصفير الصندوق المعلق بنجاح!' : 'Porters dues successfully paid out and cleared!', 'check_circle');
-        await refreshGlobalCaches();
-        renderPortersList();
-        renderStatsPanel();
-      };
+    unpaidPayouts.sort((a,b) => b.created_at - a.created_at).forEach(p => {
+      const dateStr = new Date(p.created_at).toLocaleString(currentLanguage === 'ar' ? 'ar-IQ' : 'en-US', { dateStyle: 'short', timeStyle: 'short' });
+      const cropName = p.crop_type || (currentLanguage === 'ar' ? 'صناديق بضاعة' : 'Cargo boxes');
+      const icon = p.crop_type ? getCropIcon(p.crop_type) : '📦';
+      detailsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 8px 10px; border-radius: 8px; font-size: 12px;">
+          <div>
+            <div style="font-weight: 700; color: var(--color-primary); display: flex; align-items: center; gap: 4px;">
+              <span>${icon}</span>
+              <span>${cropName}</span>
+              <span style="font-size: 10px; font-weight: normal; color: var(--color-text-muted);">• ${p.box_count} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}</span>
+            </div>
+            <div style="font-size: 10px; color: var(--color-text-muted); margin-top: 2px;">
+              <span class="material-icons-round" style="font-size: 10px; vertical-align: middle;">schedule</span>
+              <span style="vertical-align: middle;">${dateStr}</span>
+            </div>
+          </div>
+          <div style="text-align: left;">
+            <span style="font-weight: 800; color: var(--color-primary-mid); font-size: 13px;">${formatVal(p.amount, true)}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    detailsHtml += `</div>`;
+    detailsSection.innerHTML = detailsHtml;
+  }
+
+  portersList.appendChild(detailsSection);
+
+  // 2. Pay Section (Collapsible Form)
+  const paySection = document.createElement('div');
+  paySection.id = 'porters-pay-section';
+  paySection.style.display = 'none';
+  paySection.style.marginTop = '12px';
+  paySection.className = 'premium-card stagger-item';
+  paySection.style.animationDelay = '0.05s';
+
+  paySection.innerHTML = `
+    <h4 style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 6px;">
+      ${currentLanguage === 'ar' ? 'صرف وتوزيع مستحقات الحمالين' : 'Distribute and Payout Porters'}
+    </h4>
+    
+    <div class="form-group" style="margin-bottom: 12px;">
+      <label style="font-size: 11px; font-weight: 700; color: var(--color-primary); display: block; margin-bottom: 4px;">
+        ${currentLanguage === 'ar' ? 'عدد الحمالين لتوزيع المبلغ الاجمالي عليهم:' : 'Number of porters to distribute the total amount:'}
+      </label>
+      <input type="number" id="porters-count-input" class="form-input" min="1" value="1" style="text-align: center; font-weight: 700; font-size: 16px; border: 1.5px solid var(--color-primary-light); height: 44px;" required>
+    </div>
+
+    <div style="background: rgba(0, 150, 199, 0.05); border: 1px solid rgba(0, 150, 199, 0.15); border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 16px;">
+      <span style="font-size: 11px; color: var(--color-text-muted); display: block;">${currentLanguage === 'ar' ? 'حصة كل حمال (المبلغ الاجمالي مقسماً بالتساوي):' : 'Share of each porter (total amount divided equally):'}</span>
+      <h3 id="porter-individual-share-lbl" style="font-size: 18px; font-weight: 800; color: var(--color-primary); margin-top: 4px;">${formatVal(totalUnpaidPorterAmount, true)}</h3>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button class="btn-primary btn-confirm-porter-payout" style="flex: 2; padding: 10px; font-size: 12px; font-weight: 800;">
+        ${currentLanguage === 'ar' ? 'تأكيد الدفع والخصم من الخزينة' : 'Confirm Payout'}
+      </button>
+      <button class="btn-secondary btn-cancel-porter-payout" style="flex: 1; padding: 10px; font-size: 12px; font-weight: 600; border-color: rgba(0,0,0,0.15); color: var(--color-text-dark);">
+        ${currentLanguage === 'ar' ? 'إلغاء' : 'Cancel'}
+      </button>
+    </div>
+  `;
+
+  portersList.appendChild(paySection);
+
+  // Toggle Details
+  const toggleDetailsBtn = card.querySelector('.btn-toggle-porters-details');
+  toggleDetailsBtn.addEventListener('click', () => {
+    if (detailsSection.style.display === 'none') {
+      detailsSection.style.display = 'block';
+      paySection.style.display = 'none'; // hide pay section
+    } else {
+      detailsSection.style.display = 'none';
+    }
+  });
+
+  // Toggle Pay
+  const openPayBtn = card.querySelector('.btn-open-porters-pay');
+  if (openPayBtn) {
+    openPayBtn.addEventListener('click', () => {
+      if (paySection.style.display === 'none') {
+        paySection.style.display = 'block';
+        detailsSection.style.display = 'none'; // hide details
+        document.getElementById('porters-count-input').focus();
+      } else {
+        paySection.style.display = 'none';
+      }
     });
   }
+
+  // Cancel Pay
+  const cancelPayBtn = paySection.querySelector('.btn-cancel-porter-payout');
+  cancelPayBtn.addEventListener('click', () => {
+    paySection.style.display = 'none';
+  });
+
+  // Dynamic share calculation
+  const portersCountInput = paySection.querySelector('#porters-count-input');
+  const individualShareLbl = paySection.querySelector('#porter-individual-share-lbl');
+
+  function calculateShare() {
+    const count = parseInt(portersCountInput.value) || 1;
+    if (count <= 0) {
+      individualShareLbl.textContent = formatVal(0, true);
+      return;
+    }
+    const share = Math.round(totalUnpaidPorterAmount / count);
+    individualShareLbl.textContent = formatVal(share, true);
+  }
+
+  portersCountInput.addEventListener('input', calculateShare);
+
+  // Confirm Payout
+  const confirmPayBtn = paySection.querySelector('.btn-confirm-porter-payout');
+  confirmPayBtn.addEventListener('click', async () => {
+    const count = parseInt(portersCountInput.value) || 0;
+    if (count <= 0) {
+      showToast(currentLanguage === 'ar' ? 'يرجى إدخال عدد حمالين صحيح (1 على الأقل)' : 'Please enter a valid number of porters (at least 1)', 'warning', true);
+      return;
+    }
+
+    const share = Math.round(totalUnpaidPorterAmount / count);
+    const confirmTitle = currentLanguage === 'ar' ? 'تأكيد دفع مستحقات الحمالين' : 'Confirm Porter Payout';
+    const confirmMessage = currentLanguage === 'ar' ? 
+      `هل أنت متأكد من دفع مبلغ ${formatVal(totalUnpaidPorterAmount, true)} دينار عراقي؟\nسيتم توزيعها على ${count} حمالين، بمعدل ${formatVal(share, true)} لكل حمال، وسيتم خصم المبلغ من الخزينة.` :
+      `Are you sure you want to payout ${formatVal(totalUnpaidPorterAmount, true)} IQD?\nIt will be distributed to ${count} porters (${formatVal(share, true)} each), and deducted from the safe box.`;
+    
+    const isConfirmed = await showCustomConfirm(confirmTitle, confirmMessage);
+    if (!isConfirmed) return;
+
+    const tx = db.transaction('porter_payouts', 'readwrite');
+    const store = tx.objectStore('porter_payouts');
+    unpaidPayouts.forEach(p => {
+      p.is_paid = true;
+      p.paid_porters_count = count;
+      p.porter_share = share;
+      p.paid_at = Date.now();
+      store.put(p);
+    });
+
+    tx.oncomplete = async () => {
+      logAppEvent(
+        `صرف وتوزيع أجور الحمالين لعدد ${count} حمالين`,
+        `Paid and distributed porters dues to ${count} porters`,
+        totalUnpaidPorterAmount
+      );
+      playSound('success');
+      showToast(currentLanguage === 'ar' ? 'تم صرف وتوزيع أجور الحمالين والخصم تلقائياً من الخزنة بنجاح!' : 'Porters dues successfully distributed and deducted from safe box!', 'check_circle');
+      await refreshAllUI();
+    };
+  });
 }
 
 async function openPaymentSheet(debtId) {
@@ -2620,32 +3264,39 @@ async function openPaymentSheet(debtId) {
   const customer = await dbGet('customers', debt.customer_id);
   if (!customer) return;
 
-  document.getElementById('payment-customer-name').textContent = customer.name;
-  document.getElementById('payment-invoice-id').textContent = debt.sale_invoice_id;
-  document.getElementById('payment-debt-total').textContent = formatVal(debt.amount, true);
+  const customerLabel = currentLanguage === 'ar' ? 'الزبون' : 'Customer';
+  const debtLabel = currentLanguage === 'ar' ? 'إجمالي الدين المستحق' : 'Total Outstanding Debt';
+
+  document.getElementById('pay-customer-name').textContent = `${customerLabel}: ${customer.name}`;
+  document.getElementById('pay-total-debt').textContent = `${debtLabel}: ${formatVal(debt.amount, true)}`;
   
-  const amountInput = document.getElementById('payment-amount-input');
-  amountInput.value = debt.amount;
-  amountInput.setAttribute('max', debt.amount);
+  const amountInput = document.getElementById('pay-amount');
+  if (amountInput) {
+    amountInput.value = debt.amount;
+    amountInput.setAttribute('max', debt.amount);
+  }
   
   document.getElementById('btn-submit-payment').onclick = async () => {
     await submitPaymentRecord(debtId);
   };
 
-  openBottomSheet('sheet-new-payment');
+  openBottomSheet('sheet-payment');
 }
 
 async function submitPaymentRecord(debtId) {
   const debt = await dbGet('debts', debtId);
   if (!debt) return;
   
-  const paymentAmount = parseNumberInput(document.getElementById('payment-amount-input').value);
+  const amountInput = document.getElementById('pay-amount');
+  const paymentAmount = parseNumberInput(amountInput ? amountInput.value : '0');
   if (paymentAmount <= 0 || paymentAmount > debt.amount) {
     showToast(currentLanguage === 'ar' ? 'الرجاء إدخال مبلغ دفع صحيح لا يتجاوز قيمة الدين الكلية' : 'Please input a valid amount not exceeding the debt amount', 'warning', true);
     return;
   }
 
-  if (paymentAmount === debt.amount) {
+  const isFull = (paymentAmount === debt.amount);
+
+  if (isFull) {
     // Settle completely
     debt.is_paid = true;
     await dbPut('debts', debt);
@@ -2663,48 +3314,162 @@ async function submitPaymentRecord(debtId) {
     });
   }
 
+  const customer = await dbGet('customers', debt.customer_id);
+  const customerName = customer ? customer.name : '';
+  if (isFull) {
+    logAppEvent(
+      `تسديد كامل الدين للزبون: ${customerName}`,
+      `Fully paid debt for customer: ${customerName}`,
+      paymentAmount
+    );
+  } else {
+    logAppEvent(
+      `تسديد جزء من الدين للزبون: ${customerName}`,
+      `Recorded partial debt payment for customer: ${customerName}`,
+      paymentAmount
+    );
+  }
+
   playSound('success');
   showToast(currentLanguage === 'ar' ? 'تم تسجيل دفعة تسديد الديون بنجاح وتغذية الخزنة!' : 'Payment recorded and safe box updated!', 'check_circle');
   
-  closeBottomSheet('sheet-new-payment');
+  closeBottomSheet('sheet-payment');
   
-  await refreshGlobalCaches();
-  renderDebtsList();
-  renderSalesList();
-  renderStatsPanel();
+  await refreshAllUI();
+}
+
+async function settleFullDebtDirectly(debtId) {
+  const debt = await dbGet('debts', debtId);
+  if (!debt) return;
+
+  const confirmTitle = currentLanguage === 'ar' ? 'تسديد كامل الدين' : 'Full Debt Settlement';
+  const confirmMsg = currentLanguage === 'ar' 
+    ? `هل أنت متأكد من تسديد كامل الدين البالغ ${formatVal(debt.amount, true)} دينار عراقي؟`
+    : `Are you sure you want to fully settle this debt of ${formatVal(debt.amount, true)} IQD?`;
+
+  const isConfirmed = await showCustomConfirm(confirmTitle, confirmMsg);
+  if (!isConfirmed) return;
+
+  const originalAmount = debt.amount;
+  debt.is_paid = true;
+  await dbPut('debts', debt);
+
+  const customer = await dbGet('customers', debt.customer_id);
+  const customerName = customer ? customer.name : '';
+  logAppEvent(
+    `تسديد كامل الدين للزبون: ${customerName}`,
+    `Fully settled debt for customer: ${customerName}`,
+    originalAmount
+  );
+
+  playSound('success');
+  showToast(currentLanguage === 'ar' ? 'تم تسديد كامل الدين بنجاح وتغذية الخزنة!' : 'Debt fully paid and safe box updated!', 'check_circle');
+
+  await refreshAllUI();
 }
 
 async function payFarmerDues(farmerId) {
+  await openFarmerPayoutSheet(farmerId);
+}
+
+async function openFarmerPayoutSheet(farmerId) {
   const dues = await dbGetAll('farmer_dues');
   const farmers = await dbGetAll('farmers');
   const farmer = farmers.find(f => f.id === farmerId);
   if (!farmer) return;
 
   const unpaidDues = dues.filter(d => d.farmer_id === farmerId && !d.is_paid);
-  const totalAmount = unpaidDues.reduce((sum, d) => sum + d.net_due, 0);
+  const totalNetDue = unpaidDues.reduce((sum, d) => sum + d.net_due, 0);
+  const totalSales = unpaidDues.reduce((sum, d) => sum + d.sold_price, 0);
+  
+  // 7% total commission was deducted, of which 5% is net office commission and 2% is extra/additional commission
+  const commission2 = Math.round(totalSales * 0.02);
 
-  if (totalAmount <= 0) {
+  if (totalNetDue <= 0) {
     showToast(currentLanguage === 'ar' ? 'لا توجد مستحقات معلقة حالياً للصرف' : 'No pending dues to settle', 'warning', true);
     return;
   }
 
-  const confirm = window.confirm(currentLanguage === 'ar' ? `هل أنت متأكد من صرف مستحقات الفلاح "${farmer.name}" بالكامل بقيمة ${formatVal(totalAmount, true)}؟ سيتم خصم هذا المبلغ من الخزنة.` : `Are you sure you want to payout farmer "${farmer.name}" completely with ${formatVal(totalAmount, true)}?`);
-  if (!confirm) return;
+  // Populate bottom-sheet info
+  document.getElementById('payout-farmer-name').textContent = currentLanguage === 'ar' ? `الفلاح: ${farmer.name}` : `Farmer: ${farmer.name}`;
+  document.getElementById('payout-crop-sales').textContent = currentLanguage === 'ar' ? `إجمالي مبيعات محاصيله: ${formatVal(totalSales, true)}` : `Total Crop Sales: ${formatVal(totalSales, true)}`;
+  document.getElementById('payout-commission-2').textContent = currentLanguage === 'ar' ? `مجموع عمولته 2%: ${formatVal(commission2, true)}` : `Total 2% Commission: ${formatVal(commission2, true)}`;
+  
+  const amountInput = document.getElementById('payout-amount');
+  if (amountInput) {
+    amountInput.value = totalNetDue;
+    amountInput.dataset.farmerId = farmerId;
+  }
+
+  openBottomSheet('sheet-farmer-payout');
+}
+
+async function submitFarmerPayout() {
+  const amountInput = document.getElementById('payout-amount');
+  if (!amountInput) return;
+  
+  const farmerId = parseInt(amountInput.dataset.farmerId);
+  if (!farmerId) return;
+
+  const payoutAmount = parseNumberInput(amountInput.value) || 0;
+  if (payoutAmount <= 0) {
+    showToast(currentLanguage === 'ar' ? 'يرجى إدخال مبلغ صحيح للصرف' : 'Please enter a valid payout amount', 'warning', true);
+    return;
+  }
+
+  const dues = await dbGetAll('farmer_dues');
+  const farmers = await dbGetAll('farmers');
+  const farmer = farmers.find(f => f.id === farmerId);
+  if (!farmer) return;
+
+  const unpaidDues = dues.filter(d => d.farmer_id === farmerId && !d.is_paid);
+  const totalNetDue = unpaidDues.reduce((sum, d) => sum + d.net_due, 0);
+
+  if (unpaidDues.length === 0) {
+    showToast(currentLanguage === 'ar' ? 'لا توجد مستحقات معلقة حالياً للصرف' : 'No pending dues to settle', 'warning', true);
+    return;
+  }
+
+  const confirmTitle = currentLanguage === 'ar' ? 'صرف مستحقات الفلاح' : 'Farmer Payout';
+  const confirmText = currentLanguage === 'ar' 
+    ? `هل أنت متأكد من صرف مبلغ ${formatVal(payoutAmount, true)} للفلاح "${farmer.name}"؟`
+    : `Are you sure you want to pay ${formatVal(payoutAmount, true)} to farmer "${farmer.name}"?`;
+  
+  const isConfirmed = await showCustomConfirm(confirmTitle, confirmText);
+  if (!isConfirmed) return;
 
   const tx = db.transaction('farmer_dues', 'readwrite');
   const store = tx.objectStore('farmer_dues');
-  unpaidDues.forEach(due => {
-    due.is_paid = true;
-    store.put(due);
-  });
+
+  let remainingPaid = payoutAmount;
+  unpaidDues.sort((a, b) => a.created_at - b.created_at);
+
+  for (const due of unpaidDues) {
+    if (remainingPaid >= due.net_due) {
+      remainingPaid -= due.net_due;
+      due.is_paid = true;
+      await store.put(due);
+    } else if (remainingPaid > 0) {
+      due.net_due -= remainingPaid;
+      remainingPaid = 0;
+      await store.put(due);
+      break;
+    } else {
+      break;
+    }
+  }
 
   tx.oncomplete = async () => {
+    logAppEvent(
+      `صرف مستحقات مالية للفلاح: ${farmer.name}`,
+      `Paid dues to farmer: ${farmer.name}`,
+      payoutAmount
+    );
     playSound('success');
     showToast(currentLanguage === 'ar' ? 'تم صرف مستحقات الفلاح وتحديث حسابات الخزنة بنجاح!' : 'Farmer dues successfully settled and paid!', 'check_circle');
+    closeBottomSheet('sheet-farmer-payout');
     
-    await refreshGlobalCaches();
-    renderDuesList();
-    renderStatsPanel();
+    await refreshAllUI();
   };
 }
 
@@ -2729,82 +3494,343 @@ async function renderStatsPanel() {
   const losses = await dbGetAll('losses');
   const safeAdjustments = await dbGetAll('safe_adjustments');
 
-  // Math Logic for Safe Box and Company Profits:
-  // SAFE BOX INFLOWS:
-  // 1. Cash Sales = overall invoice total where payment = cash
-  const cashSalesTotal = allSales.filter(s => s.payment_type === 'cash').reduce((sum, s) => sum + s.total_amount, 0);
-
-  // 2. Collected Debts = debts where is_paid = true + partial payment adjustments
-  const collectedDebtsTotal = allDebts.filter(d => d.is_paid).reduce((sum, d) => sum + d.amount, 0) +
-                               safeAdjustments.filter(a => a.type === 'partial_debt_payout').reduce((sum, a) => sum + a.amount, 0);
-
-  const safeInflow = cashSalesTotal + collectedDebtsTotal;
-
-  // SAFE BOX OUTFLOWS:
-  // 1. Paid Farmer Dues = farmer_dues where is_paid = true
-  const paidDuesTotal = dues.filter(d => d.is_paid).reduce((sum, d) => sum + d.net_due, 0);
-
-  // 2. Paid Porter Payouts = porter_payouts where is_paid = true
-  const paidPortersTotal = porter.filter(p => p.is_paid).reduce((sum, p) => sum + p.amount, 0);
-
-  // 3. Expenses & Losses
-  const expensesTotal = dailyExpenses.reduce((sum, e) => sum + e.amount, 0) +
-                        personalExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const lossesTotal = losses.reduce((sum, l) => sum + l.amount, 0);
-
-  const safeOutflow = paidDuesTotal + paidPortersTotal + expensesTotal + lossesTotal;
+  // Lifetime running balance of Safe Box (never cleared monthly!)
+  const lifetimeCashSales = allSales.filter(s => s.payment_type === 'cash').reduce((sum, s) => sum + s.total_amount, 0);
+  const lifetimeCollectedDebts = allDebts.filter(d => d.is_paid).reduce((sum, d) => sum + d.amount, 0) +
+                                 safeAdjustments.filter(a => a.type === 'partial_debt_payout').reduce((sum, a) => sum + a.amount, 0);
   
-  const safeBoxBalance = safeInflow - safeOutflow;
+  const lifetimePaidDues = dues.filter(d => d.is_paid).reduce((sum, d) => sum + d.net_due, 0);
+  const lifetimePaidPorters = porter.filter(p => p.is_paid).reduce((sum, p) => sum + p.amount, 0);
 
-  // Render Stats
+  const lifetimeExpenses = dailyExpenses.reduce((sum, e) => sum + e.amount, 0) +
+                           personalExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const lifetimeLosses = losses.reduce((sum, l) => sum + l.amount, 0);
+
+  const lifetimeManualAdditions = safeAdjustments.filter(a => a.type === 'manual_addition').reduce((sum, a) => sum + a.amount, 0);
+  const lifetimeSafeInflow = lifetimeCashSales + lifetimeCollectedDebts + lifetimeManualAdditions;
+  const lifetimeSafeOutflow = lifetimePaidDues + lifetimePaidPorters + lifetimeExpenses + lifetimeLosses;
+  const safeBoxBalance = lifetimeSafeInflow - lifetimeSafeOutflow;
+
+  // Handle month selection options populating
+  const monthSelector = document.getElementById('stats-month-selector');
+  if (monthSelector && monthSelector.children.length === 0) {
+    const previousSelection = monthSelector.value || 'active';
+    const archives = await dbGetAll('stat_archives');
+    monthSelector.innerHTML = '';
+    
+    const activeOpt = document.createElement('option');
+    activeOpt.value = 'active';
+    activeOpt.textContent = currentLanguage === 'ar' ? 'الشهر الحالي (نشط)' : 'Current Month (Active)';
+    monthSelector.appendChild(activeOpt);
+
+    archives.sort((a, b) => b.month.localeCompare(a.month)).forEach(archive => {
+      const opt = document.createElement('option');
+      opt.value = archive.month;
+      opt.textContent = currentLanguage === 'ar' ? `أرشيف شهر ${archive.month}` : `Archive ${archive.month}`;
+      monthSelector.appendChild(opt);
+    });
+    monthSelector.value = previousSelection;
+  }
+
+  const selectedMonth = monthSelector ? monthSelector.value : 'active';
+
+  let cashSalesTotal = 0;
+  let collectedDebtsTotal = 0;
+  let paidDuesTotal = 0;
+  let paidPortersTotal = 0;
+  let expensesTotal = 0;
+  let lossesTotal = 0;
+  let totalCompanyCommission = 0;
+
+  if (selectedMonth === 'active') {
+    // Current calendar month filtering
+    const now = new Date();
+    const activeMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    const isCurrentMonth = (timestamp) => {
+      const d = new Date(timestamp);
+      const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return mKey === activeMonthKey;
+    };
+
+    cashSalesTotal = allSales.filter(s => s.payment_type === 'cash' && isCurrentMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
+
+    collectedDebtsTotal = allDebts.filter(d => d.is_paid && isCurrentMonth(d.created_at)).reduce((sum, d) => sum + d.amount, 0) +
+                          safeAdjustments.filter(a => (a.type === 'partial_debt_payout' || a.type === 'manual_addition') && isCurrentMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
+
+    paidDuesTotal = dues.filter(d => d.is_paid && isCurrentMonth(d.created_at)).reduce((sum, d) => sum + d.net_due, 0);
+
+    paidPortersTotal = porter.filter(p => p.is_paid && isCurrentMonth(p.created_at)).reduce((sum, p) => sum + p.amount, 0);
+
+    expensesTotal = dailyExpenses.filter(e => isCurrentMonth(e.created_at)).reduce((sum, e) => sum + e.amount, 0) +
+                    personalExpenses.filter(e => isCurrentMonth(e.created_at)).reduce((sum, e) => sum + e.amount, 0);
+    lossesTotal = losses.filter(l => isCurrentMonth(l.created_at)).reduce((sum, l) => sum + l.amount, 0);
+
+    const allSaleItems = await dbGetAll('sale_items');
+    const saleInvoiceIdsInMonth = new Set(allSales.filter(s => isCurrentMonth(s.created_at)).map(s => s.id));
+    totalCompanyCommission = allSaleItems.filter(item => saleInvoiceIdsInMonth.has(item.sale_invoice_id)).reduce((sum, item) => sum + Math.round(item.agreed_price * 0.05), 0);
+  } else {
+    // Fetch values from stat_archives
+    const archives = await dbGetAll('stat_archives');
+    const archive = archives.find(a => a.month === selectedMonth);
+    if (archive) {
+      cashSalesTotal = archive.cashSales;
+      collectedDebtsTotal = archive.collectedDebts;
+      paidDuesTotal = archive.paidDues;
+      paidPortersTotal = archive.paidPorters;
+      expensesTotal = archive.expenses;
+      lossesTotal = archive.losses;
+      totalCompanyCommission = archive.companyCommission;
+    }
+  }
+
+  // Render lifetime cash box balance
   safeBoxValEl.textContent = formatVal(safeBoxBalance, true);
+
+  // Render monthly stats
   totalCashSalesEl.textContent = formatVal(cashSalesTotal, true);
   totalCollectedDebtsEl.textContent = formatVal(collectedDebtsTotal, true);
   totalPaidDuesEl.textContent = formatVal(paidDuesTotal, true);
   totalPortersEl.textContent = formatVal(paidPortersTotal, true);
-
-  // Company revenue (عمولة الشركة): 5% of all SOLD crop prices
-  // Notice: The commission is saved on sale_items at 7% as part of total, but the company commission net rate of Alwa is 5%. Let's calculate:
-  const allSaleItems = await dbGetAll('sale_items');
-  const totalCompanyCommission = allSaleItems.reduce((sum, item) => sum + Math.round(item.agreed_price * 0.05), 0);
   totalCommissionEl.textContent = formatVal(totalCompanyCommission, true);
+
+  const netProfit = totalCompanyCommission - (expensesTotal + lossesTotal);
+  const profitEl = document.getElementById('val-net-profit');
+  if (profitEl) {
+    profitEl.textContent = formatVal(netProfit, true);
+  }
+
+  // Render detail list values
+  const dailyVal = selectedMonth === 'active' 
+    ? dailyExpenses.filter(e => {
+        const d = new Date(e.created_at);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      }).reduce((sum, e) => sum + e.amount, 0)
+    : expensesTotal;
+  const personalVal = selectedMonth === 'active' 
+    ? personalExpenses.filter(e => {
+        const d = new Date(e.created_at);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      }).reduce((sum, e) => sum + e.amount, 0)
+    : 0;
+
+  const dailyExpEl = document.getElementById('val-total-daily-expenses');
+  if (dailyExpEl) dailyExpEl.textContent = formatVal(dailyVal, true);
+
+  const personalExpEl = document.getElementById('val-total-personal-expenses');
+  if (personalExpEl) personalExpEl.textContent = formatVal(personalVal, true);
+
+  const lossValEl = document.getElementById('val-total-losses');
+  if (lossValEl) lossValEl.textContent = formatVal(lossesTotal, true);
 
   // Render SVG Chart distribution
   drawStatsChart(expensesTotal + lossesTotal, totalCompanyCommission);
 
-  // Render recent Ledger (Expenses + Losses)
-  renderLedgerTable(dailyExpenses, personalExpenses, losses);
+  // Render recent Ledger (Expenses + Losses) filtered by selected month
+  if (selectedMonth === 'active') {
+    const now = new Date();
+    const activeMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const filterByCurrentMonth = (items) => items.filter(item => {
+      const d = new Date(item.created_at);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === activeMonthKey;
+    });
+    renderLedgerTable(filterByCurrentMonth(dailyExpenses), filterByCurrentMonth(personalExpenses), filterByCurrentMonth(losses));
+  } else {
+    const filterByMonth = (items) => items.filter(item => {
+      const d = new Date(item.created_at);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === selectedMonth;
+    });
+    renderLedgerTable(filterByMonth(dailyExpenses), filterByMonth(personalExpenses), filterByMonth(losses));
+  }
+
+  // Render daily application logs
+  renderAppLogs();
 }
 
 function drawStatsChart(expenses, companyRevenue) {
-  const svg = document.getElementById('stats-svg-chart');
-  if (!svg) return;
-  svg.innerHTML = '';
+  const container = document.getElementById('svg-chart-container');
+  if (!container) return;
 
-  const total = expenses + companyRevenue;
+  const safeExpenses = isNaN(expenses) || expenses < 0 ? 0 : expenses;
+  const safeCompanyRevenue = isNaN(companyRevenue) || companyRevenue < 0 ? 0 : companyRevenue;
+  const total = safeExpenses + safeCompanyRevenue;
+
   if (total === 0) {
-    svg.innerHTML = `
-      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="var(--color-text-muted)" font-size="12">
-        ${currentLanguage === 'ar' ? 'لا توجد بيانات مالية متوفرة للرسم البياني' : 'No financial logs available for the chart'}
-      </text>
+    container.innerHTML = `
+      <svg id="stats-svg-chart" width="100%" height="230" viewBox="0 0 380 230" style="overflow: visible; width: 100%; height: 230px; direction: ltr !important;">
+        <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="var(--color-text-muted)" font-size="12" font-family="Cairo" font-weight="700">
+          ${currentLanguage === 'ar' ? 'لا توجد بيانات مالية متوفرة للرسم البياني' : 'No financial logs available for the chart'}
+        </text>
+      </svg>
     `;
     return;
   }
 
-  const expPercent = Math.round((expenses / total) * 100);
-  const revPercent = Math.round((companyRevenue / total) * 100);
+  // Math & Statistics calculations
+  const netProfit = safeCompanyRevenue - safeExpenses;
+  const expPercent = safeCompanyRevenue > 0 ? Math.min(100, Math.round((safeExpenses / safeCompanyRevenue) * 100)) : (safeExpenses > 0 ? 100 : 0);
+  const netProfitPercent = safeCompanyRevenue > 0 ? Math.round((netProfit / safeCompanyRevenue) * 100) : 0;
 
-  // Draw two bars side by side in high-quality SVG
-  svg.innerHTML = `
-    <!-- Expenses Bar -->
-    <rect x="15%" y="${180 - (expPercent * 1.5)}" width="25%" height="${expPercent * 1.5}" rx="6" fill="#E63946"></rect>
-    <text x="27.5%" y="${170 - (expPercent * 1.5)}" text-anchor="middle" fill="#E63946" font-size="11" font-weight="800">${formatVal(expPercent)}%</text>
-    <text x="27.5%" y="194" text-anchor="middle" fill="var(--color-text-dark)" font-size="11" font-weight="700">${currentLanguage === 'ar' ? 'المصاريف والخسائر' : 'Expenses'}</text>
+  const safeExpPercent = isNaN(expPercent) ? 0 : expPercent;
+  const safeNetProfitPercent = isNaN(netProfitPercent) ? 0 : netProfitPercent;
 
-    <!-- Company Net Commission Bar -->
-    <rect x="60%" y="${180 - (revPercent * 1.5)}" width="25%" height="${revPercent * 1.5}" rx="6" fill="#2A9D8F"></rect>
-    <text x="72.5%" y="${170 - (revPercent * 1.5)}" text-anchor="middle" fill="#2A9D8F" font-size="11" font-weight="800">${formatVal(revPercent)}%</text>
-    <text x="72.5%" y="194" text-anchor="middle" fill="var(--color-text-dark)" font-size="11" font-weight="700">${currentLanguage === 'ar' ? 'أرباح عمولتنا 5%' : 'Commissions'}</text>
+  // Outer Ring: Commission (أرباح العمولة) - 100% representation
+  // Inner Ring: Expenses & Losses (المصاريف والخسائر) - portion of commission consumed
+  const c1 = 471.24; // 2 * PI * 75
+  const c2 = 345.58; // 2 * PI * 55
+
+  const offsetOuter = 0;
+  const offsetInner = c2 - (safeExpPercent / 100) * c2;
+
+  // Financial Rating evaluation
+  let ratingTextAr = '';
+  let ratingTextEn = '';
+  let ratingColor = '';
+
+  if (netProfit > 0) {
+    if (safeExpPercent <= 15) {
+      ratingTextAr = 'ممتاز';
+      ratingTextEn = 'Excellent';
+      ratingColor = '#2D6A4F';
+    } else if (safeExpPercent <= 40) {
+      ratingTextAr = 'جيد جداً';
+      ratingTextEn = 'Very Good';
+      ratingColor = '#40916C';
+    } else if (safeExpPercent <= 70) {
+      ratingTextAr = 'مستقر';
+      ratingTextEn = 'Stable';
+      ratingColor = '#FF9F1C';
+    } else {
+      ratingTextAr = 'مقبول';
+      ratingTextEn = 'Acceptable';
+      ratingColor = '#E63946';
+    }
+  } else {
+    ratingTextAr = 'عجز مالي';
+    ratingTextEn = 'Deficit';
+    ratingColor = '#E63946';
+  }
+
+  const activeRatingText = currentLanguage === 'ar' ? ratingTextAr : ratingTextEn;
+
+  container.innerHTML = `
+    <svg id="stats-svg-chart" width="100%" height="230" viewBox="0 0 380 230" style="overflow: visible; width: 100%; height: 230px; direction: ltr !important;">
+      <defs>
+        <!-- Gradients -->
+        <linearGradient id="commissionGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#1B4332" />
+          <stop offset="100%" stop-color="#52B788" />
+        </linearGradient>
+        <linearGradient id="expenseGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#FF9F1C" />
+          <stop offset="100%" stop-color="#E63946" />
+        </linearGradient>
+        <linearGradient id="profitGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#2D6A4F" />
+          <stop offset="100%" stop-color="#74C69D" />
+        </linearGradient>
+        
+        <!-- Ring Glow Filters -->
+        <filter id="commissionGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#52B788" flood-opacity="0.25"/>
+        </filter>
+        <filter id="expenseGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#E63946" flood-opacity="0.25"/>
+        </filter>
+      </defs>
+
+      <!-- DOUBLE RADIAL RING DISPLAY (LEFT PART) -->
+      <g transform="translate(0, 0)">
+        <!-- Outer Ring Background Track (Commissions) -->
+        <circle cx="115" cy="115" r="75" fill="none" stroke="rgba(27, 67, 50, 0.06)" stroke-width="12" />
+        
+        <!-- Outer Ring Foreground -->
+        <circle cx="115" cy="115" r="75" fill="none" 
+                stroke="url(#commissionGrad)" stroke-width="12" stroke-linecap="round"
+                stroke-dasharray="${c1}" stroke-dashoffset="${offsetOuter}"
+                transform="rotate(-90, 115, 115)" filter="url(#commissionGlow)"
+                style="transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1);" />
+
+        <!-- Inner Ring Background Track (Expenses) -->
+        <circle cx="115" cy="115" r="55" fill="none" stroke="rgba(230, 57, 70, 0.06)" stroke-width="12" />
+        
+        <!-- Inner Ring Foreground -->
+        <circle cx="115" cy="115" r="55" fill="none" 
+                stroke="url(#expenseGrad)" stroke-width="12" stroke-linecap="round"
+                stroke-dasharray="${c2}" stroke-dashoffset="${offsetInner}"
+                transform="rotate(-90, 115, 115)" filter="url(#expenseGlow)"
+                style="transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);" />
+
+        <!-- CENTER INFO GRAPHICS -->
+        <text x="115" y="108" text-anchor="middle" dominant-baseline="middle" 
+              fill="${netProfit >= 0 ? '#1B4332' : '#E63946'}" font-size="22" font-weight="900" font-family="Cairo">
+          ${netProfit >= 0 ? '+' : ''}${safeNetProfitPercent}%
+        </text>
+        <text x="115" y="128" text-anchor="middle" dominant-baseline="middle" 
+              fill="var(--color-text-muted)" font-size="9" font-weight="700" font-family="Cairo">
+          ${currentLanguage === 'ar' ? 'الكفاءة المالية' : 'Financial Efficiency'}
+        </text>
+        <!-- Rating Text Badge background -->
+        <rect x="75" y="142" width="80" height="18" rx="9" fill="${ratingColor}1A" />
+        <text x="115" y="152" text-anchor="middle" dominant-baseline="middle" 
+              fill="${ratingColor}" font-size="9.5" font-weight="800" font-family="Cairo">
+          ${activeRatingText}
+        </text>
+      </g>
+
+      <!-- UNCONVENTIONAL HIGH-FIDELITY LEGEND CARD (RIGHT PART) -->
+      <g transform="translate(210, 20)">
+        <!-- Row 1: Net Commission Earnings -->
+        <g transform="translate(0, 15)">
+          <circle cx="160" cy="10" r="6" fill="url(#commissionGrad)" />
+          <text x="145" y="13" text-anchor="end" fill="var(--color-text-dark)" font-size="11" font-weight="700" font-family="Cairo">
+            ${currentLanguage === 'ar' ? 'أرباح العمولة' : 'Commissions'}
+          </text>
+          <text x="0" y="13" text-anchor="start" fill="#2D6A4F" font-size="11" font-weight="800" font-family="Cairo">
+            ${formatVal(safeCompanyRevenue)} د.ع
+          </text>
+        </g>
+
+        <!-- Row 2: Expenses & Losses -->
+        <g transform="translate(0, 55)">
+          <circle cx="160" cy="10" r="6" fill="url(#expenseGrad)" />
+          <text x="145" y="13" text-anchor="end" fill="var(--color-text-dark)" font-size="11" font-weight="700" font-family="Cairo">
+            ${currentLanguage === 'ar' ? 'مصاريف وخسائر' : 'Expenses & Losses'}
+          </text>
+          <text x="0" y="13" text-anchor="start" fill="#E63946" font-size="11" font-weight="800" font-family="Cairo">
+            ${formatVal(safeExpenses)} د.ع
+          </text>
+        </g>
+
+        <!-- Row 3: Net Profit Margin -->
+        <g transform="translate(0, 95)">
+          <circle cx="160" cy="10" r="6" fill="${netProfit >= 0 ? 'url(#profitGrad)' : '#E63946'}" />
+          <text x="145" y="13" text-anchor="end" fill="var(--color-text-dark)" font-size="11" font-weight="700" font-family="Cairo">
+            ${currentLanguage === 'ar' ? 'صافي الأرباح' : 'Net Profits'}
+          </text>
+          <text x="0" y="13" text-anchor="start" fill="${netProfit >= 0 ? '#2D6A4F' : '#E63946'}" font-size="12" font-weight="900" font-family="Cairo">
+            ${formatVal(netProfit)} د.ع
+          </text>
+        </g>
+
+        <!-- Horizontal Separator -->
+        <line x1="0" y1="130" x2="160" y2="130" stroke="rgba(0,0,0,0.06)" stroke-width="1" />
+
+        <!-- Efficiency Quote / Summary Statement -->
+        <g transform="translate(0, 140)">
+          <text x="160" y="15" text-anchor="end" fill="var(--color-text-muted)" font-size="9" font-weight="700" font-family="Cairo">
+            ${currentLanguage === 'ar' ? 'مؤشر كفاءة العلوة لليوم:' : 'Today\'s Office Index:'}
+          </text>
+          <text x="160" y="31" text-anchor="end" fill="${ratingColor}" font-size="10" font-weight="800" font-family="Cairo">
+            ${
+              netProfit > 0 
+                ? (currentLanguage === 'ar' ? `الأرباح تغطي المصاريف بـ ${safeNetProfitPercent}%` : `Profit covers expenses by ${safeNetProfitPercent}%`)
+                : (currentLanguage === 'ar' ? 'المصاريف تفوق نسبة الأرباح!' : 'Expenses exceed net profits!')
+            }
+          </text>
+        </g>
+      </g>
+    </svg>
   `;
 }
 
@@ -2857,6 +3883,12 @@ async function submitExpenseRecord() {
     created_at: Date.now()
   });
 
+  logAppEvent(
+    `تسجيل مصروفات (${type === 'daily' ? 'مصاريف علوة يومية' : 'مصاريف شخصية'}): ${subject}`,
+    `Recorded expense (${type === 'daily' ? 'Daily Office' : 'Personal'}): ${subject}`,
+    amount
+  );
+
   playSound('success');
   showToast(currentLanguage === 'ar' ? 'تم تسجيل المصروف وتحديث رصيد الخزنة!' : 'Expense recorded successfully!', 'check_circle');
 
@@ -2865,8 +3897,7 @@ async function submitExpenseRecord() {
   document.getElementById('expense-amount').value = '';
   closeBottomSheet('sheet-new-expense');
 
-  await refreshGlobalCaches();
-  renderStatsPanel();
+  await refreshAllUI();
 }
 
 async function submitLossRecord() {
@@ -2884,6 +3915,12 @@ async function submitLossRecord() {
     created_at: Date.now()
   });
 
+  logAppEvent(
+    `تسجيل خسائر وتلفيات: ${subject}`,
+    `Recorded loss / damage: ${subject}`,
+    amount
+  );
+
   playSound('success');
   showToast(currentLanguage === 'ar' ? 'تم تسجيل الخسارة التالفة بنجاح وتعديل الأرباح!' : 'Loss recorded successfully!', 'check_circle');
 
@@ -2892,8 +3929,7 @@ async function submitLossRecord() {
   document.getElementById('loss-amount').value = '';
   closeBottomSheet('sheet-new-loss');
 
-  await refreshGlobalCaches();
-  renderStatsPanel();
+  await refreshAllUI();
 }
 
 // ==============================================
@@ -2931,18 +3967,27 @@ async function openPrintPreview(saleId) {
 
   let itemsRowsHtml = items.map((it, idx) => {
     const cropName = it.crop_type;
+    const isCountUnit = it.unit === 'count';
+    const computedPrice = it.unit_price || (isCountUnit ? (it.box_count ? Math.round(it.agreed_price / it.box_count) : 0) : (it.weight_kg ? Math.round(it.agreed_price / it.weight_kg) : 0));
+    const priceStr = formatVal(computedPrice);
+    const weightStr = isCountUnit ? '-' : formatWeight(it.weight_kg, it.unit || 'kg');
+    const boxesStr = formatVal(it.box_count || 0);
+    const isLast = idx === items.length - 1;
+    const rowBorder = isLast ? '' : borderStyle;
+
     return `
-      <tr style="${borderStyle} height: auto;">
-        <td style="text-align: right; width: 10%; ${paddingClass}">${formatVal(idx + 1)}</td>
-        <td style="text-align: right; width: 40%; ${paddingClass} white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${cropName}">${cropName}</td>
-        <td style="text-align: center; width: 25%; ${paddingClass}">${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
-        <td style="text-align: left; width: 25%; ${paddingClass} font-weight: 700;">${formatVal(it.agreed_price)}</td>
+      <tr style="${rowBorder} height: auto;">
+        <td style="text-align: right; width: 35%; ${paddingClass} white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${cropName}">${cropName}</td>
+        <td style="text-align: center; width: 25%; ${paddingClass}">${priceStr}</td>
+        <td style="text-align: center; width: 25%; ${paddingClass}">${weightStr}</td>
+        <td style="text-align: left; width: 15%; ${paddingClass} font-weight: 700;">${boxesStr}</td>
       </tr>
     `;
   }).join('');
 
   // Calculate dynamic totals for the paper preview
   const subtotal = items.reduce((sum, item) => sum + item.agreed_price, 0);
+  const totalCommissions = items.reduce((sum, item) => sum + item.commission_amount, 0);
   const carrying = items.reduce((sum, item) => sum + item.porter_fee, 0);
 
   // Render Receipt Preview HTML with pixel-perfect, highly responsive layout for 58mm/80mm
@@ -2975,10 +4020,10 @@ async function openPrintPreview(saleId) {
     <table class="receipt-table" style="width: 100%; border-collapse: collapse; ${tableFontSizeClass} table-layout: fixed; direction: rtl; margin-bottom: 6px;">
       <thead>
         <tr style="border-bottom: 1.5px dashed #000; height: 24px;">
-          <th style="text-align: right; font-weight:700; width: 10%; padding-bottom: 2px;">ت</th>
-          <th style="text-align: right; font-weight:700; width: 40%; padding-bottom: 2px;">الصنف</th>
-          <th style="text-align: center; font-weight:700; width: 25%; padding-bottom: 2px;">الوزن</th>
-          <th style="text-align: left; font-weight:700; width: 25%; padding-bottom: 2px;">المجموع</th>
+          <th style="text-align: right; font-weight:700; width: 35%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'الصنف' : 'Item'}</th>
+          <th style="text-align: center; font-weight:700; width: 25%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
+          <th style="text-align: center; font-weight:700; width: 25%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
+          <th style="text-align: left; font-weight:700; width: 15%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</th>
         </tr>
       </thead>
       <tbody>
@@ -2986,18 +4031,14 @@ async function openPrintPreview(saleId) {
       </tbody>
     </table>
 
-    <div style="${fontSizeClass} border-top: 1px dashed #000; margin-top: 4px; padding-top: 6px; line-height: 1.4; direction: rtl;">
-      <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-        <span>مجموع البضاعة:</span>
-        <span style="font-weight:600;">${formatVal(subtotal, true)}</span>
-      </div>
+    <div style="${fontSizeClass} border-top: 1.5px dashed #000; margin-top: 4px; padding-top: 6px; line-height: 1.4; direction: rtl;">
       ${sale.bags_cost > 0 ? `
-        <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
           <span>تكلفة الأكياس والكراتين:</span>
           <span style="font-weight:600;">${formatVal(sale.bags_cost, true)}</span>
         </div>
       ` : ''}
-      <div style="display:flex; justify-content:space-between; font-weight: 800; border-top: 1.5px dashed #000; margin-top: 4px; padding-top: 4px;">
+      <div style="display:flex; justify-content:space-between; font-weight: 800; ${sale.bags_cost > 0 ? 'border-top: 1.2px dashed #000; margin-top: 4px; padding-top: 4px;' : ''}">
         <span>الإجمالي المستحق:</span>
         <span style="font-size: 1.1em;">${formatVal(sale.total_amount, true)}</span>
       </div>
@@ -4302,8 +5343,13 @@ async function importDatabaseFromJSON(event) {
         return;
       }
 
-      const confirm = window.confirm(currentLanguage === 'ar' ? 'تحذير هام! استيراد هذه النسخة سيؤدي لمسح جميع البيانات الحالية وإحلال بيانات النسخة الاحتياطية بدلاً منها. هل تود الاستمرار؟' : 'Warning! This will overwrite all current local transactions. Proceed?');
-      if (!confirm) return;
+      const confirmTitle = currentLanguage === 'ar' ? 'استيراد قاعدة البيانات' : 'Import Database';
+      const confirmMessage = currentLanguage === 'ar' ? 
+        'تحذير هام! استيراد هذه النسخة سيؤدي لمسح جميع البيانات الحالية وإحلال بيانات النسخة الاحتياطية بدلاً منها. هل تود الاستمرار؟' : 
+        'Warning! This will overwrite all current local transactions. Proceed?';
+      
+      const isConfirmed = await showCustomConfirm(confirmTitle, confirmMessage);
+      if (!isConfirmed) return;
 
       // Clear and rewrite DB
       for (const store of stores) {
@@ -4325,13 +5371,7 @@ async function importDatabaseFromJSON(event) {
       showToast(currentLanguage === 'ar' ? 'تم استعادة البيانات والملفات والذمم المالية بنجاح!' : 'Database successfully restored from JSON backup!', 'check_circle');
       
       // Reload UI
-      await refreshGlobalCaches();
-      renderImportsList();
-      renderSalesList();
-      renderDebtsList();
-      renderDuesList();
-      renderPortersList();
-      renderStatsPanel();
+      await refreshAllUI();
     } catch (err) {
       showToast('خطأ فادح أثناء قراءة الملف أو استيراده', 'warning', true);
     }
@@ -4465,10 +5505,12 @@ async function showInvoiceDetails(invoiceId, type) {
   if (!detailsBody) return;
   detailsBody.innerHTML = '';
 
-  const titleEl = document.getElementById('details-sheet-title');
+  const titleEl = document.getElementById('details-sheet-title') || document.getElementById('txt-details-sheet-title');
 
   if (type === 'import') {
-    titleEl.textContent = currentLanguage === 'ar' ? 'تفاصيل فاتورة الاستيراد' : 'Import Invoice Details';
+    if (titleEl) {
+      titleEl.textContent = currentLanguage === 'ar' ? 'تفاصيل فاتورة الاستيراد' : 'Import Invoice Details';
+    }
     const imp = await dbGet('import_invoices', invoiceId);
     if (!imp) return;
     const farmer = await dbGet('farmers', imp.farmer_id);
@@ -4476,52 +5518,123 @@ async function showInvoiceDetails(invoiceId, type) {
     const items = await dbGetAll('import_items');
     const impItems = items.filter(it => it.invoice_id === invoiceId);
 
-    let itemsHtml = impItems.map((it, idx) => `
-      <tr>
-        <td>${formatVal(idx + 1)}</td>
-        <td>${it.crop_type}</td>
-        <td>${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
-        <td>${formatVal(it.box_count)} صندوق</td>
-      </tr>
-    `).join('');
+    let itemsHtml = impItems.map((it, idx) => {
+      const cropIcon = getCropIcon(it.crop_type);
+      return `
+        <tr style="border-bottom: 1px solid #f1f5f9; background: var(--color-white); transition: background-color 0.15s;">
+          <td style="padding: 10px 12px; font-weight: 600; color: #94a3b8; text-align: center; font-size: 11px;">${formatVal(idx + 1)}</td>
+          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-text-dark); text-align: start;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #f8fafc; font-size: 13px; border: 1px solid #f1f5f9;">${cropIcon}</span>
+              <span style="font-size: 12.5px;">${it.crop_type}</span>
+            </div>
+          </td>
+          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-primary-mid); text-align: start; font-size: 12px;">${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
+          <td style="padding: 10px 12px; text-align: start;">
+            <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10.5px; white-space: nowrap;">
+              ${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'صندوق' : 'Boxes'}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    const isSettled = imp.is_settled;
+    const statusText = isSettled 
+      ? (currentLanguage === 'ar' ? 'مسواة حسابياً' : 'Settled') 
+      : (currentLanguage === 'ar' ? 'نشطة / قيد البيع' : 'Active');
+    const statusBg = isSettled ? '#f0fdf4' : '#fffbeb';
+    const statusColor = isSettled ? '#15803d' : '#b45309';
+    const statusBorder = isSettled ? '1px solid #bbf7d0' : '1px solid #fef3c7';
+    const statusIcon = isSettled ? 'check_circle' : 'hourglass_empty';
 
     detailsBody.innerHTML = `
-      <div style="padding: 12px 16px; background: rgba(0,0,0,0.02); border-radius: 12px; margin-bottom: 16px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
-          <span style="color:var(--color-text-muted);">رقم الفاتورة:</span>
-          <span style="font-weight:700;"># ${formatVal(imp.id)}</span>
+      <!-- Compact Receipt Header -->
+      <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px;">#${formatVal(imp.id)}</span>
+            <span style="color: #cbd5e1; font-weight: 300;">|</span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
+              <span style="color: var(--color-text-dark); font-weight: 700; font-size: 13px;">${farmer.name}</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; background: ${statusBg}; color: ${statusColor}; border: ${statusBorder}; font-weight: 700; font-size: 11px; line-height: 1;">
+            <span class="material-icons-round" style="font-size: 14px;">${statusIcon}</span>
+            <span>${statusText}</span>
+          </div>
         </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
-          <span style="color:var(--color-text-muted);">الفلاح المورد:</span>
-          <span style="font-weight:700; color:var(--color-primary);">${farmer.name}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
-          <span style="color:var(--color-text-muted);">نوع سيارة الحمل:</span>
-          <span>${imp.vehicle_type}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-          <span style="color:var(--color-text-muted);">تاريخ الاستلام:</span>
-          <span>${new Date(imp.invoice_date).toLocaleString()}</span>
+        
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11px;">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">calendar_today</span>
+            <span>${new Date(imp.invoice_date).toLocaleDateString()}</span>
+          </div>
+          ${imp.vehicle_type ? `
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">local_shipping</span>
+            <span>${imp.vehicle_type}</span>
+          </div>
+          ` : ''}
         </div>
       </div>
 
-      <h4 style="font-size:13px; font-weight:700; color:var(--color-primary); margin-bottom:8px;">أصناف البضائع المستلمة بالفاتورة:</h4>
-      <table class="details-table" style="width:100%; text-align:right; border-collapse:collapse; font-size:12px;">
-        <thead>
-          <tr style="border-bottom: 2px solid var(--color-border); color:var(--color-text-muted);">
-            <th style="padding: 6px 4px;">ت</th>
-            <th style="padding: 6px 4px;">المحصول</th>
-            <th style="padding: 6px 4px;">الوزن الكلي القائم</th>
-            <th style="padding: 6px 4px;">العدد / الصناديق</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemsHtml}
-        </tbody>
-      </table>
+      <!-- Compact Table -->
+      <div style="border: 1.5px solid #f1f5f9; border-radius: 16px; overflow: hidden; background: var(--color-white); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); margin-top: 12px; margin-bottom: 12px;">
+        <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: #f8fafc; border-bottom: 1.5px solid #f1f5f9; color: #64748b;">
+              <th style="padding: 10px 12px; font-weight: 800; text-align: center; width: 40px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">#</th>
+              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'المحصول' : 'Crop'}</th>
+              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'الوزن الكلي' : 'Total Weight'}</th>
+              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'العدد' : 'Boxes'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Compact Settle Panel -->
+      <div style="margin-top: 4px;">
+        ${!isSettled ? `
+          <button id="btn-details-settle-import" class="btn-primary" style="width: 100%; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-success); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(82, 183, 136, 0.15);">
+            <span class="material-icons-round" style="font-size: 16px;">check_circle</span>
+            <span>${currentLanguage === 'ar' ? 'تسوية الفاتورة وإغلاقها' : 'Settle & Close'}</span>
+          </button>
+        ` : `
+          <div style="display: flex; align-items: center; gap: 6px; color: var(--color-success); font-weight: 800; font-size: 11.5px; background: rgba(82, 183, 136, 0.05); padding: 8px 12px; border-radius: 12px; border: 1px dashed rgba(82, 183, 136, 0.2);">
+            <span class="material-icons-round" style="font-size: 18px;">verified</span>
+            <span>${currentLanguage === 'ar' ? 'تم تسوية وتصفية هذه الفاتورة بالكامل.' : 'This invoice is fully settled.'}</span>
+          </div>
+        `}
+      </div>
     `;
+
+    const settleBtn = document.getElementById('btn-details-settle-import');
+    if (settleBtn) {
+      settleBtn.addEventListener('click', async () => {
+        closeBottomSheet('sheet-invoice-details');
+        const confirmTitle = currentLanguage === 'ar' ? 'تسوية حساب الفاتورة' : 'Settle Import Invoice';
+        const confirmMsg = currentLanguage === 'ar' 
+          ? `هل أنت متأكد من تسوية حساب وإغلاق فاتورة الاستيراد رقم #${imp.id} للفلاح "${farmer.name}"؟` 
+          : `Are you sure you want to settle accounts and close import invoice #${imp.id} for farmer "${farmer.name}"?`;
+        const isConfirmed = await showCustomConfirm(confirmTitle, confirmMsg);
+        if (isConfirmed) {
+          await settleImportInvoice(imp.id);
+          await showInvoiceDetails(imp.id, 'import');
+        } else {
+          openBottomSheet('sheet-invoice-details');
+        }
+      });
+    }
+
   } else {
-    titleEl.textContent = currentLanguage === 'ar' ? 'تفاصيل فاتورة البيع والأرباح' : 'Sale Invoice Details';
+    if (titleEl) {
+      titleEl.textContent = currentLanguage === 'ar' ? 'تفاصيل فاتورة البيع والأرباح' : 'Sale Invoice Details';
+    }
     const sale = await dbGet('sale_invoices', invoiceId);
     if (!sale) return;
     const customer = await dbGet('customers', sale.customer_id);
@@ -4529,71 +5642,257 @@ async function showInvoiceDetails(invoiceId, type) {
     const items = await dbGetAll('sale_items');
     const saleItems = items.filter(it => it.sale_invoice_id === invoiceId);
 
-    let itemsHtml = saleItems.map((it, idx) => `
-      <tr>
-        <td>${formatVal(idx + 1)}</td>
-        <td>${it.crop_type}</td>
-        <td>${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
-        <td>${formatVal(it.box_count)} صندوق</td>
-        <td>${formatVal(it.agreed_price, true)}</td>
-      </tr>
-    `).join('');
+    let itemsHtml = saleItems.map((it, idx) => {
+      const cropIcon = getCropIcon(it.crop_type);
+      return `
+        <tr style="border-bottom: 1px solid #f1f5f9; background: var(--color-white); transition: background-color 0.15s;">
+          <td style="padding: 10px 12px; font-weight: 600; color: #94a3b8; text-align: center; font-size: 11px;">${formatVal(idx + 1)}</td>
+          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-text-dark); text-align: start;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #f8fafc; font-size: 13px; border: 1px solid #f1f5f9;">${cropIcon}</span>
+              <span style="font-size: 12.5px;">${it.crop_type}</span>
+            </div>
+          </td>
+          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-primary-mid); text-align: start; font-size: 12px;">${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
+          <td style="padding: 10px 12px; text-align: start;">
+            <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10.5px; white-space: nowrap;">
+              ${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'صندوق' : 'Boxes'}
+            </span>
+          </td>
+          <td style="padding: 10px 12px; font-weight: 800; color: var(--color-primary); text-align: start; white-space: nowrap; font-size: 12px;">${formatVal(it.agreed_price, true)}</td>
+        </tr>
+      `;
+    }).join('');
 
     const subtotal = saleItems.reduce((sum, item) => sum + item.agreed_price, 0);
+    const totalCommissions = saleItems.reduce((sum, item) => sum + item.commission_amount, 0);
+    const totalCarrying = saleItems.reduce((sum, item) => sum + item.porter_fee, 0);
+
+    const debts = await dbGetAll('debts');
+    const isSettled = isSaleInvoiceSettled(sale, debts);
+    const debt = debts.find(d => d.sale_invoice_id === sale.id);
+
+    let statusText = '';
+    let statusBg = '';
+    let statusColor = '';
+    let statusBorder = '';
+    let statusIcon = '';
+
+    if (sale.payment_type === 'cash') {
+      statusText = currentLanguage === 'ar' ? 'مدفوعة نقداً' : 'Paid Cash';
+      statusBg = '#f0fdf4';
+      statusColor = '#15803d';
+      statusBorder = '1px solid #bbf7d0';
+      statusIcon = 'payments';
+    } else {
+      if (isSettled) {
+        statusText = currentLanguage === 'ar' ? 'دين مسدد' : 'Settled';
+        statusBg = '#f0f9ff';
+        statusColor = '#0369a1';
+        statusBorder = '1px solid #bae6fd';
+        statusIcon = 'check_circle';
+      } else {
+        const remaining = debt ? debt.amount : sale.total_amount;
+        statusText = currentLanguage === 'ar' ? `بالأجل (${formatVal(remaining)} د.ع)` : `Credit (${formatVal(remaining)} IQD)`;
+        statusBg = '#fef2f2';
+        statusColor = '#b91c1c';
+        statusBorder = '1px solid #fecaca';
+        statusIcon = 'hourglass_empty';
+      }
+    }
+
+    // Dynamic Debt Progress Section (Super compact)
+    let debtProgressHtml = '';
+    if (sale.payment_type === 'debt' && debt) {
+      const outstanding = debt.amount;
+      const originalTotal = sale.total_amount;
+      const paidAmount = originalTotal - outstanding;
+      const progressPercent = Math.min(100, Math.max(0, Math.round((paidAmount / originalTotal) * 100)));
+
+      debtProgressHtml = `
+        <div style="background: var(--color-white); border: 1.5px solid #fee2e2; border-radius: 20px; padding: 16px; margin-bottom: 12px; font-family: inherit; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <!-- Left Side: Progress Pill -->
+            <span style="background: #fff1f2; color: #dc2626; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 8px; border: 1px solid #ffe4e6; line-height: 1;">
+              ${progressPercent}% ${currentLanguage === 'ar' ? 'مُسدد' : 'Paid'}
+            </span>
+            
+            <!-- Right Side: Title and Icon -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #dc2626; font-weight: 700; font-size: 13px;">
+                ${currentLanguage === 'ar' ? 'تتبع حالة سداد الدين:' : 'Debt Payment Tracker:'}
+              </span>
+              <div style="width: 22px; height: 22px; border-radius: 6px; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <span class="material-icons-round" style="font-size: 14px;">analytics</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div style="height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 14px;">
+            <div style="width: ${progressPercent}%; height: 100%; background: #10b981; border-radius: 10px; transition: width 0.8s ease;"></div>
+          </div>
+
+          <!-- Three Columns Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <!-- Left Column: Outstanding -->
+            <div style="text-align: start; flex: 1;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
+                ${currentLanguage === 'ar' ? 'المتبقي بذمة الزبون:' : 'Outstanding Debt:'}
+              </span>
+              <strong style="color: #ef4444; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(outstanding, true)}</strong>
+            </div>
+
+            <!-- Middle Column: Paid -->
+            <div style="text-align: center; flex: 1;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
+                ${currentLanguage === 'ar' ? 'المبلغ المسدد:' : 'Paid So Far:'}
+              </span>
+              <strong style="color: #10b981; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(paidAmount, true)}</strong>
+            </div>
+
+            <!-- Right Column: Original -->
+            <div style="text-align: end; flex: 1;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
+                ${currentLanguage === 'ar' ? 'المبلغ الأصلي للفاتورة:' : 'Original Invoice Total:'}
+              </span>
+              <strong style="color: #1e293b; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(originalTotal, true)}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     detailsBody.innerHTML = `
-      <div style="padding: 12px 16px; background: rgba(0,0,0,0.02); border-radius: 12px; margin-bottom: 16px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
-          <span style="color:var(--color-text-muted);">رمز تتبع الفاتورة (ID):</span>
-          <span style="font-weight:700;"># ${sale.order_id || formatVal(sale.id)}</span>
+      <!-- Compact Receipt Header -->
+      <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
+            <span style="color: #cbd5e1; font-weight: 300;">|</span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
+              <span style="color: var(--color-text-dark); font-weight: 700; font-size: 13px;">${customer.name}</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; background: ${statusBg}; color: ${statusColor}; border: ${statusBorder}; font-weight: 700; font-size: 11px; line-height: 1;">
+            <span class="material-icons-round" style="font-size: 14px;">${statusIcon}</span>
+            <span>${statusText}</span>
+          </div>
         </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
-          <span style="color:var(--color-text-muted);">الزبون المشتري:</span>
-          <span style="font-weight:700; color:var(--color-primary);">${customer.name}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
-          <span style="color:var(--color-text-muted);">طريقة الدفع:</span>
-          <span style="font-weight:700;">${sale.payment_type === 'cash' ? '💵 نقد' : '📋 دين بالأجل'}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-          <span style="color:var(--color-text-muted);">تاريخ الإصدار:</span>
-          <span>${new Date(sale.created_at).toLocaleString()}</span>
+        
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11px;">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">calendar_today</span>
+            <span>${new Date(sale.created_at).toLocaleDateString()}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">credit_card</span>
+            <span>${currentLanguage === 'ar' ? 'الدفع:' : 'Payment:'} ${sale.payment_type === 'cash' ? (currentLanguage === 'ar' ? '💵 نقد' : 'Cash') : (currentLanguage === 'ar' ? '📋 دين بالأجل' : 'Debt')}</span>
+          </div>
         </div>
       </div>
 
-      <h4 style="font-size:13px; font-weight:700; color:var(--color-primary); margin-bottom:8px;">أصناف المبيعات:</h4>
-      <table class="details-table" style="width:100%; text-align:right; border-collapse:collapse; font-size:12px;">
-        <thead>
-          <tr style="border-bottom: 2px solid var(--color-border); color:var(--color-text-muted);">
-            <th style="padding: 6px 4px;">ت</th>
-            <th style="padding: 6px 4px;">المحصول</th>
-            <th style="padding: 6px 4px;">الوزن المباع</th>
-            <th style="padding: 6px 4px;">الصناديق</th>
-            <th style="padding: 6px 4px;">سعر البيع الكلي</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemsHtml}
-        </tbody>
-      </table>
+      <!-- Outstanding Debt Tracker if needed -->
+      ${debtProgressHtml}
 
-      <div style="margin-top: 16px; padding: 12px; border-top: 1px dashed rgba(0,0,0,0.1); line-height: 1.6; font-size:12px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
-          <span>مجموع المبيعات الكلي:</span>
-          <span>${formatVal(subtotal, true)}</span>
+      <!-- Compact Table -->
+      <div style="border: 1.5px solid #f1f5f9; border-radius: 16px; overflow: hidden; background: var(--color-white); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); margin-top: 12px; margin-bottom: 12px;">
+        <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: #f8fafc; border-bottom: 1.5px solid #f1f5f9; color: #64748b;">
+              <th style="padding: 10px 12px; font-weight: 800; text-align: center; width: 40px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">#</th>
+              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'المحصول' : 'Crop'}</th>
+              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
+              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'العلب' : 'Boxes'}</th>
+              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Financial Calculation Summary List -->
+      <div style="background: linear-gradient(135deg, var(--color-white) 0%, rgba(0, 119, 182, 0.01) 100%); border: 1px solid rgba(0, 119, 182, 0.08); border-radius: 14px; padding: 10px 12px; line-height: 1.5; font-size: 12px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'مجموع قيمة البضاعة:' : 'Goods Subtotal:'}</span>
+          <span style="font-weight: 700; color: var(--color-text-dark);">${formatVal(subtotal, true)}</span>
         </div>
-        ${sale.bags_cost > 0 ? `
-          <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
-            <span>أجور الأكياس والكراتين:</span>
-            <span>+ ${formatVal(sale.bags_cost, true)}</span>
+        ${totalCommissions > 0 ? `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'عمولة المكتب (7%):' : 'Office Commission (7%):'}</span>
+            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(totalCommissions, true)}</span>
           </div>
         ` : ''}
-        <div style="display:flex; justify-content:space-between; font-size: 14px; font-weight:800; color:var(--color-primary); border-top:1.5px dashed rgba(0,0,0,0.1); margin-top:6px; padding-top:6px;">
-          <span>الإجمالي المستحق بالفاتورة:</span>
-          <span>${formatVal(sale.total_amount, true)}</span>
+        ${totalCarrying > 0 ? `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'أجور تحميل (حمالية):' : 'Carrying Fee:'}</span>
+            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(totalCarrying, true)}</span>
+          </div>
+        ` : ''}
+        ${sale.bags_cost > 0 ? `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'أجور الأكياس والكراتين:' : 'Bags/Boxes Cost:'}</span>
+            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(sale.bags_cost, true)}</span>
+          </div>
+        ` : ''}
+        
+        <div style="display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 900; color: var(--color-primary); border-top: 1px dashed rgba(0,0,0,0.08); margin-top: 6px; padding-top: 6px;">
+          <span>${currentLanguage === 'ar' ? 'صافي الإجمالي المستحق:' : 'Grand Total:'}</span>
+          <span style="font-family: monospace;">${formatVal(sale.total_amount, true)}</span>
         </div>
       </div>
+
+      <!-- Quick Actions (Printing & Settle Options) -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <!-- Print Button -->
+        <button id="btn-details-print-sale" class="btn-primary" style="flex: 1; min-width: 110px; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-primary-mid); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(0, 150, 199, 0.15);">
+          <span class="material-icons-round" style="font-size: 16px;">print</span>
+          <span>${currentLanguage === 'ar' ? 'طباعة الفاتورة' : 'Print'}</span>
+        </button>
+        
+        <!-- Debt Settlement Buttons (Only for pending debts) -->
+        ${(sale.payment_type === 'debt' && !isSettled && debt) ? `
+          <button id="btn-details-partial-pay" class="btn-primary" style="flex: 1; min-width: 90px; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-info); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(0, 119, 182, 0.1);">
+            <span class="material-icons-round" style="font-size: 16px;">payments</span>
+            <span>${currentLanguage === 'ar' ? 'تسديد دفعة' : 'Pay Partial'}</span>
+          </button>
+          <button id="btn-details-full-settle" class="btn-primary" style="flex: 1; min-width: 90px; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-success); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(82, 183, 136, 0.15);">
+            <span class="material-icons-round" style="font-size: 16px;">check_circle</span>
+            <span>${currentLanguage === 'ar' ? 'تسديد كامل' : 'Settle All'}</span>
+          </button>
+        ` : ''}
+      </div>
     `;
+
+    // Bind Print Button
+    const printBtn = document.getElementById('btn-details-print-sale');
+    if (printBtn) {
+      printBtn.addEventListener('click', async () => {
+        closeBottomSheet('sheet-invoice-details');
+        await openPrintPreview(sale.id);
+      });
+    }
+
+    // Bind Partial Pay Button
+    const partialBtn = document.getElementById('btn-details-partial-pay');
+    if (partialBtn && debt) {
+      partialBtn.addEventListener('click', async () => {
+        closeBottomSheet('sheet-invoice-details');
+        await openPaymentSheet(debt.id);
+      });
+    }
+
+    // Bind Full Settle Button
+    const fullSettleBtn = document.getElementById('btn-details-full-settle');
+    if (fullSettleBtn && debt) {
+      fullSettleBtn.addEventListener('click', async () => {
+        closeBottomSheet('sheet-invoice-details');
+        await settleFullDebtDirectly(debt.id);
+      });
+    }
   }
 
   openBottomSheet('sheet-invoice-details');
@@ -4650,6 +5949,15 @@ function applyBilingualTranslations() {
 
   document.getElementById('lbl-chart-title').textContent = t.txtChartTitle;
   document.getElementById('lbl-ledger-title').textContent = t.txtLedgerTitle;
+
+  const elStatsPeriod = document.getElementById('txt-stats-period-lbl');
+  if (elStatsPeriod) elStatsPeriod.textContent = currentLanguage === 'ar' ? 'فترة الإحصائيات:' : 'Stats Period:';
+
+  const elPrintInv = document.getElementById('txt-print-inventory-lbl');
+  if (elPrintInv) elPrintInv.textContent = currentLanguage === 'ar' ? 'طباعة قائمة جرد يومية' : 'Print Daily Inventory';
+
+  const elLogsTitle = document.getElementById('txt-logs-title-lbl');
+  if (elLogsTitle) elLogsTitle.textContent = currentLanguage === 'ar' ? 'سجل عمليات التطبيق اليومي' : 'Daily App Activity Log';
 
   // Settings Screen
   document.getElementById('lbl-office-title').textContent = t.officeSettingsTitle;
@@ -4719,6 +6027,11 @@ function applyBilingualTranslations() {
   document.getElementById('sheet-payment-title-h3').textContent = t.sheetPaymentTitle;
   document.getElementById('lbl-payment-amount-label').textContent = t.lblPayAmount;
   document.getElementById('btn-submit-payment').textContent = t.btnSubmitPayment;
+
+  const elAddLiquidity = document.getElementById('txt-add-liquidity-btn-lbl');
+  if (elAddLiquidity) {
+    elAddLiquidity.textContent = currentLanguage === 'ar' ? 'إضافة سيولة نقدية' : 'Add Cash Liquidity';
+  }
 
   // Language direction configurations
   if (currentLanguage === 'ar') {
@@ -4853,6 +6166,225 @@ function updateUIActiveTab(tabId) {
   }
 }
 
+async function executeMonthlyRollover(monthKey) {
+  const allSales = await dbGetAll('sale_invoices');
+  const allDebts = await dbGetAll('debts');
+  const dues = await dbGetAll('farmer_dues');
+  const porter = await dbGetAll('porter_payouts');
+  const dailyExpenses = await dbGetAll('daily_expenses');
+  const personalExpenses = await dbGetAll('personal_expenses');
+  const losses = await dbGetAll('losses');
+  const safeAdjustments = await dbGetAll('safe_adjustments');
+  const allSaleItems = await dbGetAll('sale_items');
+
+  const isTargetMonth = (timestamp) => {
+    const d = new Date(timestamp);
+    const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return mKey === monthKey;
+  };
+
+  const cashSalesTotal = allSales.filter(s => s.payment_type === 'cash' && isTargetMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
+  
+  const collectedDebtsTotal = allDebts.filter(d => d.is_paid && isTargetMonth(d.created_at)).reduce((sum, d) => sum + d.amount, 0) +
+                               safeAdjustments.filter(a => (a.type === 'partial_debt_payout' || a.type === 'manual_addition') && isTargetMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
+
+  const paidDuesTotal = dues.filter(d => d.is_paid && isTargetMonth(d.created_at)).reduce((sum, d) => sum + d.net_due, 0);
+  const paidPortersTotal = porter.filter(p => p.is_paid && isTargetMonth(p.created_at)).reduce((sum, p) => sum + p.amount, 0);
+
+  const expensesTotal = dailyExpenses.filter(e => isTargetMonth(e.created_at)).reduce((sum, e) => sum + e.amount, 0) +
+                        personalExpenses.filter(e => isTargetMonth(e.created_at)).reduce((sum, e) => sum + e.amount, 0);
+  const lossesTotal = losses.filter(l => isTargetMonth(l.created_at)).reduce((sum, l) => sum + l.amount, 0);
+
+  const saleInvoiceIdsInMonth = new Set(allSales.filter(s => isTargetMonth(s.created_at)).map(s => s.id));
+  const totalCompanyCommission = allSaleItems.filter(item => saleInvoiceIdsInMonth.has(item.sale_invoice_id)).reduce((sum, item) => sum + Math.round(item.agreed_price * 0.05), 0);
+
+  await dbAdd('stat_archives', {
+    id: monthKey,
+    month: monthKey,
+    cashSales: cashSalesTotal,
+    collectedDebts: collectedDebtsTotal,
+    paidDues: paidDuesTotal,
+    paidPorters: paidPortersTotal,
+    expenses: expensesTotal,
+    losses: lossesTotal,
+    companyCommission: totalCompanyCommission,
+    archived_at: Date.now()
+  });
+
+  logAppEvent(
+    `ترحيل تلقائي وأرشفة إحصائيات شهر: ${monthKey}`,
+    `Automatic monthly rollover and archived statistics for: ${monthKey}`
+  );
+}
+
+async function checkAndApplyMonthlyRollover() {
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  
+  const lastRolloverMonth = localStorage.getItem('alwa_last_rollover_month');
+  
+  if (lastRolloverMonth && lastRolloverMonth !== currentMonthKey) {
+    try {
+      await executeMonthlyRollover(lastRolloverMonth);
+    } catch (e) {
+      console.error('Failed to perform monthly rollover archiving:', e);
+    }
+  }
+  
+  localStorage.setItem('alwa_last_rollover_month', currentMonthKey);
+}
+
+async function printDailyInventoryList() {
+  const allSales = await dbGetAll('sale_invoices');
+  const allSaleItems = await dbGetAll('sale_items');
+  const allImports = await dbGetAll('import_invoices');
+  const allImportItems = await dbGetAll('import_items');
+  const allFarmers = await dbGetAll('farmers');
+  const allCustomers = await dbGetAll('customers');
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todayEnd = todayStart + 24 * 60 * 60 * 1000;
+
+  // Filter sales made today
+  const todaySales = allSales.filter(s => s.created_at >= todayStart && s.created_at < todayEnd);
+  const todaySaleIds = new Set(todaySales.map(s => s.id));
+  const todaySaleItems = allSaleItems.filter(item => todaySaleIds.has(item.sale_invoice_id));
+
+  if (todaySaleItems.length === 0) {
+    showToast(currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لليوم لطباعة قائمة الجرد!' : 'No sales recorded today to generate an inventory list!', 'warning', true);
+    return;
+  }
+
+  // Group by crop type
+  const inventoryMap = {};
+
+  todaySaleItems.forEach(item => {
+    const crop = item.crop_type;
+    if (!inventoryMap[crop]) {
+      inventoryMap[crop] = {
+        cropType: crop,
+        soldWeight: 0,
+        soldBoxes: 0,
+        farmers: new Set(),
+        customers: new Set(),
+        unit: item.unit || 'kg'
+      };
+    }
+    inventoryMap[crop].soldWeight += item.weight_kg || 0;
+    inventoryMap[crop].soldBoxes += item.box_count || 0;
+
+    // Find customer
+    const invoice = todaySales.find(s => s.id === item.sale_invoice_id);
+    if (invoice) {
+      const cust = allCustomers.find(c => c.id === invoice.customer_id);
+      if (cust) {
+        inventoryMap[crop].customers.add(cust.name);
+      }
+    }
+
+    // Find farmer
+    const impItem = allImportItems.find(ii => ii.id === item.import_item_id);
+    if (impItem) {
+      const impInvoice = allImports.find(ii => ii.id === impItem.invoice_id);
+      if (impInvoice) {
+        const farmer = allFarmers.find(f => f.id === impInvoice.farmer_id);
+        if (farmer) {
+          inventoryMap[crop].farmers.add(farmer.name);
+        }
+      }
+    }
+  });
+
+  // Calculate remaining quantities for each crop
+  for (const crop in inventoryMap) {
+    const cropItems = allImportItems.filter(ii => ii.crop_type === crop);
+    const totalImportedWeight = cropItems.reduce((sum, ii) => sum + (ii.weight_kg || 0), 0);
+    const totalImportedBoxes = cropItems.reduce((sum, ii) => sum + (ii.box_count || 0), 0);
+
+    const cropSales = allSaleItems.filter(si => si.crop_type === crop);
+    const totalSoldWeight = cropSales.reduce((sum, si) => sum + (si.weight_kg || 0), 0);
+    const totalSoldBoxes = cropSales.reduce((sum, si) => sum + (si.box_count || 0), 0);
+
+    inventoryMap[crop].remainingWeight = Math.max(0, totalImportedWeight - totalSoldWeight);
+    inventoryMap[crop].remainingBoxes = Math.max(0, totalImportedBoxes - totalSoldBoxes);
+  }
+
+  // Populate receipt-paper HTML for high-fidelity inventory print!
+  const container = document.getElementById('receipt-paper');
+  if (container) {
+    container.className = `thermal-paper w-${printerPaperWidth}`;
+  }
+
+  const is58mm = printerPaperWidth === '58';
+  const fontSizeClass = is58mm ? 'font-size: 13.5px; line-height: 1.3;' : 'font-size: 15.5px; line-height: 1.45;';
+  const headerFontSizeClass = is58mm ? 'font-size: 18px;' : 'font-size: 22px;';
+  const borderStyle = 'border-bottom: 1.2px dashed #000;';
+
+  const formattedDate = now.toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US', {
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  });
+
+  let itemsHtml = Object.values(inventoryMap).map((it, idx) => {
+    const isCount = it.unit === 'count';
+    const soldQty = isCount ? `${formatVal(it.soldBoxes)} عدد` : `${formatWeight(it.soldWeight, 'kg')} (${formatVal(it.soldBoxes)} ص)`;
+    const remainingQty = isCount ? `${formatVal(it.remainingBoxes)} عدد` : `${formatWeight(it.remainingWeight, 'kg')} (${formatVal(it.remainingBoxes)} ص)`;
+    
+    const farmersList = Array.from(it.farmers).join('، ') || (currentLanguage === 'ar' ? 'غير محدد' : 'Unknown');
+    const customersList = Array.from(it.customers).join('، ') || (currentLanguage === 'ar' ? 'غير مححد' : 'Unknown');
+
+    return `
+      <div style="${borderStyle} padding: 8px 0; direction: rtl; text-align: right; ${fontSizeClass}">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; color: #000;">
+          <span>[${idx + 1}] ${it.cropType}</span>
+          <span style="color: var(--color-primary-dark);">${it.unit === 'count' ? 'عدد فقط' : 'وزن وصندوق'}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-weight: 600;">
+          <span>الكمية المباعة:</span>
+          <span style="font-weight: 800; color: #000;">${soldQty}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 2px; font-weight: 600;">
+          <span>الكمية المتبقية:</span>
+          <span style="font-weight: 800; color: #000;">${remainingQty}</span>
+        </div>
+        <div style="margin-top: 4px; font-size: 11.5px; color: #444; line-height: 1.3;">
+          <div><strong style="color: #000;">الفلاح المستورد منه:</strong> ${farmersList}</div>
+          <div style="margin-top: 2px;"><strong style="color: #000;">الزبون المباع له:</strong> ${customersList}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
+      <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
+      <h3 style="font-size: 14px; font-weight: 700; color: #333; margin: 0 0 8px 0;">قائمة الجرد اليومية / Daily Inventory</h3>
+      <div style="font-size: 12px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      ${itemsHtml}
+    </div>
+
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 11px; font-weight: 700; color: #444;">
+      نظام علوة للمحاسبة الذكي © ${now.getFullYear()}
+    </div>
+  `;
+
+  // Log in events
+  logAppEvent(
+    `طباعة قائمة جرد يومية لعدد ${Object.keys(inventoryMap).length} أصناف`,
+    `Printed daily inventory list for ${Object.keys(inventoryMap).length} crop items`
+  );
+
+  // Set dataset ID to -1 to prevent printing a single receipt when print button is pressed
+  document.getElementById('btn-execute-print').dataset.id = "-1";
+  document.getElementById('btn-execute-sysprint').dataset.id = "-1";
+  document.getElementById('btn-share-receipt').dataset.id = "-1";
+
+  openBottomSheet('sheet-print-preview');
+}
+
 // ==============================================
 // 19. APP BOOTSTRAP INITIALIZATION
 // ==============================================
@@ -4869,6 +6401,9 @@ async function startApp() {
 
     // 4. Fill Cache
     await refreshGlobalCaches();
+
+    // Check and apply monthly rollover if needed
+    await checkAndApplyMonthlyRollover();
 
     // 5. Apply Bilingual & Layout values
     applyBilingualTranslations();
@@ -4901,6 +6436,7 @@ async function startApp() {
     
     document.getElementById('btn-submit-sale').addEventListener('click', submitSaleInvoice);
     document.getElementById('btn-add-sale-crop').addEventListener('click', addSaleCropRow);
+    document.getElementById('btn-submit-payout').addEventListener('click', submitFarmerPayout);
     document.getElementById('btn-submit-expense').addEventListener('click', submitExpenseRecord);
     document.getElementById('btn-submit-loss').addEventListener('click', submitLossRecord);
 
@@ -4930,6 +6466,70 @@ async function startApp() {
     
     document.getElementById('btn-record-expense').addEventListener('click', () => openBottomSheet('sheet-new-expense'));
     document.getElementById('btn-record-loss').addEventListener('click', () => openBottomSheet('sheet-new-loss'));
+
+    const btnAddSafeLiquidity = document.getElementById('btn-add-safe-liquidity');
+    if (btnAddSafeLiquidity) {
+      btnAddSafeLiquidity.addEventListener('click', () => {
+        const dialog = document.getElementById('custom-safe-adjust-dialog');
+        if (dialog) {
+          document.getElementById('safe-adj-amount').value = '';
+          document.getElementById('safe-adj-note').value = '';
+          dialog.style.display = 'flex';
+        }
+      });
+    }
+
+    const btnSafeAdjCancel = document.getElementById('btn-safe-adj-cancel');
+    if (btnSafeAdjCancel) {
+      btnSafeAdjCancel.addEventListener('click', () => {
+        const dialog = document.getElementById('custom-safe-adjust-dialog');
+        if (dialog) dialog.style.display = 'none';
+      });
+    }
+
+    const btnSafeAdjOk = document.getElementById('btn-safe-adj-ok');
+    if (btnSafeAdjOk) {
+      btnSafeAdjOk.addEventListener('click', async () => {
+        const amountEl = document.getElementById('safe-adj-amount');
+        const noteEl = document.getElementById('safe-adj-note');
+        const amount = parseFloat(amountEl.value);
+        const note = noteEl.value.trim();
+
+        if (isNaN(amount) || amount <= 0) {
+          showToast(currentLanguage === 'ar' ? 'الرجاء إدخال مبلغ صحيح أكبر من الصفر' : 'Please enter a valid amount greater than zero', 'warning', true);
+          return;
+        }
+
+        const dialog = document.getElementById('custom-safe-adjust-dialog');
+        if (dialog) dialog.style.display = 'none';
+
+        try {
+          await dbAdd('safe_adjustments', {
+            type: 'manual_addition',
+            amount: amount,
+            note: note || (currentLanguage === 'ar' ? 'إيداع نقدي يدوي' : 'Manual cash deposit'),
+            created_at: Date.now()
+          });
+
+          logAppEvent(
+            `إيداع سيولة يدوية بالخزنة: ${amount} د.ع - ${note || 'بدون ملاحظة'}`,
+            `Manual cash deposit to safe box: ${amount} IQD - ${note || 'No notes'}`,
+            amount
+          );
+
+          playSound('success');
+          showToast(
+            currentLanguage === 'ar' ? 'تمت إضافة السيولة النقدية للخزنة بنجاح!' : 'Cash liquidity successfully added to the safe box!',
+            'check_circle'
+          );
+
+          await refreshAllUI();
+        } catch (e) {
+          console.error(e);
+          showToast(currentLanguage === 'ar' ? 'حدث خطأ أثناء الإيداع!' : 'An error occurred during deposit!', 'warning', true);
+        }
+      });
+    }
 
     // 11. Bind bottom sheet close buttons
     const closeButtons = document.querySelectorAll('.bottom-sheet-close, .btn-cancel-action, [id^="btn-close-"], .btn-choice-cancel, .btn-confirm-cancel, .btn-prompt-cancel, .btn-safe-adj-cancel, .btn-custom-crop-cancel');
@@ -4984,6 +6584,13 @@ async function startApp() {
     document.getElementById('search-debts-input').addEventListener('input', renderDebtsList);
     document.getElementById('search-dues-input').addEventListener('input', renderDuesList);
 
+    const statsMonthSel = document.getElementById('stats-month-selector');
+    if (statsMonthSel) {
+      statsMonthSel.addEventListener('change', () => {
+        renderStatsPanel();
+      });
+    }
+
     // 14. Bind archive search filters
     const searchArchiveFarmer = document.getElementById('search-archive-farmer');
     if (searchArchiveFarmer) {
@@ -4996,6 +6603,11 @@ async function startApp() {
 
     // 15. Bind hardware Bluetooth Scanner
     document.getElementById('btn-scan-printer').addEventListener('click', handleScanAndConnect);
+    
+    const btnPrintInv = document.getElementById('btn-print-inventory');
+    if (btnPrintInv) {
+      btnPrintInv.addEventListener('click', printDailyInventoryList);
+    }
     
     // Test print
     document.getElementById('btn-test-print').addEventListener('click', () => {

@@ -230,7 +230,7 @@
         <div class="search-filter-bar">
           <input type="text" class="search-filter-input" id="search-debts" placeholder="🔍 ابحث باسم الزبون المدين...">
         </div>
-        <div id="debts-container" style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="debts-list" style="display: flex; flex-direction: column; gap: 12px;">
           <!-- Dynamic Debts will be injected here -->
         </div>
       </div>
@@ -240,39 +240,15 @@
         <div class="search-filter-bar">
           <input type="text" class="search-filter-input" id="search-dues" placeholder="🔍 ابحث باسم الفلاح...">
         </div>
-        <div id="dues-container" style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="dues-list" style="display: flex; flex-direction: column; gap: 12px;">
           <!-- Dynamic Dues will be injected here -->
         </div>
       </div>
 
       <!-- 3. Porters Dues Section -->
       <div id="section-porters-list" style="display: none; flex-direction: column; gap: 16px;">
-        <div class="premium-card">
-          <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 12px;">
-            <div class="icon-badge-round" style="background: rgba(0, 150, 199, 0.1); color: var(--color-primary); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-              <span class="material-icons-round">groups</span>
-            </div>
-            <div>
-              <h3 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;" id="txt-porter-section-title">مستحقات الحمالين لليوم</h3>
-              <p style="font-size: 10px; color: var(--color-text-muted); margin: 2px 0 0 0;" id="porter-today-date">-</p>
-            </div>
-          </div>
-          
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 12px; color: var(--color-text-dark); font-weight: 600;" id="txt-porter-today-total-lbl">إجمالي حمالية اليوم:</span>
-              <span style="font-size: 18px; font-weight: 800; color: var(--color-primary-mid);" id="val-porters-today-total">0 دينار</span>
-            </div>
-            
-            <div id="porters-status-container" style="margin-top: 8px;">
-              <!-- Dynamic status & action button will be injected here -->
-            </div>
-          </div>
-        </div>
-        
-        <h4 style="font-size: 12px; font-weight: 700; color: var(--color-text-dark); margin: 8px 0 0 0;" id="txt-porter-history-title">سجل تسويات الحمالين السابقة</h4>
-        <div id="porter-payouts-history-container" style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Historical payouts list -->
+        <div id="porters-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Dynamic Porters list/card will be injected here -->
         </div>
       </div>
     </main>
@@ -281,24 +257,36 @@
     <!-- 📈 SCREEN 4: STATISTICS (الأرباح والمصاريف والخزنة) -->
     <!-- ============================================== -->
     <main id="screen-stats" class="screen-content animate">
-      <!-- Month Filter for Statistics -->
-      <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px;">
-        <span style="font-weight: 700; font-size: 13px; color: var(--color-primary-light);" id="txt-stats-period-lbl">فترة الإحصائيات:</span>
-        <select id="stats-month-selector" class="form-input" style="width: auto; margin: 0; padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: var(--color-bg);">
-          <!-- Dynamic select populated by app.js -->
-        </select>
+      <!-- Month Filter & Inventory Print for Statistics -->
+      <div style="margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 700; font-size: 13px; color: var(--color-primary-light);" id="txt-stats-period-lbl">فترة الإحصائيات:</span>
+          <select id="stats-month-selector" class="form-input" style="width: auto; margin: 0; padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: var(--color-bg);">
+            <!-- Dynamic select populated by app.js -->
+          </select>
+        </div>
+        <button id="btn-print-inventory" class="btn-primary" style="margin: 0; padding: 6px 14px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; border-radius: 8px; background: var(--color-primary-mid);">
+          <span class="material-icons-round" style="font-size: 16px;">print</span>
+          <span id="txt-print-inventory-lbl">طباعة قائمة جرد يومية</span>
+        </button>
       </div>
       <!-- Grid for Safe Box & Profits -->
       <div class="stats-top-grid">
         <!-- Card 1: Smart Cash Box -->
-        <div class="stats-summary-card safe-card">
-          <div class="stats-card-header">
-            <div class="icon-badge-round">
-              <span class="material-icons-round">account_balance_wallet</span>
+        <div class="stats-summary-card safe-card" style="display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; min-height: 125px;">
+          <div>
+            <div class="stats-card-header">
+              <div class="icon-badge-round">
+                <span class="material-icons-round">account_balance_wallet</span>
+              </div>
+              <span class="safe-balance-label" id="txt-safe-box-label">رصيد الخزنة الحالي</span>
             </div>
-            <span class="safe-balance-label" id="txt-safe-box-label">رصيد الخزنة الحالي</span>
+            <div class="safe-balance-value" id="val-safe-box">0 دينار</div>
           </div>
-          <div class="safe-balance-value" id="val-safe-box">0 دينار</div>
+          <button id="btn-add-safe-liquidity" class="btn-primary" style="background: var(--color-success); font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; align-self: flex-start; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; border: none; cursor: pointer; color: #fff;">
+            <span class="material-icons-round" style="font-size: 14px;">add_card</span>
+            <span id="txt-add-liquidity-btn-lbl">إضافة سيولة نقدية</span>
+          </button>
         </div>
         
         <!-- Card 2: Net Office Profits -->
@@ -431,6 +419,17 @@
         <h3 id="txt-ledger-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary);">سجل المصروفات والخسائر الأخيرة</h3>
         <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="expenses-ledger">
           <!-- Dynamic Ledger Entries -->
+        </div>
+      </div>
+
+      <!-- List of Daily Application Operations Logs -->
+      <div class="premium-card" style="margin-top: 16px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--color-primary); display: flex; align-items: center; gap: 6px;">
+          <span class="material-icons-round" style="font-size: 18px; color: var(--color-primary-mid);">history_edu</span>
+          <span id="txt-logs-title-lbl">سجل عمليات التطبيق اليومي</span>
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto; padding-right: 4px;" id="app-logs-container">
+          <!-- Dynamic App Logs will be rendered here -->
         </div>
       </div>
     </main>
