@@ -178,13 +178,25 @@ let consecutiveAutoConnectFailures = 0; // counter to prevent native Android Blu
 let isManualScanning = false;       // status flag to avoid collision with manual BLE scan
 
 
-// Helper to generate a 6-character random alphanumeric Order ID
-function generateOrderId() {
+// Helper to generate a 6-character random alphanumeric Order ID that is completely unique
+async function generateOrderId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  let allInvoices = [];
+  try {
+    allInvoices = await dbGetAll('sale_invoices');
+  } catch (e) {
+    console.error('Error fetching invoices for unique order ID check:', e);
   }
+  const existingIds = new Set(allInvoices.map(inv => (inv.order_id || '').toUpperCase()));
+
+  let result = '';
+  do {
+    result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+  } while (existingIds.has(result));
+
   return result;
 }
 
@@ -1789,8 +1801,8 @@ async function renderSalesList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
-            ID: ${orderId}
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
+            ID: <span class="font-handjet" style="font-size: 14.5px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
@@ -1925,8 +1937,8 @@ async function renderSalesArchiveList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: #6b7280; margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
-            ID: ${orderId}
+          <span class="lang-badge" style="background-color: #6b7280; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
+            ID: <span class="font-handjet" style="font-size: 14.5px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
@@ -2000,7 +2012,7 @@ async function renderSalesArchiveList() {
   });
 }
 
-function addSaleCropRow() {
+async function addSaleCropRow() {
   const container = document.getElementById('sale-items-container');
   const index = container.children.length;
 
@@ -2058,7 +2070,7 @@ function addSaleCropRow() {
 
   // Populate cargo select dynamically from active imports cache
   // Filter out fully sold items
-  refreshCargoOptions(cargoSelect);
+  await refreshCargoOptions(cargoSelect);
 
   cargoSelect.addEventListener('change', async () => {
     const [invoiceIdStr, cropType] = cargoSelect.value.split('|');
@@ -2173,15 +2185,54 @@ function addSaleCropRow() {
   container.appendChild(row);
 }
 
-function refreshCargoOptions(selectElement) {
+async function refreshCargoOptions(selectElement) {
   const currentVal = selectElement.value;
+  selectElement.innerHTML = `<option value="" disabled selected>${currentLanguage === 'ar' ? 'جاري التحميل...' : 'Loading...'}</option>`;
+
+  const allSaleItems = await dbGetAll('sale_items');
+
   selectElement.innerHTML = `<option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر من البضاعة المعروضة بالاستيراد...' : 'Choose from available imports...'}</option>`;
 
   activeImportInvoices.forEach(imp => {
     imp.items.forEach(it => {
+      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
+      
+      let soldWeight = 0;
+      let soldBoxes = 0;
+      const isCount = (getCropUnitType(it.crop_type) === 'count');
+      
+      salesOfItem.forEach(s => {
+        soldWeight += (isCount ? (s.box_count || 0) : s.weight_kg);
+        soldBoxes += (s.box_count || 0);
+      });
+
+      const remWeight = Math.max(0, (isCount ? (it.box_count || 0) : it.weight_kg) - soldWeight);
+      const remBoxes = Math.max(0, (it.box_count || 0) - soldBoxes);
+
+      const isSelected = (currentVal === `${imp.id}|${it.crop_type}`);
+      if (remWeight <= 0 && !isSelected) {
+        return; // Skip fully sold items
+      }
+
       const opt = document.createElement('option');
       opt.value = `${imp.id}|${it.crop_type}`;
-      opt.textContent = `${getCropIcon(it.crop_type)} ${it.crop_type} - فلاح: ${imp.farmer_name} (#${imp.id})`;
+
+      let remainingText = '';
+      if (isCount) {
+        remainingText = currentLanguage === 'ar' 
+          ? `(متبقي: ${formatVal(remBoxes)} مفرد)` 
+          : `(rem: ${formatVal(remBoxes)} qty)`;
+      } else if (isWatermelonOrMelon(it.crop_type)) {
+        remainingText = currentLanguage === 'ar' 
+          ? `(متبقي: ${formatWeight(remWeight, it.unit || 'kg')})` 
+          : `(rem: ${formatWeight(remWeight, it.unit || 'kg')})`;
+      } else {
+        remainingText = currentLanguage === 'ar' 
+          ? `(متبقي: ${formatWeight(remWeight, it.unit || 'kg')} [${remBoxes} ص])` 
+          : `(rem: ${formatWeight(remWeight, it.unit || 'kg')} [${remBoxes} b])`;
+      }
+
+      opt.textContent = `${getCropIcon(it.crop_type)} ${it.crop_type} - فلاح: ${imp.farmer_name} (#${imp.id}) ${remainingText}`;
       selectElement.appendChild(opt);
     });
   });
@@ -2413,7 +2464,7 @@ async function submitSaleInvoice() {
   const totalCarrying = saleItemsToSave.reduce((sum, item) => sum + item.porter_fee, 0);
   const grandTotal = subtotal + totalCommissions + totalCarrying + bagsCost;
 
-  const orderId = generateOrderId();
+  const orderId = await generateOrderId();
 
   const saleInvoiceId = await dbAdd('sale_invoices', {
     customer_id: customer.id,
@@ -2762,8 +2813,8 @@ async function renderDebtsList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
-            ID: ${orderId}
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
+            ID: <span class="font-handjet" style="font-size: 14.5px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address || ''} ${customer.phone ? `• ${customer.phone}` : ''}</span>
@@ -4150,7 +4201,7 @@ async function submitLossRecord() {
       }
 
       // 3. Create normal sale invoice
-      const orderId = generateOrderId();
+      const orderId = await generateOrderId();
       const saleInvoiceId = await dbAdd('sale_invoices', {
         customer_id: customer.id,
         order_id: orderId,
@@ -4252,6 +4303,128 @@ async function submitLossRecord() {
   await refreshAllUI();
 }
 
+// Helper to draw high-fidelity random barcode on canvas
+function drawRandomBarcode(canvasElement, is58mm) {
+  const ctx = canvasElement.getContext('2d');
+  if (!ctx) return;
+
+  // Generate a random 12-digit number sequence
+  const digits = Array.from({length: 12}, () => Math.floor(Math.random() * 10)).join('');
+
+  // Define crisp logical size
+  const logicalWidth = is58mm ? 320 : 440;
+  const logicalHeight = 85;
+  const scaleRatio = 2; // high resolution multiplier for extreme clarity
+
+  canvasElement.width = logicalWidth * scaleRatio;
+  canvasElement.height = logicalHeight * scaleRatio;
+
+  // Clear background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+  // EAN-13 / UPC encoding patterns
+  const L_CODE = [
+    [0,0,0,1,1,0,1], [0,0,1,1,0,0,1], [0,0,1,0,0,1,1], [0,1,1,1,1,0,1], [0,1,0,0,0,1,1],
+    [0,1,1,0,0,0,1], [0,1,0,1,1,1,1], [0,1,1,1,0,1,1], [0,1,1,0,1,1,1], [0,0,0,1,0,1,1]
+  ];
+  const G_CODE = [
+    [0,1,0,0,1,1,1], [0,1,1,0,0,1,1], [0,0,1,1,0,1,1], [0,1,0,0,0,0,1], [0,0,1,1,1,0,1],
+    [0,1,1,1,0,0,1], [0,0,0,0,1,0,1], [0,0,1,0,0,0,1], [0,0,0,1,0,0,1], [0,0,1,0,1,1,1]
+  ];
+  const R_CODE = [
+    [1,1,1,0,0,1,0], [1,1,0,0,1,1,0], [1,1,0,1,1,0,0], [1,0,0,0,0,1,0], [1,0,1,1,1,0,0],
+    [1,0,0,1,1,1,0], [1,0,1,0,0,0,0], [1,0,0,0,1,0,0], [1,0,0,1,0,0,0], [1,1,1,0,1,0,0]
+  ];
+
+  // First digit determines the G/L sequence for first 6 digits
+  const firstDigit = parseInt(digits[0]);
+  const PARITY_TABLE = [
+    [0,0,0,0,0,0], [0,0,1,0,1,1], [0,0,1,1,0,1], [0,0,1,1,1,0], [0,1,0,0,1,1],
+    [0,1,1,0,0,1], [0,1,1,1,0,0], [0,1,0,1,0,1], [0,1,0,1,1,0], [0,1,1,0,1,0]
+  ];
+  const structure = PARITY_TABLE[firstDigit] || PARITY_TABLE[0];
+
+  const modules = [];
+
+  // Start Guard (101)
+  modules.push(1, 0, 1);
+
+  // Left 6 digits
+  for (let i = 1; i <= 6; i++) {
+    const digit = parseInt(digits[i]);
+    const useG = structure[i - 1] === 1;
+    const pattern = useG ? G_CODE[digit] : L_CODE[digit];
+    modules.push(...pattern);
+  }
+
+  // Center Guard (01010)
+  modules.push(0, 1, 0, 1, 0);
+
+  // Right 6 digits (using last 5 from random + EAN checksum for authentic look)
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(digits[i]) * (i % 2 === 0 ? 1 : 3);
+  }
+  const checkDigit = (10 - (sum % 10)) % 10;
+  const rightDigits = digits.slice(7) + checkDigit;
+
+  for (let i = 0; i < 6; i++) {
+    const digit = parseInt(rightDigits[i]);
+    modules.push(...R_CODE[digit]);
+  }
+
+  // End Guard (101)
+  modules.push(1, 0, 1);
+
+  // Center the drawing beautifully
+  const moduleCount = modules.length; // 95
+  const moduleWidth = is58mm ? 2.5 * scaleRatio : 3.5 * scaleRatio;
+  const barcodeWidth = moduleCount * moduleWidth;
+  const startX = Math.floor((canvasElement.width - barcodeWidth) / 2);
+
+  const barHeight = 55 * scaleRatio;
+  const guardExtraHeight = 6 * scaleRatio;
+
+  // Enable crisp pixels
+  ctx.imageSmoothingEnabled = false;
+
+  // Draw lines
+  ctx.fillStyle = '#000000';
+  for (let i = 0; i < moduleCount; i++) {
+    if (modules[i] === 1) {
+      const isGuard = (i < 3) || (i >= 45 && i < 50) || (i >= 92);
+      const h = isGuard ? (barHeight + guardExtraHeight) : barHeight;
+      ctx.fillRect(Math.floor(startX + i * moduleWidth), Math.floor(10 * scaleRatio), Math.ceil(moduleWidth), Math.floor(h));
+    }
+  }
+
+  // Draw EAN numbers underneath
+  ctx.font = `bold ${16 * scaleRatio}px "Courier New", Courier, monospace`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#000000';
+  
+  const displayNum = digits[0] + ' ' + digits.slice(1, 7) + ' ' + rightDigits;
+  ctx.fillText(displayNum, canvasElement.width / 2, (logicalHeight - 3) * scaleRatio);
+}
+
+// Simple digit pattern helper to map 0-9 into distinct array patterns for guard lines
+function getBarcodeDigitPattern(digit) {
+  const patterns = [
+    [true, false, true, true],
+    [true, true, false, true],
+    [false, true, true, false],
+    [true, false, false, true],
+    [false, true, false, true],
+    [true, true, false, false],
+    [false, false, true, true],
+    [true, false, true, false],
+    [false, true, true, true],
+    [true, true, true, false]
+  ];
+  return patterns[digit] || patterns[0];
+}
+
 // ==============================================
 // 10. THERMAL RECEIPT GENERATOR (BLE & PRINT PREVIEW)
 // ==============================================
@@ -4321,7 +4494,7 @@ async function openPrintPreview(saleId) {
     <div style="${fontSizeClass} border-bottom: 1.5px dashed #000; padding-bottom: 6px; margin-bottom: 6px; line-height: 1.4; direction: rtl;">
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>رقم الفاتورة:</span>
-        <span style="font-weight:700;"># ${formatVal(sale.id)} (${orderId})</span>
+        <span style="font-weight:700;"># ${formatVal(sale.id)} (<span style="font-family: 'Handjet', monospace; font-size: 16px; font-weight: 900; vertical-align: middle;">${orderId}</span>)</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>الزبون:</span>
@@ -4364,24 +4537,48 @@ async function openPrintPreview(saleId) {
       </div>
     </div>
 
-    <!-- Generates dynamic offline QR-code with QRious inside preview -->
-    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; direction: rtl;">
-      <canvas id="receipt-qr-canvas" style="display: inline-block; margin-bottom: 4px;"></canvas>
-      <div style="font-size: 11.5px; color: #000; font-weight: 700; margin-top: 4px;">شكرًا لتعاملكم معنا - علوة الغابة الخضراء</div>
+    <!-- Generates dynamic offline QR-code and random barcode inside preview -->
+    <div style="margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #000; direction: ltr; text-align: left;">
+      <!-- Row 1 & 2: Left half (Text info) and Right half (QR) -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <!-- Left half: Monospace text & Invoice code -->
+        <div style="flex: 1; text-align: left; font-family: 'Courier New', Courier, monospace; color: #000; word-break: break-word;">
+          <div style="font-size: 16px; font-weight: 900; margin-bottom: 4px;">Invoice: <span style="font-family: 'Handjet', monospace; font-size: 22px; font-weight: 900; vertical-align: middle;">${orderId}</span></div>
+          <div style="font-size: 12.5px; font-weight: 700; line-height: 1.3;">This Invoice was successfully registered in the system</div>
+        </div>
+        <!-- Right half: QR code -->
+        <div style="text-align: right; flex-shrink: 0;">
+          <canvas id="receipt-qr-canvas" style="display: block; margin: 0; padding: 0;"></canvas>
+        </div>
+      </div>
+
+      <!-- Row 3: Barcode below -->
+      <div style="text-align: center; margin-top: 18px; padding-top: 12px; border-top: 1.5px dashed #000;">
+        <canvas id="receipt-barcode-canvas" style="display: block; width: 100%; max-width: 100%; height: 90px; margin: 0 auto;"></canvas>
+      </div>
+
+      <div style="text-align: center; font-size: 11px; color: #000; font-weight: 700; margin-top: 8px; direction: rtl;">
+        شكرًا لتعاملكم معنا - علوة الغابة الخضراء
+      </div>
     </div>
   `;
 
-  // Render QR Canvas
+  // Render QR Canvas and Barcode Canvas
   setTimeout(() => {
     const qrCanvas = document.getElementById('receipt-qr-canvas');
     if (qrCanvas) {
       new window.QRious({
         element: qrCanvas,
-        value: `ALWA_REC|ID:${sale.id}|TOTAL:${sale.total_amount}|CUST:${customer.name}`,
-        size: is58mm ? 220 : 310,
+        value: orderId, // Points strictly to the invoice symbol / code
+        size: is58mm ? 96 : 132,
         background: '#ffffff',
         foreground: '#000000'
       });
+    }
+
+    const barcodeCanvas = document.getElementById('receipt-barcode-canvas');
+    if (barcodeCanvas) {
+      drawRandomBarcode(barcodeCanvas, is58mm);
     }
   }, 150);
 
@@ -6260,7 +6457,7 @@ async function showInvoiceDetails(invoiceId, type) {
       <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
+            <span style="font-family: 'Handjet', monospace; font-size: 18px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px; line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
