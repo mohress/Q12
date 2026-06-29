@@ -35,6 +35,7 @@ document.getElementById = function(id) {
     'safe-box-val': 'val-safe-box',
     'total-cash-sales': 'val-total-cash-sales',
     'total-collected-debts': 'val-total-collected-debts',
+    'total-adjustments': 'val-total-adjustments',
     'total-commission-5': 'val-total-commission-5',
     'total-paid-dues': 'val-total-paid-dues',
     'total-porters-payouts': 'val-total-porter-payouts',
@@ -97,7 +98,17 @@ document.getElementById = function(id) {
     'dialog-crop-confirm': 'btn-custom-crop-ok',
     'dialog-crop-cancel': 'btn-custom-crop-cancel',
     'btn-execute-sysprint': 'btn-execute-system-print',
-    'btn-share-receipt': 'btn-share-receipt-png'
+    'btn-share-receipt': 'btn-share-receipt-png',
+    'sheet-expense-title-h3': 'txt-expense-sheet-title',
+    'lbl-expense-type-label': 'lbl-expense-type',
+    'opt-expense-daily': 'expense-type-daily',
+    'opt-expense-personal': 'expense-type-personal',
+    'lbl-expense-subject-label': 'lbl-expense-subject',
+    'lbl-expense-amount-label': 'lbl-expense-amount',
+    'sheet-loss-title-h3': 'txt-loss-sheet-title',
+    'lbl-loss-subject-label': 'lbl-loss-subject',
+    'lbl-loss-amount-label': 'lbl-loss-amount',
+    'sheet-preview-title-h3': 'txt-print-preview-title'
   };
 
   if (mappings[id]) {
@@ -163,6 +174,7 @@ let isCordovaSerialActive = false;  // true only if Classic Bluetooth SPP is use
 let connectedDeviceAddress = null;  // generic address holder
 let autoConnectIntervalId = null;   // background auto-connect interval ID
 let isAutoConnecting = false;       // status flag to avoid duplicate concurrent connects
+let consecutiveAutoConnectFailures = 0; // counter to prevent native Android Bluetooth socket/GATT leaks and crashes
 let isManualScanning = false;       // status flag to avoid collision with manual BLE scan
 
 
@@ -814,47 +826,92 @@ function initDatabase() {
 }
 
 function dbGetAll(storeName) {
-  return new Promise((resolve) => {
-    const tx = db.transaction(storeName, 'readonly');
-    const store = tx.objectStore(storeName);
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
+  return new Promise((resolve, reject) => {
+    try {
+      if (!db) {
+        throw new Error('Database is not initialized');
+      }
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (e) => reject('IndexedDB error on getAll: ' + e.target.error);
+      tx.onerror = (e) => reject('Transaction error on getAll: ' + e.target.error);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 function dbGet(storeName, id) {
-  return new Promise((resolve) => {
-    const tx = db.transaction(storeName, 'readonly');
-    const store = tx.objectStore(storeName);
-    const request = store.get(id);
-    request.onsuccess = () => resolve(request.result);
+  return new Promise((resolve, reject) => {
+    try {
+      if (!db) {
+        throw new Error('Database is not initialized');
+      }
+      const tx = db.transaction(storeName, 'readonly');
+      const store = tx.objectStore(storeName);
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (e) => reject('IndexedDB error on get: ' + e.target.error);
+      tx.onerror = (e) => reject('Transaction error on get: ' + e.target.error);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 function dbAdd(storeName, obj) {
-  return new Promise((resolve) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    const request = store.add(obj);
-    request.onsuccess = (e) => resolve(e.target.result);
+  return new Promise((resolve, reject) => {
+    try {
+      if (!db) {
+        throw new Error('Database is not initialized');
+      }
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.add(obj);
+      request.onsuccess = (e) => resolve(e.target.result);
+      request.onerror = (e) => reject('IndexedDB error on add: ' + e.target.error);
+      tx.onerror = (e) => reject('Transaction error on add: ' + e.target.error);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 function dbPut(storeName, obj) {
-  return new Promise((resolve) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    const request = store.put(obj);
-    request.onsuccess = () => resolve();
+  return new Promise((resolve, reject) => {
+    try {
+      if (!db) {
+        throw new Error('Database is not initialized');
+      }
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.put(obj);
+      request.onsuccess = () => resolve();
+      request.onerror = (e) => reject('IndexedDB error on put: ' + e.target.error);
+      tx.onerror = (e) => reject('Transaction error on put: ' + e.target.error);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 function dbDelete(storeName, id) {
-  return new Promise((resolve) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    const request = store.delete(id);
-    request.onsuccess = () => resolve();
+  return new Promise((resolve, reject) => {
+    try {
+      if (!db) {
+        throw new Error('Database is not initialized');
+      }
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = (e) => reject('IndexedDB error on delete: ' + e.target.error);
+      tx.onerror = (e) => reject('Transaction error on delete: ' + e.target.error);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
@@ -1517,12 +1574,6 @@ function addImportCropRow() {
     autocomplete.style.display = 'block';
   });
 
-  document.addEventListener('click', (e) => {
-    if (e.target !== selector && e.target !== autocomplete) {
-      autocomplete.style.display = 'none';
-    }
-  });
-
   row.querySelector('.delete-row-btn').addEventListener('click', () => {
     row.remove();
     updateImportRowLabels();
@@ -1568,12 +1619,6 @@ function setupFarmerAutocomplete() {
       dropdown.appendChild(div);
     });
     dropdown.style.display = 'block';
-  });
-
-  document.addEventListener('click', (e) => {
-    if (e.target !== input && e.target !== dropdown) {
-      dropdown.style.display = 'none';
-    }
   });
 }
 
@@ -2233,12 +2278,6 @@ function setupCustomerAutocomplete() {
       dropdown.appendChild(div);
     });
     dropdown.style.display = 'block';
-  });
-
-  document.addEventListener('click', (e) => {
-    if (e.target !== input && e.target !== dropdown) {
-      dropdown.style.display = 'none';
-    }
   });
 }
 
@@ -3480,6 +3519,7 @@ async function renderStatsPanel() {
   const safeBoxValEl = document.getElementById('safe-box-val');
   const totalCashSalesEl = document.getElementById('total-cash-sales');
   const totalCollectedDebtsEl = document.getElementById('total-collected-debts');
+  const totalAdjustmentsEl = document.getElementById('total-adjustments');
   const totalCommissionEl = document.getElementById('total-commission-5');
   const totalPaidDuesEl = document.getElementById('total-paid-dues');
   const totalPortersEl = document.getElementById('total-porters-payouts');
@@ -3536,6 +3576,7 @@ async function renderStatsPanel() {
 
   let cashSalesTotal = 0;
   let collectedDebtsTotal = 0;
+  let manualAdditionsTotal = 0;
   let paidDuesTotal = 0;
   let paidPortersTotal = 0;
   let expensesTotal = 0;
@@ -3556,7 +3597,9 @@ async function renderStatsPanel() {
     cashSalesTotal = allSales.filter(s => s.payment_type === 'cash' && isCurrentMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
 
     collectedDebtsTotal = allDebts.filter(d => d.is_paid && isCurrentMonth(d.created_at)).reduce((sum, d) => sum + d.amount, 0) +
-                          safeAdjustments.filter(a => (a.type === 'partial_debt_payout' || a.type === 'manual_addition') && isCurrentMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
+                          safeAdjustments.filter(a => a.type === 'partial_debt_payout' && isCurrentMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
+
+    manualAdditionsTotal = safeAdjustments.filter(a => a.type === 'manual_addition' && isCurrentMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
 
     paidDuesTotal = dues.filter(d => d.is_paid && isCurrentMonth(d.created_at)).reduce((sum, d) => sum + d.net_due, 0);
 
@@ -3576,6 +3619,7 @@ async function renderStatsPanel() {
     if (archive) {
       cashSalesTotal = archive.cashSales;
       collectedDebtsTotal = archive.collectedDebts;
+      manualAdditionsTotal = archive.manualAdditions || 0;
       paidDuesTotal = archive.paidDues;
       paidPortersTotal = archive.paidPorters;
       expensesTotal = archive.expenses;
@@ -3590,6 +3634,9 @@ async function renderStatsPanel() {
   // Render monthly stats
   totalCashSalesEl.textContent = formatVal(cashSalesTotal, true);
   totalCollectedDebtsEl.textContent = formatVal(collectedDebtsTotal, true);
+  if (totalAdjustmentsEl) {
+    totalAdjustmentsEl.textContent = formatVal(manualAdditionsTotal, true);
+  }
   totalPaidDuesEl.textContent = formatVal(paidDuesTotal, true);
   totalPortersEl.textContent = formatVal(paidPortersTotal, true);
   totalCommissionEl.textContent = formatVal(totalCompanyCommission, true);
@@ -3867,7 +3914,16 @@ function renderLedgerTable(daily, personal, losses) {
 }
 
 async function submitExpenseRecord() {
-  const type = document.getElementById('expense-type').value;
+  let type = 'daily';
+  const activeBtn = document.querySelector('#expense-type-switch .segmented-control-btn.active');
+  if (activeBtn) {
+    if (activeBtn.id === 'expense-type-personal') {
+      type = 'personal';
+    } else if (activeBtn.id === 'expense-type-salary') {
+      type = 'salary';
+    }
+  }
+
   const subject = document.getElementById('expense-subject').value.trim();
   const amount = parseNumberInput(document.getElementById('expense-amount').value);
 
@@ -3876,16 +3932,19 @@ async function submitExpenseRecord() {
     return;
   }
 
-  const storeName = type === 'daily' ? 'daily_expenses' : 'personal_expenses';
+  const storeName = (type === 'daily' || type === 'salary') ? 'daily_expenses' : 'personal_expenses';
   await dbAdd(storeName, {
     subject,
     amount,
     created_at: Date.now()
   });
 
+  const arabicType = type === 'daily' ? 'مصاريف علوة يومية' : type === 'salary' ? 'رواتب' : 'مصاريف شخصية';
+  const englishType = type === 'daily' ? 'Daily Office' : type === 'salary' ? 'Salaries' : 'Personal';
+
   logAppEvent(
-    `تسجيل مصروفات (${type === 'daily' ? 'مصاريف علوة يومية' : 'مصاريف شخصية'}): ${subject}`,
-    `Recorded expense (${type === 'daily' ? 'Daily Office' : 'Personal'}): ${subject}`,
+    `تسجيل مصروفات (${arabicType}): ${subject}`,
+    `Recorded expense (${englishType}): ${subject}`,
     amount
   );
 
@@ -3900,23 +3959,277 @@ async function submitExpenseRecord() {
   await refreshAllUI();
 }
 
-async function submitLossRecord() {
-  const subject = document.getElementById('loss-subject').value.trim();
-  const amount = parseNumberInput(document.getElementById('loss-amount').value);
-
-  if (!subject || amount <= 0) {
-    showToast(currentLanguage === 'ar' ? 'الرجاء إدخال سبب ومبلغ الخسارة بشكل صحيح' : 'Please fill all required loss fields', 'warning', true);
+async function populateLossCropDropdown() {
+  const allImportItems = await dbGetAll('import_items');
+  const uniqueCrops = [...new Set(allImportItems.map(it => it.crop_type))];
+  const dropdown = document.getElementById('loss-crop-dropdown');
+  if (!dropdown) return;
+  dropdown.innerHTML = '';
+  
+  if (uniqueCrops.length === 0) {
+    const emptyEl = document.createElement('div');
+    emptyEl.className = 'autocomplete-item';
+    emptyEl.style.color = '#888';
+    emptyEl.textContent = currentLanguage === 'ar' ? 'لا توجد محاصيل مسجلة في المخزن حالياً' : 'No crops registered in stock yet';
+    dropdown.appendChild(emptyEl);
     return;
+  }
+  
+  uniqueCrops.forEach(crop => {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'autocomplete-item';
+    itemEl.innerHTML = `<span>${getCropIcon(crop)} ${crop}</span>`;
+    itemEl.addEventListener('click', () => {
+      document.getElementById('loss-crop-search').value = crop;
+      document.getElementById('loss-crop-selector').value = crop;
+      dropdown.style.display = 'none';
+      
+      const isWatermelon = isWatermelonOrMelon(crop);
+      const boxCountContainer = document.getElementById('loss-crop-box-count-container');
+      if (boxCountContainer) {
+        boxCountContainer.style.display = isWatermelon ? 'none' : 'block';
+      }
+    });
+    dropdown.appendChild(itemEl);
+  });
+}
+
+async function submitLossRecord() {
+  const lossTypeCropBtn = document.getElementById('loss-type-crop');
+  const isCropLoss = lossTypeCropBtn && lossTypeCropBtn.classList.contains('active');
+
+  let subject = '';
+  let amount = 0;
+  let lossData = {};
+
+  if (isCropLoss) {
+    const cropType = document.getElementById('loss-crop-search').value.trim();
+    const weight = parseNumberInput(document.getElementById('loss-crop-weight').value);
+    const boxCount = parseNumberInput(document.getElementById('loss-crop-box-count').value);
+
+    if (!cropType || (weight <= 0 && boxCount <= 0)) {
+      showToast(currentLanguage === 'ar' ? 'الرجاء اختيار صنف المحصول وتحديد الوزن أو العدد التالف بشكل صحيح' : 'Please select a crop and enter a valid weight or box count', 'warning', true);
+      return;
+    }
+
+    // Determine estimated financial loss
+    const allSaleItems = await dbGetAll('sale_items');
+    const cropSales = allSaleItems.filter(si => si.crop_type === cropType);
+    let averagePrice = 1000; // Fallback: 1000 IQD per kg
+    if (cropSales.length > 0) {
+      const totalSoldVal = cropSales.reduce((sum, si) => sum + (si.total_amount || 0), 0);
+      const totalSoldWeight = cropSales.reduce((sum, si) => sum + (si.weight_kg || 0), 0);
+      if (totalSoldWeight > 0) {
+        averagePrice = totalSoldVal / totalSoldWeight;
+      }
+    }
+
+    if (weight > 0) {
+      amount = Math.round(weight * averagePrice);
+    } else if (boxCount > 0) {
+      amount = Math.round(boxCount * 10 * averagePrice); // Fallback: 10kg per box/bag
+    }
+
+    if (amount <= 0) {
+      amount = weight > 0 ? weight * 1000 : boxCount * 10000;
+    }
+
+    const weightText = weight > 0 ? `${weight} كغم` : '';
+    const boxText = boxCount > 0 ? `${boxCount} صندوق/كيس` : '';
+    const detailsText = [weightText, boxText].filter(Boolean).join(' - ');
+
+    subject = currentLanguage === 'ar'
+      ? `تلف محصول: ${cropType} (${detailsText})`
+      : `Crop Damage: ${cropType} (${detailsText})`;
+
+    lossData = {
+      type: 'crop_damage',
+      crop_type: cropType,
+      weight_kg: weight,
+      box_count: boxCount
+    };
+
+    // ==========================================
+    // CREATE AUTOMATIC NORMAL SALE INVOICE FOR DAMAGE
+    // ==========================================
+    try {
+      // 1. Resolve customer named "تالف"
+      let customer = cachedCustomers.find(c => c.name.trim() === 'تالف');
+      if (!customer) {
+        const newCustId = await dbAdd('customers', {
+          name: 'تالف',
+          phone: '07700000000',
+          address: 'بغداد',
+          created_at: Date.now()
+        });
+        customer = { id: newCustId, name: 'تالف', phone: '07700000000', address: 'بغداد' };
+        // Refresh cached customers
+        cachedCustomers = await dbGetAll('customers');
+      }
+
+      // 2. Resolve source import invoice and import item
+      let targetImportInvoiceId = null;
+      let targetImportItem = null;
+
+      // Try to find in active imports
+      for (const imp of activeImportInvoices) {
+        const item = imp.items.find(it => it.crop_type === cropType);
+        if (item) {
+          const previousSales = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === cropType);
+          const isCount = (getCropUnitType(cropType) === 'count');
+          
+          let totalPreviouslySold = 0;
+          previousSales.forEach(s => {
+            totalPreviouslySold += (isCount ? (s.box_count || 0) : s.weight_kg);
+          });
+          
+          const stockLimit = isCount ? item.box_count : item.weight_kg;
+          const remainingStock = Math.max(0, stockLimit - totalPreviouslySold);
+          
+          if (remainingStock > 0 || !targetImportInvoiceId) {
+            targetImportInvoiceId = imp.id;
+            targetImportItem = item;
+            if (remainingStock > 0) {
+              break;
+            }
+          }
+        }
+      }
+
+      // Fallback: search all import invoices
+      if (!targetImportInvoiceId) {
+        const allImportItems = await dbGetAll('import_items');
+        const cropImportItems = allImportItems.filter(ii => ii.crop_type === cropType);
+        if (cropImportItems.length > 0) {
+          const sortedCropImports = cropImportItems.sort((a, b) => b.id - a.id);
+          targetImportInvoiceId = sortedCropImports[0].invoice_id;
+          targetImportItem = sortedCropImports[0];
+        }
+      }
+
+      // Final Fallback: Create placeholder if absolutely none exists
+      if (!targetImportInvoiceId) {
+        let farmerId = 1;
+        const allFarmers = await dbGetAll('farmers');
+        if (allFarmers.length > 0) {
+          farmerId = allFarmers[0].id;
+        } else {
+          farmerId = await dbAdd('farmers', {
+            name: 'فلاح افتراضي',
+            phone: '07700000000',
+            address: 'العراق',
+            created_at: Date.now()
+          });
+        }
+        
+        targetImportInvoiceId = await dbAdd('import_invoices', {
+          farmer_id: farmerId,
+          vehicle_type: 'حمل',
+          invoice_date: Date.now(),
+          is_settled: false,
+          created_at: Date.now()
+        });
+        
+        const isCount = (getCropUnitType(cropType) === 'count');
+        const newItemId = await dbAdd('import_items', {
+          invoice_id: targetImportInvoiceId,
+          crop_type: cropType,
+          weight_kg: isCount ? 0 : (weight > 0 ? weight : 100),
+          box_count: boxCount > 0 ? boxCount : 10,
+          weight_per_box: 10
+        });
+        
+        targetImportItem = {
+          id: newItemId,
+          invoice_id: targetImportInvoiceId,
+          crop_type: cropType,
+          weight_kg: isCount ? 0 : (weight > 0 ? weight : 100),
+          box_count: boxCount > 0 ? boxCount : 10,
+          weight_per_box: 10
+        };
+      }
+
+      // 3. Create normal sale invoice
+      const orderId = generateOrderId();
+      const saleInvoiceId = await dbAdd('sale_invoices', {
+        customer_id: customer.id,
+        order_id: orderId,
+        total_amount: 0,
+        payment_type: 'cash',
+        bags_cost: 0,
+        created_at: Date.now()
+      });
+
+      // 4. Save sale item
+      const isCount = (getCropUnitType(cropType) === 'count');
+      const saleItemId = await dbAdd('sale_items', {
+        sale_invoice_id: saleInvoiceId,
+        import_invoice_id: targetImportInvoiceId,
+        crop_type: cropType,
+        weight_kg: isCount ? 0 : weight,
+        box_count: boxCount,
+        agreed_price: 0,
+        unit: isCount ? 'count' : (targetImportItem.unit || 'kg'),
+        commission_amount: 0,
+        porter_fee: 0,
+        unit_price: 0
+      });
+
+      // 5. Record farmer dues (set to 0, which correctly subtracts from inventory and assigns 0 value)
+      const originalImport = await dbGet('import_invoices', targetImportInvoiceId);
+      if (originalImport) {
+        await dbAdd('farmer_dues', {
+          farmer_id: originalImport.farmer_id,
+          import_invoice_id: targetImportInvoiceId,
+          sale_invoice_id: saleInvoiceId,
+          sale_item_id: saleItemId,
+          crop_type: cropType,
+          weight_kg: isCount ? 0 : weight,
+          box_count: boxCount,
+          sold_price: 0,
+          commission_deducted: 0,
+          porter_deducted: 0,
+          net_due: 0,
+          is_paid: false,
+          created_at: Date.now()
+        });
+      }
+
+      logAppEvent(
+        `تسجيل تلقائي لفاتورة بيع تالف للزبون: تالف (صنف: ${cropType})`,
+        `Automatic sale invoice created for damaged goods: تالف (crop: ${cropType})`,
+        0
+      );
+
+    } catch (e) {
+      console.error("Error creating automatic sale invoice for damage:", e);
+    }
+
+  } else {
+    const customSubject = document.getElementById('loss-subject').value.trim();
+    const customAmount = parseNumberInput(document.getElementById('loss-amount').value);
+
+    if (!customSubject || customAmount <= 0) {
+      showToast(currentLanguage === 'ar' ? 'الرجاء إدخال سبب ومبلغ الخسارة بشكل صحيح' : 'Please fill all required loss fields', 'warning', true);
+      return;
+    }
+
+    subject = customSubject;
+    amount = customAmount;
+    lossData = {
+      type: 'other'
+    };
   }
 
   await dbAdd('losses', {
+    ...lossData,
     subject,
     amount,
     created_at: Date.now()
   });
 
   logAppEvent(
-    `تسجيل خسائر وتلفيات: ${subject}`,
+    `تسجيل خسائر (${isCropLoss ? 'تلف محصول' : 'خسائر وتلفيات أخرى'}): ${subject}`,
     `Recorded loss / damage: ${subject}`,
     amount
   );
@@ -3924,9 +4237,16 @@ async function submitLossRecord() {
   playSound('success');
   showToast(currentLanguage === 'ar' ? 'تم تسجيل الخسارة التالفة بنجاح وتعديل الأرباح!' : 'Loss recorded successfully!', 'check_circle');
 
-  // Reset form
+  // Reset crop form fields
+  document.getElementById('loss-crop-search').value = '';
+  document.getElementById('loss-crop-selector').value = '';
+  document.getElementById('loss-crop-weight').value = '';
+  document.getElementById('loss-crop-box-count').value = '';
+
+  // Reset other form fields
   document.getElementById('loss-subject').value = '';
   document.getElementById('loss-amount').value = '';
+
   closeBottomSheet('sheet-new-loss');
 
   await refreshAllUI();
@@ -4604,48 +4924,82 @@ function connectToPrinterDevice(printer) {
 
   // 1. Cordova Classic Bluetooth connection
   if (typeof window.bluetoothSerial !== 'undefined' && printer.type === 'classic') {
-    window.bluetoothSerial.connect(printer.mac, function() {
-      establishSuccessState();
-    }, function(err) {
-      establishFailureState(err);
-    });
+    // Clean up first to prevent native crash/socket leaks
+    try { window.bluetoothSerial.disconnect(); } catch(e) {}
+    
+    // Tiny delay to ensure socket cleanup completes
+    setTimeout(() => {
+      window.bluetoothSerial.connect(printer.mac, function() {
+        // Save to localStorage for auto-reconnect
+        localStorage.setItem('alwa_printer_address', printer.mac);
+        localStorage.setItem('alwa_printer_type', printer.type);
+        localStorage.setItem('alwa_printer_name', printer.name);
+        
+        establishSuccessState();
+      }, function(err) {
+        // If it was already connected and lost, handleConnectionLost will clean up.
+        // Otherwise, handle regular failure.
+        if (isPrinterConnected) {
+          handleConnectionLost(printer.name, printer.mac, printer.type, err);
+        } else {
+          establishFailureState(err);
+        }
+      });
+    }, 150);
     return;
   }
 
   // 2. Cordova BLE Central connection
   if (typeof window.ble !== 'undefined' && printer.type === 'ble') {
-    window.ble.connect(printer.mac, function(device) {
-      // Find write characteristic
-      let writeChar = null;
-      if (device.services && device.characteristics) {
-        for (const char of device.characteristics) {
-          const props = Array.isArray(char.properties) ? char.properties : [];
-          const hasWrite = props.some(p => typeof p === 'string' && (p.toLowerCase().indexOf('write') !== -1));
-          if (hasWrite) {
-            bleWriteServiceUUID = char.service;
-            bleWriteCharUUID = char.characteristic;
-            writeChar = char;
-            break;
+    // Clean up first to prevent GATT leak/native crash
+    try { window.ble.disconnect(printer.mac); } catch(e) {}
+
+    setTimeout(() => {
+      window.ble.connect(printer.mac, function(device) {
+        // Find write characteristic
+        let writeChar = null;
+        if (device.services && device.characteristics) {
+          for (const char of device.characteristics) {
+            const props = Array.isArray(char.properties) ? char.properties : [];
+            const hasWrite = props.some(p => typeof p === 'string' && (p.toLowerCase().indexOf('write') !== -1));
+            if (hasWrite) {
+              bleWriteServiceUUID = char.service;
+              bleWriteCharUUID = char.characteristic;
+              writeChar = char;
+              break;
+            }
           }
         }
-      }
-      
-      // Fallback to standard thermal printer GATT UUIDs if characteristics weren't properly reported
-      if (!writeChar || !bleWriteCharUUID) {
-        console.warn('Could not auto-detect BLE write characteristic, using standard thermal printer fallback UUIDs');
-        bleWriteServiceUUID = '000018f0-0000-1000-8000-00805f9b34fb';
-        bleWriteCharUUID = '00002af1-0000-1000-8000-00805f9b34fb';
-      }
-      
-      establishSuccessState();
-    }, function(err) {
-      establishFailureState(err);
-    });
+        
+        // Fallback to standard thermal printer GATT UUIDs if characteristics weren't properly reported
+        if (!writeChar || !bleWriteCharUUID) {
+          console.warn('Could not auto-detect BLE write characteristic, using standard thermal printer fallback UUIDs');
+          bleWriteServiceUUID = '000018f0-0000-1000-8000-00805f9b34fb';
+          bleWriteCharUUID = '00002af1-0000-1000-8000-00805f9b34fb';
+        }
+        
+        // Save to localStorage for auto-reconnect
+        localStorage.setItem('alwa_printer_address', printer.mac);
+        localStorage.setItem('alwa_printer_type', printer.type);
+        localStorage.setItem('alwa_printer_name', printer.name);
+
+        establishSuccessState();
+      }, function(err) {
+        if (isPrinterConnected) {
+          handleConnectionLost(printer.name, printer.mac, printer.type, err);
+        } else {
+          establishFailureState(err);
+        }
+      });
+    }, 150);
     return;
   }
 
   // 3. Simulated Connection
   setTimeout(() => {
+    localStorage.setItem('alwa_printer_address', printer.mac);
+    localStorage.setItem('alwa_printer_type', printer.type);
+    localStorage.setItem('alwa_printer_name', printer.name);
     establishSuccessState();
   }, 1000);
 
@@ -4655,11 +5009,7 @@ function connectToPrinterDevice(printer) {
     connectedDeviceAddress = printer.mac;
     isCordovaSerialActive = (printer.type === 'classic');
     isManualScanning = false;
-
-    // Cache the printer settings for future background auto-connections
-    localStorage.setItem('alwa_printer_address', printer.mac);
-    localStorage.setItem('alwa_printer_type', printer.type);
-    localStorage.setItem('alwa_printer_name', printer.name);
+    consecutiveAutoConnectFailures = 0; // Reset connection failure counter on manual success
 
     if (statusText) {
       statusText.textContent = currentLanguage === 'ar' ? `متصل بـ ${printer.name} (جاهز)` : `Connected to ${printer.name} (Ready)`;
@@ -4690,11 +5040,88 @@ function connectToPrinterDevice(printer) {
 
   function establishFailureState(err) {
     console.error('Hardware connection error:', err);
+    isPrinterConnected = false;
+    isAutoConnecting = false;
+    bleConnectedDeviceId = null;
+    isCordovaSerialActive = false;
+    connectedDeviceAddress = null;
+
+    // Explicitly clean up on failure
+    if (typeof window.bluetoothSerial !== 'undefined') {
+      try { window.bluetoothSerial.disconnect(); } catch(e) {}
+    }
+    if (typeof window.ble !== 'undefined' && printer.mac) {
+      try { window.ble.disconnect(printer.mac); } catch(e) {}
+    }
+
     if (statusText) {
       statusText.textContent = currentLanguage === 'ar' ? `فشل الاتصال بـ ${printer.name}` : `Failed to connect to ${printer.name}`;
     }
+    if (statusDot) {
+      statusDot.classList.remove('connected');
+    }
+    if (testPrintBtn) {
+      testPrintBtn.setAttribute('disabled', 'true');
+      testPrintBtn.style.opacity = '0.6';
+    }
+    if (scanBtn) {
+      scanBtn.textContent = currentLanguage === 'ar' ? "اقتران وفحص" : "Scan & Pair";
+      scanBtn.style.backgroundColor = "var(--color-primary-mid)";
+    }
+
     showToast(currentLanguage === 'ar' ? 'فشل الاتصال بجهاز الطابعة الحرارية' : 'Failed to connect to hardware printer', 'error', true);
   }
+}
+
+function handleConnectionLost(name, mac, type, err) {
+  console.log(`Connection to ${name} (${mac}) lost:`, err);
+  
+  isPrinterConnected = false;
+  isAutoConnecting = false;
+  bleConnectedDeviceId = null;
+  isCordovaSerialActive = false;
+  connectedDeviceAddress = null;
+
+  // Clean up native hardware states immediately to prevent OS level socket or GATT resource leak crashes
+  if (typeof window.bluetoothSerial !== 'undefined') {
+    try { window.bluetoothSerial.disconnect(); } catch(e) {}
+  }
+  if (typeof window.ble !== 'undefined' && mac) {
+    try { window.ble.disconnect(mac); } catch(e) {}
+  }
+  if (activeWebBluetoothDevice) {
+    try {
+      if (activeWebBluetoothDevice.gatt.connected) {
+        activeWebBluetoothDevice.gatt.disconnect();
+      }
+    } catch(e) {}
+    activeWebBluetoothDevice = null;
+    activeWebBluetoothCharacteristic = null;
+  }
+
+  // Synchronize UI Elements
+  const statusText = document.getElementById('printer-status-text');
+  const statusDot = document.getElementById('printer-status-dot');
+  const testPrintBtn = document.getElementById('btn-test-print');
+  const scanBtn = document.getElementById('btn-scan-printer');
+
+  if (statusText) {
+    statusText.textContent = currentLanguage === 'ar' ? `فقد الاتصال بالطابعة ${name}` : `Connection lost to ${name}`;
+  }
+  if (statusDot) {
+    statusDot.classList.remove('connected');
+  }
+  if (testPrintBtn) {
+    testPrintBtn.setAttribute('disabled', 'true');
+    testPrintBtn.style.opacity = '0.6';
+  }
+  if (scanBtn) {
+    scanBtn.textContent = currentLanguage === 'ar' ? "اقتران وفحص" : "Scan & Pair";
+    scanBtn.style.backgroundColor = "";
+  }
+
+  playSound('error');
+  showToast(currentLanguage === 'ar' ? `تم فقد الاتصال بالطابعة ${name}!` : `Connection to ${name} was lost!`, 'error', true);
 }
 
 function disconnectPrinter() {
@@ -4704,15 +5131,19 @@ function disconnectPrinter() {
   const scanBtn = document.getElementById('btn-scan-printer');
   const container = document.getElementById('printer-device-list-container');
 
-  // Disconnect active hardware Bluetooth
-  if (typeof window.bluetoothSerial !== 'undefined' && isPrinterConnected) {
-    window.bluetoothSerial.disconnect();
+  // Disconnect active hardware Bluetooth cleanly to release all Android/iOS system resources
+  if (typeof window.bluetoothSerial !== 'undefined') {
+    try { window.bluetoothSerial.disconnect(); } catch(e) {}
   }
-  if (typeof window.ble !== 'undefined' && isPrinterConnected && bleConnectedDeviceId) {
-    window.ble.disconnect(bleConnectedDeviceId);
+  if (typeof window.ble !== 'undefined' && (bleConnectedDeviceId || connectedDeviceAddress)) {
+    try { window.ble.disconnect(bleConnectedDeviceId || connectedDeviceAddress); } catch(e) {}
   }
-  if (activeWebBluetoothDevice && activeWebBluetoothDevice.gatt.connected) {
-    activeWebBluetoothDevice.gatt.disconnect();
+  if (activeWebBluetoothDevice) {
+    try {
+      if (activeWebBluetoothDevice.gatt.connected) {
+        activeWebBluetoothDevice.gatt.disconnect();
+      }
+    } catch(e) {}
     activeWebBluetoothDevice = null;
     activeWebBluetoothCharacteristic = null;
   }
@@ -4722,6 +5153,7 @@ function disconnectPrinter() {
   isCordovaSerialActive = false;
   connectedDeviceAddress = null;
   isManualScanning = false;
+  consecutiveAutoConnectFailures = 0; // Reset counter on manual disconnect
 
   // Clear connection details so we do not auto-reconnect immediately after intentional disconnection
   localStorage.removeItem('alwa_printer_address');
@@ -4811,8 +5243,10 @@ function initAutoConnect() {
             return;
           }
         }
+        handleAutoConnectFailure('Device or characteristic not found', savedName, savedAddress, savedType);
       } catch (err) {
         console.error('Auto-connect Web Bluetooth failure:', err);
+        handleAutoConnectFailure(err, savedName, savedAddress, savedType);
       }
       isAutoConnecting = false;
       return;
@@ -4825,13 +5259,24 @@ function initAutoConnect() {
           ? `جاري إعادة الاتصال التلقائي بالطابعة ${savedName}...` 
           : `Auto-reconnecting to ${savedName}...`;
       }
-      window.bluetoothSerial.connect(savedAddress, function() {
-        isAutoConnecting = false;
-        establishAutoConnectSuccess(savedName, savedAddress, savedType);
-      }, function(err) {
-        isAutoConnecting = false;
-        console.error('Auto-connect classic mode failure, retrying soon:', err);
-      });
+      
+      // Clean up previous stale channel first before connecting
+      try { window.bluetoothSerial.disconnect(); } catch(e) {}
+      
+      setTimeout(() => {
+        window.bluetoothSerial.connect(savedAddress, function() {
+          isAutoConnecting = false;
+          establishAutoConnectSuccess(savedName, savedAddress, savedType);
+        }, function(err) {
+          isAutoConnecting = false;
+          if (isPrinterConnected) {
+            handleConnectionLost(savedName, savedAddress, savedType, err);
+          } else {
+            console.error('Auto-connect classic mode failure, retrying soon:', err);
+            handleAutoConnectFailure(err, savedName, savedAddress, savedType);
+          }
+        });
+      }, 150);
       return;
     }
 
@@ -4842,24 +5287,41 @@ function initAutoConnect() {
           ? `جاري إعادة الاتصال التلقائي بالطابعة ${savedName}...` 
           : `Auto-reconnecting to ${savedName}...`;
       }
-      window.ble.connect(savedAddress, function(device) {
-        let writeChar = null;
-        if (device.services && device.characteristics) {
-          for (const char of device.characteristics) {
-            if (char.properties.indexOf('Write') !== -1 || char.properties.indexOf('WriteWithoutResponse') !== -1) {
-              bleWriteServiceUUID = char.service;
-              bleWriteCharUUID = char.characteristic;
-              writeChar = char;
-              break;
+      
+      // Clean up previous stale channel first before connecting
+      try { window.ble.disconnect(savedAddress); } catch(e) {}
+      
+      setTimeout(() => {
+        window.ble.connect(savedAddress, function(device) {
+          let writeChar = null;
+          if (device.services && device.characteristics) {
+            for (const char of device.characteristics) {
+              if (char.properties.indexOf('Write') !== -1 || char.properties.indexOf('WriteWithoutResponse') !== -1) {
+                bleWriteServiceUUID = char.service;
+                bleWriteCharUUID = char.characteristic;
+                writeChar = char;
+                break;
+              }
             }
           }
-        }
-        isAutoConnecting = false;
-        establishAutoConnectSuccess(savedName, savedAddress, savedType);
-      }, function(err) {
-        isAutoConnecting = false;
-        console.error('Auto-connect BLE mode failure, retrying soon:', err);
-      });
+          
+          if (!writeChar || !bleWriteCharUUID) {
+            bleWriteServiceUUID = '000018f0-0000-1000-8000-00805f9b34fb';
+            bleWriteCharUUID = '00002af1-0000-1000-8000-00805f9b34fb';
+          }
+          
+          isAutoConnecting = false;
+          establishAutoConnectSuccess(savedName, savedAddress, savedType);
+        }, function(err) {
+          isAutoConnecting = false;
+          if (isPrinterConnected) {
+            handleConnectionLost(savedName, savedAddress, savedType, err);
+          } else {
+            console.error('Auto-connect BLE mode failure, retrying soon:', err);
+            handleAutoConnectFailure(err, savedName, savedAddress, savedType);
+          }
+        });
+      }, 150);
       return;
     }
 
@@ -4872,12 +5334,42 @@ function initAutoConnect() {
   }, 10000); // Check and attempt reconnect every 10 seconds
 }
 
+function handleAutoConnectFailure(err, name, mac, type) {
+  consecutiveAutoConnectFailures++;
+  console.warn(`Auto-connect failure (${consecutiveAutoConnectFailures}/3) to ${name}:`, err);
+  
+  if (consecutiveAutoConnectFailures >= 3) {
+    if (autoConnectIntervalId) {
+      clearInterval(autoConnectIntervalId);
+      autoConnectIntervalId = null;
+    }
+    isAutoConnecting = false;
+    
+    // Reset status text to guide the user in a friendly way and prevent background hammering
+    const statusText = document.getElementById('printer-status-text');
+    if (statusText) {
+      statusText.textContent = currentLanguage === 'ar' 
+        ? `تم إيقاف الاتصال التلقائي مؤقتاً لتوفير طاقة وموارد الجهاز` 
+        : `Auto-connect paused to conserve battery and system resources`;
+    }
+    
+    showToast(
+      currentLanguage === 'ar' 
+        ? `تم إيقاف الاتصال التلقائي مؤقتاً بعد 3 محاولات فاشلة. يرجى التأكد من تشغيل طابعة البلوتوث ثم اضغط اقتران` 
+        : `Auto-connect paused after 3 failed attempts. Please make sure the printer is turned on and try scanning again.`, 
+      'warning', 
+      true
+    );
+  }
+}
+
 function establishAutoConnectSuccess(name, mac, type) {
   isPrinterConnected = true;
   bleConnectedDeviceId = mac;
   connectedDeviceAddress = mac;
   isCordovaSerialActive = (type === 'classic');
   isManualScanning = false;
+  consecutiveAutoConnectFailures = 0; // Reset counter on success
 
   const statusText = document.getElementById('printer-status-text');
   const statusDot = document.getElementById('printer-status-dot');
@@ -5002,10 +5494,10 @@ async function handleScanAndConnect() {
 }
 
 function handlePaperWidthChange(width) {
-  printerPaperWidth = width;
+  printerPaperWidth = '58'; // Strictly force to 58mm as per user request
   const content = document.getElementById('receipt-paper');
   if (content) {
-    content.className = `thermal-paper w-${width}`;
+    content.className = `thermal-paper w-58`;
   }
 }
 
@@ -6075,10 +6567,8 @@ function openBottomSheet(id) {
   // Specific initializations
   if (id === 'sheet-new-import') {
     addImportCropRow();
-    setupFarmerAutocomplete();
   } else if (id === 'sheet-new-sale') {
     addSaleCropRow();
-    setupCustomerAutocomplete();
   } else if (id === 'sheet-due-claims') {
     renderDueClaims();
   }
@@ -6186,7 +6676,9 @@ async function executeMonthlyRollover(monthKey) {
   const cashSalesTotal = allSales.filter(s => s.payment_type === 'cash' && isTargetMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
   
   const collectedDebtsTotal = allDebts.filter(d => d.is_paid && isTargetMonth(d.created_at)).reduce((sum, d) => sum + d.amount, 0) +
-                               safeAdjustments.filter(a => (a.type === 'partial_debt_payout' || a.type === 'manual_addition') && isTargetMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
+                               safeAdjustments.filter(a => a.type === 'partial_debt_payout' && isTargetMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
+
+  const manualAdditionsTotal = safeAdjustments.filter(a => a.type === 'manual_addition' && isTargetMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
 
   const paidDuesTotal = dues.filter(d => d.is_paid && isTargetMonth(d.created_at)).reduce((sum, d) => sum + d.net_due, 0);
   const paidPortersTotal = porter.filter(p => p.is_paid && isTargetMonth(p.created_at)).reduce((sum, p) => sum + p.amount, 0);
@@ -6203,6 +6695,7 @@ async function executeMonthlyRollover(monthKey) {
     month: monthKey,
     cashSales: cashSalesTotal,
     collectedDebts: collectedDebtsTotal,
+    manualAdditions: manualAdditionsTotal,
     paidDues: paidDuesTotal,
     paidPorters: paidPortersTotal,
     expenses: expensesTotal,
@@ -6385,6 +6878,33 @@ async function printDailyInventoryList() {
   openBottomSheet('sheet-print-preview');
 }
 
+// ==========================================================================
+// ♿ ACCESSIBILITY & VISUALLY IMPAIRED SUITE LOGIC
+// ==========================================================================
+function applyAccessibilityPreferences() {
+  // 1. Zoom/Scale Level
+  const zoomVal = localStorage.getItem('alwa_zoom') || '100';
+  document.documentElement.style.setProperty('--app-zoom', `${zoomVal}%`);
+  
+  const slider = document.getElementById('setting-zoom-slider');
+  if (slider) {
+    slider.value = zoomVal;
+  }
+  const badge = document.getElementById('zoom-level-badge');
+  if (badge) {
+    let zoomText = `${zoomVal}%`;
+    if (zoomVal === '100') zoomText += currentLanguage === 'ar' ? ' (طبيعي)' : ' (Normal)';
+    else if (zoomVal === '115') zoomText += currentLanguage === 'ar' ? ' (كبير)' : ' (Large)';
+    else if (zoomVal === '130') zoomText += currentLanguage === 'ar' ? ' (كبير جداً)' : ' (Extra Large)';
+    else if (zoomVal === '145') zoomText += currentLanguage === 'ar' ? ' (ضخم)' : ' (Massive)';
+    else if (zoomVal === '160') zoomText += currentLanguage === 'ar' ? ' (شديد الضخامة)' : ' (Very Massive)';
+    else if (zoomVal === '175') zoomText += currentLanguage === 'ar' ? ' (عملاق)' : ' (Giant)';
+    else if (zoomVal === '190') zoomText += currentLanguage === 'ar' ? ' (عملاق جداً)' : ' (Super Giant)';
+    else if (zoomVal === '200') zoomText += currentLanguage === 'ar' ? ' (أقصى تكبير)' : ' (Maximum Zoom)';
+    badge.textContent = zoomText;
+  }
+}
+
 // ==============================================
 // 19. APP BOOTSTRAP INITIALIZATION
 // ==============================================
@@ -6401,6 +6921,10 @@ async function startApp() {
 
     // 4. Fill Cache
     await refreshGlobalCaches();
+
+    // 4.5 Initialize Autocompletes Once to Prevent Listeners Accumulation
+    setupFarmerAutocomplete();
+    setupCustomerAutocomplete();
 
     // Check and apply monthly rollover if needed
     await checkAndApplyMonthlyRollover();
@@ -6464,8 +6988,92 @@ async function startApp() {
     document.getElementById('btn-trigger-new-import').addEventListener('click', () => openBottomSheet('sheet-new-import'));
     document.getElementById('btn-trigger-new-sale').addEventListener('click', () => openBottomSheet('sheet-new-sale'));
     
-    document.getElementById('btn-record-expense').addEventListener('click', () => openBottomSheet('sheet-new-expense'));
-    document.getElementById('btn-record-loss').addEventListener('click', () => openBottomSheet('sheet-new-loss'));
+    // Dynamic robust binding for expense and loss buttons
+    const bindExpenseAndLossBtns = () => {
+      const expBtn = document.getElementById('btn-add-expense') || document.getElementById('btn-record-expense');
+      if (expBtn && !expBtn.dataset.hasListener) {
+        expBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openBottomSheet('sheet-new-expense');
+        });
+        expBtn.dataset.hasListener = 'true';
+      }
+      const lossBtn = document.getElementById('btn-add-loss') || document.getElementById('btn-record-loss');
+      if (lossBtn && !lossBtn.dataset.hasListener) {
+        lossBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openBottomSheet('sheet-new-loss');
+        });
+        lossBtn.dataset.hasListener = 'true';
+      }
+    };
+
+    bindExpenseAndLossBtns();
+
+    // Wire up Loss Sheet type toggling
+    const lossTypeCropBtn = document.getElementById('loss-type-crop');
+    const lossTypeOtherBtn = document.getElementById('loss-type-other');
+    const lossCropSection = document.getElementById('loss-crop-section');
+    const lossOtherSection = document.getElementById('loss-other-section');
+
+    if (lossTypeCropBtn && lossTypeOtherBtn && lossCropSection && lossOtherSection) {
+      lossTypeCropBtn.addEventListener('click', () => {
+        lossTypeCropBtn.classList.add('active');
+        lossTypeOtherBtn.classList.remove('active');
+        lossCropSection.style.display = 'flex';
+        lossOtherSection.style.display = 'none';
+      });
+
+      lossTypeOtherBtn.addEventListener('click', () => {
+        lossTypeOtherBtn.classList.add('active');
+        lossTypeCropBtn.classList.remove('active');
+        lossCropSection.style.display = 'none';
+        lossOtherSection.style.display = 'flex';
+      });
+    }
+
+    // Autocomplete click & dropdown bindings for crop loss search
+    const lossCropSearch = document.getElementById('loss-crop-search');
+    const lossCropDropdown = document.getElementById('loss-crop-dropdown');
+    if (lossCropSearch && lossCropDropdown) {
+      lossCropSearch.addEventListener('click', (e) => {
+        e.stopPropagation();
+        populateLossCropDropdown();
+        lossCropDropdown.style.display = 'block';
+      });
+      
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#loss-crop-search') && !e.target.closest('#loss-crop-dropdown')) {
+          lossCropDropdown.style.display = 'none';
+        }
+      });
+    }
+
+    // General event delegation for ALL segmented control buttons
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.segmented-control-btn');
+      if (btn) {
+        const parent = btn.closest('.segmented-control');
+        if (parent) {
+          parent.querySelectorAll('.segmented-control-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        }
+      }
+    });
+
+    // Event delegation fallback to be 100% bulletproof
+    document.addEventListener('click', (e) => {
+      const expBtn = e.target.closest('#btn-add-expense, #btn-record-expense');
+      if (expBtn) {
+        e.preventDefault();
+        openBottomSheet('sheet-new-expense');
+      }
+      const lossBtn = e.target.closest('#btn-add-loss, #btn-record-loss');
+      if (lossBtn) {
+        e.preventDefault();
+        openBottomSheet('sheet-new-loss');
+      }
+    }, true); // Use capture phase to intercept clicks before other handlers
 
     const btnAddSafeLiquidity = document.getElementById('btn-add-safe-liquidity');
     if (btnAddSafeLiquidity) {
@@ -6670,6 +7278,17 @@ async function startApp() {
     soundEnabled = storedSound === 'true';
     document.getElementById('setting-sound-alerts').checked = soundEnabled;
 
+    // Initialize & Bind Accessibility Controls (Accessibility / Visually Impaired Mode)
+    applyAccessibilityPreferences();
+
+    const zoomSlider = document.getElementById('setting-zoom-slider');
+    if (zoomSlider) {
+      zoomSlider.addEventListener('input', (e) => {
+        localStorage.setItem('alwa_zoom', e.target.value);
+        applyAccessibilityPreferences();
+      });
+    }
+
     // 20. Bind customer payment trigger select (cash/debt) in sale form
     const paymentBtns = document.querySelectorAll('.toggle-switch-group .toggle-switch-btn');
     paymentBtns.forEach(btn => {
@@ -6693,6 +7312,73 @@ async function startApp() {
       btn.addEventListener('click', () => {
         debtDaysBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+      });
+    });
+
+    // ♿ Robust Virtual Keyboard open/close detection to hide/show .bottom-nav
+    const initialWindowHeight = window.innerHeight;
+    
+    function isInputActiveElement() {
+      const activeEl = document.activeElement;
+      if (!activeEl) return false;
+      const tag = activeEl.tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      const isReadonly = activeEl.readOnly || activeEl.hasAttribute('readonly');
+      const isDisabled = activeEl.disabled || activeEl.hasAttribute('disabled');
+      return isInput && !isReadonly && !isDisabled;
+    }
+
+    function checkKeyboardState() {
+      const currentHeight = window.innerHeight;
+      const heightDifference = initialWindowHeight - currentHeight;
+      const isFocused = isInputActiveElement();
+
+      // If viewport is significantly smaller (mobile keyboard visible) OR an input is focused, hide bottom navigation
+      if (heightDifference > 120 || isFocused) {
+        document.body.classList.add('keyboard-open');
+      } else {
+        document.body.classList.remove('keyboard-open');
+      }
+    }
+
+    // Capture focusin/focusout globally (covers dynamically added elements too)
+    document.addEventListener('focusin', () => {
+      setTimeout(checkKeyboardState, 100);
+    });
+
+    document.addEventListener('focusout', () => {
+      setTimeout(checkKeyboardState, 100);
+    });
+
+    // Resize listener covers orientation changes and keyboard appearance
+    window.addEventListener('resize', checkKeyboardState);
+
+    // Global leak-proof event delegation to close all autocomplete dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      // 1. Farmer autocomplete
+      const farmerInput = document.getElementById('import-farmer-name');
+      const farmerDropdown = document.getElementById('farmer-autocomplete');
+      if (farmerInput && farmerDropdown && e.target !== farmerInput && e.target !== farmerDropdown) {
+        farmerDropdown.style.display = 'none';
+      }
+
+      // 2. Customer autocomplete
+      const customerInput = document.getElementById('sale-customer-name');
+      const customerDropdown = document.getElementById('customer-autocomplete');
+      if (customerInput && customerDropdown && e.target !== customerInput && e.target !== customerDropdown) {
+        customerDropdown.style.display = 'none';
+      }
+
+      // 3. Crop autocomplete in dynamic rows
+      const cropDropdowns = document.querySelectorAll('.crop-autocomplete-dropdown');
+      cropDropdowns.forEach(dropdown => {
+        const parentFormGroup = dropdown.closest('.form-group');
+        if (parentFormGroup) {
+          const input = parentFormGroup.querySelector('input');
+          if (input && e.target !== input && e.target !== dropdown && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+          }
+        }
       });
     });
 

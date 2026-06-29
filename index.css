@@ -326,8 +326,8 @@ body::before {
   font-weight: 700;
 }
 
-/* Hide bottom navigation when input keyboard is likely open */
-body:has(input:focus:not([readonly]), textarea:focus, select:focus) .bottom-nav {
+/* Hide bottom navigation when input keyboard is likely open (managed robustly via JS) */
+body.keyboard-open .bottom-nav {
   display: none !important;
 }
 
@@ -2370,3 +2370,581 @@ input:checked + .slider:before {
   background: rgba(255, 255, 255, 0.8) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
+
+/* ==========================================================================
+   ♿ PROFESSIONAL ACCESSIBILITY SUITE FOR VISUALLY IMPAIRED USERS
+   ========================================================================== */
+
+/* Zoom settings for full viewport */
+html {
+  zoom: var(--app-zoom, 100%);
+  transition: zoom 0.15s ease-out;
+}
+
+/* High Contrast Mode Overrides */
+body.high-contrast {
+  --color-primary: #000000 !important;
+  --color-primary-mid: #000000 !important;
+  --color-primary-light: #000000 !important;
+  --color-accent: #000000 !important;
+  --color-text-dark: #000000 !important;
+  --color-text-muted: #000000 !important;
+  --color-surface: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.high-contrast::after,
+body.high-contrast::before {
+  display: none !important; /* Remove background gradients/noise to maximize clarity */
+}
+
+body.high-contrast .premium-card,
+body.high-contrast .settings-item,
+body.high-contrast .summary-item,
+body.high-contrast .stats-grid-2,
+body.high-contrast .stats-grid-3,
+body.high-contrast .info-strip,
+body.high-contrast .printer-status-bar,
+body.high-contrast #app-logs-container {
+  border: 2px solid #000000 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  color: #000000 !important;
+}
+
+body.high-contrast input[type="text"],
+body.high-contrast input[type="number"],
+body.high-contrast select,
+body.high-contrast textarea {
+  border: 2.5px solid #000000 !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast input::placeholder {
+  color: #555555 !important;
+  font-weight: 700 !important;
+}
+
+body.high-contrast .btn-primary,
+body.high-contrast .btn-secondary,
+body.high-contrast .segmented-control-btn,
+body.high-contrast .toggle-switch-btn,
+body.high-contrast .keypad-btn,
+body.high-contrast .nav-item {
+  border: 2px solid #000000 !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+body.high-contrast .btn-primary:hover,
+body.high-contrast .btn-secondary:hover,
+body.high-contrast .segmented-control-btn.active,
+body.high-contrast .toggle-switch-btn.active,
+body.high-contrast .nav-item.active {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+body.high-contrast table,
+body.high-contrast th,
+body.high-contrast td {
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+}
+
+body.high-contrast th {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.high-contrast td {
+  font-weight: 800 !important;
+}
+
+body.high-contrast span,
+body.high-contrast p,
+body.high-contrast div,
+body.high-contrast h1,
+body.high-contrast h2,
+body.high-contrast h3,
+body.high-contrast h4,
+body.high-contrast strong,
+body.high-contrast small {
+  color: #000000 !important;
+}
+
+body.high-contrast .material-icons-round {
+  color: #000000 !important;
+}
+
+/* Bold Fonts Mode Overrides */
+body.bold-fonts,
+body.bold-fonts * {
+  font-weight: 700 !important;
+}
+
+body.bold-fonts h1,
+body.bold-fonts h2,
+body.bold-fonts h3,
+body.bold-fonts h4,
+body.bold-fonts strong,
+body.bold-fonts th,
+body.bold-fonts .settings-item-title,
+body.bold-fonts .financial-value {
+  font-weight: 900 !important;
+}
+
+/* Unconventional Premium Liquidity Panel */
+.liquidity-panel-container {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(4, 120, 87, 0.04) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  border-radius: 16px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.liquidity-panel-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.liquidity-panel-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.liquidity-panel-container:hover::before {
+  opacity: 1;
+}
+
+.liquidity-panel-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.liquidity-panel-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(4, 120, 87, 0.15) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  flex-shrink: 0;
+}
+
+.liquidity-pulse-icon {
+  color: #059669;
+  font-size: 20px;
+}
+
+.liquidity-add-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #10b981;
+  color: white;
+  font-size: 10px !important;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffff;
+  font-weight: bold;
+}
+
+.liquidity-panel-text {
+  flex-grow: 1;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.liquidity-panel-text h4 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1b4332;
+}
+
+.liquidity-panel-text p {
+  margin: 0;
+  font-size: 10.5px;
+  color: #52b788;
+  line-height: 1.4;
+}
+
+.btn-premium-liquidity {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-premium-liquidity:hover {
+  background: linear-gradient(135deg, #34d399 0%, #047857 100%);
+  transform: scale(1.04);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.btn-premium-liquidity:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.btn-premium-liquidity span.material-icons-round {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+.btn-premium-liquidity:hover span.material-icons-round {
+  transform: translateY(-1px) scale(1.15);
+}
+
+
+/* ==========================================================================
+   ⚙️ PROFESSIONAL BLE PRINTER SETUP SECTION (CLEAN & ELEGANT LIGHT THEME)
+   ========================================================================= */
+.printer-setup-card-pro {
+  border: 1.5px solid rgba(27, 67, 50, 0.12) !important;
+  background: var(--color-white) !important;
+  box-shadow: 0 10px 30px -5px rgba(27, 67, 50, 0.08) !important;
+  color: var(--color-text-main) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  padding: 20px !important;
+}
+
+.printer-card-header-pro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.printer-header-icon-pro {
+  background: rgba(82, 183, 136, 0.12);
+  color: var(--color-primary-mid);
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 24px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.printer-header-text-pro {
+  display: flex;
+  flex-direction: column;
+}
+
+.printer-title-pro {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.printer-subtitle-pro {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 2px 0 0 0;
+}
+
+.printer-status-bar-pro {
+  background: #f4fbf7;
+  border: 1px solid rgba(82, 183, 136, 0.18);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.status-indicator-pro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot-pro {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #94a3b8; /* default gray */
+  transition: background-color 0.3s ease;
+}
+
+.status-dot-pro.connected {
+  background-color: var(--color-success);
+  box-shadow: 0 0 8px rgba(82, 183, 136, 0.6);
+}
+
+.status-label-pro {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.status-text-pro {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary-mid);
+}
+
+.form-group-pro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label-pro {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.segmented-control-pro {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.segmented-control-btn-pro {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.segmented-control-btn-pro:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-main);
+}
+
+.segmented-control-btn-pro.active {
+  background: var(--color-white);
+  color: var(--color-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.printer-actions-pro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn-scan-pro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  background: linear-gradient(135deg, var(--color-primary-mid) 0%, var(--color-primary) 100%);
+  color: var(--color-white);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(82, 183, 136, 0.15);
+}
+
+.btn-scan-pro:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.btn-test-pro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-primary-light);
+  background: var(--color-white);
+  color: var(--color-primary);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-test-pro:not(:disabled):hover {
+  background: #f4fbf7;
+  transform: translateY(-1px);
+}
+
+.btn-test-pro:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  background: #f8fafc;
+}
+
+.btn-icon-pro {
+  font-size: 16px !important;
+}
+
+.devices-discovery-panel-pro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding-top: 14px;
+}
+
+.discovery-header-pro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.discovery-title-pro {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.discovery-badge-pro {
+  background: rgba(82, 183, 136, 0.15);
+  color: var(--color-primary);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.discovery-list-pro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Dynamic device list items with clean light capsule style */
+.printer-device-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 16px !important;
+  background: var(--color-white) !important;
+  border: 1.5px solid rgba(27, 67, 50, 0.08) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 10px -2px rgba(27, 67, 50, 0.04) !important;
+  cursor: pointer !important;
+  color: var(--color-text-main) !important;
+  transition: all 0.2s ease !important;
+}
+
+.printer-device-item:hover {
+  background: rgba(82, 183, 136, 0.08) !important;
+  border-color: var(--color-primary-light) !important;
+  transform: translateY(-1px) !important;
+}
+
+.printer-device-item:active {
+  transform: scale(0.98) !important;
+}
+
+/* ==========================================================================
+   🖨️ PREMIUM PRINT INVENTORY BUTTON (PROFESSIONAL & ELEGANT)
+   ========================================================================= */
+.btn-print-inventory-pro {
+  background: linear-gradient(135deg, var(--color-primary-mid) 0%, var(--color-primary) 100%) !important;
+  color: var(--color-white) !important;
+  border: 1px solid rgba(82, 183, 136, 0.2) !important;
+  padding: 8px 18px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(27, 67, 50, 0.15) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.btn-print-inventory-pro::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: 0.6s ease;
+}
+
+.btn-print-inventory-pro:hover::before {
+  left: 100%;
+}
+
+.btn-print-inventory-pro:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 18px rgba(27, 67, 50, 0.25) !important;
+  border-color: var(--color-primary-light) !important;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary-mid) 100%) !important;
+}
+
+.btn-print-inventory-pro:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 2px 6px rgba(27, 67, 50, 0.15) !important;
+}
+
+
+

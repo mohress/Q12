@@ -265,7 +265,7 @@
             <!-- Dynamic select populated by app.js -->
           </select>
         </div>
-        <button id="btn-print-inventory" class="btn-primary" style="margin: 0; padding: 6px 14px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; border-radius: 8px; background: var(--color-primary-mid);">
+        <button id="btn-print-inventory" class="btn-print-inventory-pro">
           <span class="material-icons-round" style="font-size: 16px;">print</span>
           <span id="txt-print-inventory-lbl">طباعة قائمة جرد يومية</span>
         </button>
@@ -273,20 +273,14 @@
       <!-- Grid for Safe Box & Profits -->
       <div class="stats-top-grid">
         <!-- Card 1: Smart Cash Box -->
-        <div class="stats-summary-card safe-card" style="display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; min-height: 125px;">
-          <div>
-            <div class="stats-card-header">
-              <div class="icon-badge-round">
-                <span class="material-icons-round">account_balance_wallet</span>
-              </div>
-              <span class="safe-balance-label" id="txt-safe-box-label">رصيد الخزنة الحالي</span>
+        <div class="stats-summary-card safe-card">
+          <div class="stats-card-header">
+            <div class="icon-badge-round">
+              <span class="material-icons-round">account_balance_wallet</span>
             </div>
-            <div class="safe-balance-value" id="val-safe-box">0 دينار</div>
+            <span class="safe-balance-label" id="txt-safe-box-label">رصيد الخزنة الحالي</span>
           </div>
-          <button id="btn-add-safe-liquidity" class="btn-primary" style="background: var(--color-success); font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; align-self: flex-start; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; border: none; cursor: pointer; color: #fff;">
-            <span class="material-icons-round" style="font-size: 14px;">add_card</span>
-            <span id="txt-add-liquidity-btn-lbl">إضافة سيولة نقدية</span>
-          </button>
+          <div class="safe-balance-value" id="val-safe-box">0 دينار</div>
         </div>
         
         <!-- Card 2: Net Office Profits -->
@@ -406,6 +400,24 @@
         </button>
       </div>
 
+      <!-- Redesigned High-End Unconventional Liquidity Management Card -->
+      <div class="liquidity-panel-container">
+        <div class="liquidity-panel-content">
+          <div class="liquidity-panel-icon-wrap">
+            <span class="material-icons-round liquidity-pulse-icon">account_balance</span>
+            <span class="material-icons-round liquidity-add-badge">add</span>
+          </div>
+          <div class="liquidity-panel-text">
+            <h4 id="txt-add-liquidity-title">إيداع سيولة نقدية جديدة</h4>
+            <p id="txt-add-liquidity-desc">حقن أموال إضافية مباشرة إلى رصيد الخزنة لتسوية الحسابات</p>
+          </div>
+          <button id="btn-add-safe-liquidity" class="btn-premium-liquidity">
+            <span id="txt-add-liquidity-btn-lbl">إيداع سيولة</span>
+            <span class="material-icons-round">bolt</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Expense Statistics SVG Chart -->
       <div class="premium-card chart-card">
         <h3 id="txt-chart-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary);">توزيع المصاريف والأرباح لشهر الجاري</h3>
@@ -440,6 +452,58 @@
     <main id="screen-settings" class="screen-content animate">
       <div class="settings-list">
         
+        <!-- Bluetooth Printer Config (Professional & Elegant Light-Theme Design) -->
+        <div class="premium-card printer-setup-card-pro">
+          <div class="printer-card-header-pro">
+            <span class="material-icons-round printer-header-icon-pro">print</span>
+            <div class="printer-header-text-pro">
+              <h3 id="txt-printer-title" class="printer-title-pro">إعدادات طابعة الفواتير (Bluetooth BLE)</h3>
+              <p class="printer-subtitle-pro">ربط وضبط طابعات البلوتوث لطباعة الفواتير فورياً</p>
+            </div>
+          </div>
+          
+          <!-- Connection Status Info -->
+          <div class="printer-status-bar-pro">
+            <div class="status-indicator-pro">
+              <div class="status-dot-pro" id="printer-status-dot"></div>
+              <span class="status-label-pro">حالة الاتصال:</span>
+              <span id="printer-status-text" class="status-text-pro">الطابعة غير متصلة</span>
+            </div>
+          </div>
+
+          <!-- Paper Width Setup -->
+          <div class="form-group-pro" style="display: none !important;">
+            <label id="lbl-paper-width" class="form-label-pro">عرض ورق الطباعة</label>
+            <div class="segmented-control-pro">
+              <button class="segmented-control-btn-pro active" id="paper-width-58">58mm</button>
+              <button class="segmented-control-btn-pro" id="paper-width-80">80mm</button>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="printer-actions-pro">
+            <button class="btn-scan-pro" id="btn-scan-printer">
+              <span class="material-icons-round btn-icon-pro">bluetooth_searching</span>
+              <span>اقتران وفحص</span>
+            </button>
+            <button class="btn-test-pro" id="btn-test-print" disabled>
+              <span class="material-icons-round btn-icon-pro">receipt_long</span>
+              <span>طباعة فحص</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Devices Discovery List -->
+          <div id="printer-device-list-container" class="devices-discovery-panel-pro" style="display: none;">
+            <div class="discovery-header-pro">
+              <span id="lbl-discovered-devices" class="discovery-title-pro">الأجهزة المكتشفة:</span>
+              <span id="printer-device-count" class="discovery-badge-pro">0</span>
+            </div>
+            <div id="printer-devices-list" class="discovery-list-pro">
+              <!-- Discovered paired and unpaired bluetooth devices will be populated here -->
+            </div>
+          </div>
+        </div>
+
         <!-- Office Info Form -->
         <div class="premium-card" style="gap: 14px;">
           <h3 id="txt-office-settings-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary); border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">معلومات العلوة</h3>
@@ -456,6 +520,41 @@
             <input type="text" class="form-input" id="setting-office-location" value="جمهورية العراق">
           </div>
           <button class="btn-primary" id="btn-save-office-settings" style="padding: 10px; font-size: 12px;">حفظ المعلومات</button>
+        </div>
+
+        <!-- Accessibility / Visually Impaired Settings -->
+        <div class="premium-card" id="accessibility-panel" style="gap: 14px; border: 1.5px solid #0284c7; background: #f0f9ff; position: relative; overflow: hidden; margin-top: 12px; margin-bottom: 12px;">
+          <div style="position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; background: rgba(2, 132, 199, 0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 24px; color: #0284c7; transform: translate(4px, 4px);">accessibility_new</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: #0284c7; font-size: 20px;">accessibility</span>
+            <h3 id="txt-accessibility-title" style="font-size: 14px; font-weight: 800; color: #0369a1;">تسهيل الاستخدام وضعاف البصر</h3>
+          </div>
+          
+          <p id="txt-accessibility-desc" style="font-size: 11px; color: #0369a1; margin-top: -6px; font-weight: 600;">إعدادات متقدمة مخصصة لضعاف البصر وكبار السن لتسهيل القراءة وتكبير عناصر التطبيق بالكامل.</p>
+
+          <!-- App Zoom Level Slider -->
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 12px; background: #ffffff; border-radius: 12px; border: 1px solid #bae6fd;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: #0369a1; font-size: 12px;" id="lbl-zoom-level">حجم نصوص وعناصر التطبيق:</span>
+              <span id="zoom-level-badge" style="background: #0284c7; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800;">100% (طبيعي)</span>
+            </div>
+            
+            <input type="range" id="setting-zoom-slider" min="100" max="200" step="15" value="100" style="width: 100%; accent-color: #0284c7; height: 6px; background: #e0f2fe; border-radius: 4px; outline: none; cursor: pointer;">
+            
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; font-weight: 700; padding: 0 2px;">
+              <span>100%</span>
+              <span>115%</span>
+              <span>130%</span>
+              <span>145%</span>
+              <span>160%</span>
+              <span>175%</span>
+              <span>190%</span>
+              <span>200%</span>
+            </div>
+          </div>
         </div>
 
         <!-- Passcode System Settings -->
@@ -481,39 +580,7 @@
           </label>
         </div>
 
-        <!-- Bluetooth Printer Config -->
-        <div class="premium-card" style="gap: 12px;">
-          <h3 id="txt-printer-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary);">إعدادات طابعة الفواتير (Bluetooth BLE)</h3>
-          
-          <div class="printer-status-bar">
-            <div class="status-dot" id="printer-status-dot"></div>
-            <span id="printer-status-text">الطابعة غير متصلة</span>
-          </div>
 
-          <div class="form-group">
-            <label id="lbl-paper-width">عرض ورق الطباعة</label>
-            <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);">
-              <button class="segmented-control-btn active" id="paper-width-58">58mm</button>
-              <button class="segmented-control-btn" id="paper-width-80">80mm</button>
-            </div>
-          </div>
-
-          <div class="summary-grid">
-            <button class="btn-primary" id="btn-scan-printer" style="padding: 10px; font-size: 12px;">اقتران وفحص</button>
-            <button class="btn-secondary" id="btn-test-print" style="padding: 10px; font-size: 12px;" disabled>طباعة فحص</button>
-          </div>
-
-          <!-- Dynamic Devices Discovery List -->
-          <div id="printer-device-list-container" style="display: none; flex-direction: column; gap: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px dashed rgba(0,0,0,0.15);">
-            <div id="printer-device-list-header" style="font-size: 11px; font-weight: 700; color: var(--color-text-muted); display: flex; justify-content: space-between; align-items: center;">
-              <span id="lbl-discovered-devices">الأجهزة المكتشفة:</span>
-              <span id="printer-device-count" style="background: var(--color-primary); color: white; padding: 1px 6px; border-radius: 10px; font-size: 9px; font-weight: 600;">0</span>
-            </div>
-            <div id="printer-devices-list" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
-              <!-- Discovered paired and unpaired bluetooth devices will be populated here -->
-            </div>
-          </div>
-        </div>
 
         <!-- Database Backups -->
         <div class="premium-card" style="gap: 12px;">
