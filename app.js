@@ -47,6 +47,7 @@ document.getElementById = function(id) {
     'lbl-name-setting': 'lbl-office-name',
     'lbl-phone-setting': 'lbl-office-phone',
     'lbl-location-setting': 'lbl-office-location',
+    'lbl-cashier-setting': 'lbl-office-cashier',
     'btn-save-office-settings': 'btn-save-office-settings',
     'lbl-numeral-title': 'txt-numeral-title',
     'lbl-numeral-desc': 'txt-numeral-desc',
@@ -164,6 +165,7 @@ let printerPaperWidth = '58'; // '58' or '80'
 let officeName = localStorage.getItem('alwa_office_name') || 'علوة الغابة الخضراء';
 let officePhone = localStorage.getItem('alwa_office_phone') || '07701234567';
 let officeLocation = localStorage.getItem('alwa_office_location') || 'جمهورية العراق';
+let officeCashier = localStorage.getItem('alwa_office_cashier') || 'John Doe';
 let officeChangesCount = parseInt(localStorage.getItem('alwa_office_changes_count') || '0');
 
 // BLE Central state (cordova-plugin-ble-central)
@@ -571,6 +573,7 @@ const translations = {
     lblOfficeName: "اسم العلوة (يظهر بالفاتورة)",
     lblOfficePhone: "رقم الهاتف",
     lblOfficeLocation: "موقع العلوة (العنوان)",
+    lblOfficeCashier: "اسم المحاسب (بالإنجليزي حصراً)",
     btnSaveOffice: "حفظ المعلومات",
     txtNumeralTitle: "عرض الأرقام العربية",
     txtNumeralDesc: "التبديل بين الأرقام الهندية (١٢٣) والإنجليزية (123) في كل شاشات وفواتير التطبيق.",
@@ -665,6 +668,7 @@ const translations = {
     lblOfficeName: "Alwa Name (Receipt Header)",
     lblOfficePhone: "Phone Number",
     lblOfficeLocation: "Alwa Location (Address)",
+    lblOfficeCashier: "Accountant Name (English Only)",
     btnSaveOffice: "Save Settings",
     txtNumeralTitle: "Eastern Arabic Numerals",
     txtNumeralDesc: "Switch between Arabic-Indic numerals (١٢٣) and Western numerals (123) globally.",
@@ -1764,7 +1768,10 @@ async function renderSalesList() {
 
   allSales.sort((a,b) => b.created_at - a.created_at);
 
-  const activeSales = allSales.filter(sale => !isSaleInvoiceSettled(sale, debts));
+  const activeSales = allSales.filter(sale => {
+    if (searchQuery) return true; // Include both active and settled sales if there is a search query
+    return !isSaleInvoiceSettled(sale, debts);
+  });
 
   let displayedCount = 0;
   for (const sale of activeSales) {
@@ -1798,10 +1805,12 @@ async function renderSalesList() {
       </div>`;
     }).join('');
 
+    const isSettled = isSaleInvoiceSettled(sale, debts);
+
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
+          <span class="lang-badge" style="background-color: ${isSettled ? '#6b7280' : 'var(--color-primary-mid)'}; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
             ID: <span class="font-handjet" style="font-size: 14.5px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
@@ -1809,9 +1818,12 @@ async function renderSalesList() {
         </div>
         <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
           <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
-          ${sale.payment_type === 'cash' ? 
-            `<span class="debt-status-tag ok" style="font-size:9px;">💵 ${translations[currentLanguage].btnPayCash}</span>` : 
-            `<span class="debt-status-tag late" style="font-size:9px;">📋 ${translations[currentLanguage].btnPayDebt}</span>`
+          ${isSettled ? 
+            `<span class="debt-status-tag ok" style="font-size:9px; background-color: #e5e7eb; color: #374151; border-color: #d1d5db;">📦 ${currentLanguage === 'ar' ? 'تمت تسويتها' : 'Settled'}</span>` : 
+            (sale.payment_type === 'cash' ? 
+              `<span class="debt-status-tag ok" style="font-size:9px;">💵 ${translations[currentLanguage].btnPayCash}</span>` : 
+              `<span class="debt-status-tag late" style="font-size:9px;">📋 ${translations[currentLanguage].btnPayDebt}</span>`
+            )
           }
         </div>
       </div>
@@ -2977,53 +2989,49 @@ async function renderDuesList() {
       <!-- Collapsible Details Container -->
       <div id="farmer-details-${farmerId}" style="display:none; flex-direction:column; gap:8px; margin-top:8px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:8px;">
         <h5 style="font-size:11px; font-weight:700; color:var(--color-primary); margin: 0 0 4px 0;">
-          ${currentLanguage === 'ar' ? 'تفاصيل المبيعات المستحقة:' : 'Detailed Dues:'}
+          ${currentLanguage === 'ar' ? 'الأصناف المستوردة من هذا الفلاح:' : 'Imported Crop Types:'}
         </h5>
-        <div style="display: flex; flex-direction: column; gap: 6px; max-height: 250px; overflow-y: auto;">
-          ${data.rawItems.map(item => {
-            const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
-            const cropIcon = getCropIcon(item.crop_type);
-            const saleItem = saleItems.find(si => si.id === item.sale_item_id);
-            let priceLabel = '';
-            let priceValue = 0;
-            
-            if (saleItem) {
-              const isCountUnit = saleItem.unit === 'count';
-              priceLabel = isCountUnit 
-                ? (currentLanguage === 'ar' ? 'سعر البيع/العدد:' : 'Sale Price/Qty:') 
-                : (currentLanguage === 'ar' ? 'سعر البيع/الكيلو:' : 'Sale Price/kg:');
-              priceValue = saleItem.unit_price || (isCountUnit 
-                ? (saleItem.box_count ? Math.round(saleItem.agreed_price / saleItem.box_count) : 0) 
-                : (saleItem.weight_kg ? Math.round(saleItem.agreed_price / saleItem.weight_kg) : 0));
-            } else {
-              const isCountUnit = !item.weight_kg || item.weight_kg === 0;
-              priceLabel = isCountUnit 
-                ? (currentLanguage === 'ar' ? 'سعر البيع/العدد:' : 'Sale Price/Qty:') 
-                : (currentLanguage === 'ar' ? 'سعر البيع/الكيلو:' : 'Sale Price/kg:');
-              priceValue = isCountUnit 
-                ? (item.box_count ? Math.round(item.sold_price / item.box_count) : 0) 
-                : (item.weight_kg ? Math.round(item.sold_price / item.weight_kg) : 0);
-            }
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          ${(() => {
+            const cropsGroup = {};
+            data.rawItems.forEach(item => {
+              if (!cropsGroup[item.crop_type]) {
+                cropsGroup[item.crop_type] = [];
+              }
+              cropsGroup[item.crop_type].push(item);
+            });
+            return Object.keys(cropsGroup).map(crop => {
+              const cropIcon = getCropIcon(crop);
+              const items = cropsGroup[crop];
+              const totalBoxes = items.reduce((sum, item) => sum + (item.box_count || 0), 0);
+              const totalWeight = items.reduce((sum, item) => sum + (item.weight_kg || 0), 0);
+              
+              let quantityText = '';
+              if (totalWeight > 0) {
+                quantityText = `${formatVal(totalWeight)} ${currentLanguage === 'ar' ? 'كغم' : 'kg'}`;
+              } else {
+                quantityText = `${formatVal(totalBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}`;
+              }
 
-            // Ultimate fallback: If priceValue is still 0 or empty, try to use the sold_price
-            if (!priceValue || priceValue === 0) {
-              priceValue = item.sold_price || (saleItem ? saleItem.agreed_price : 0);
-              priceLabel = currentLanguage === 'ar' ? 'إجمالي سعر البيع:' : 'Total Sale Price:';
-            }
-
-            return `
-              <div style="display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.02); border: 1px solid rgba(0, 0, 0, 0.04); padding: 8px; border-radius: 8px; gap: 4px; font-size:11px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <strong style="color: var(--color-primary);">${cropIcon} ${item.crop_type}</strong>
-                  <span style="font-size: 10px; color: var(--color-text-muted);">${itemDate}</span>
+              return `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.02); border: 1px solid rgba(0, 0, 0, 0.04); padding: 8px 12px; border-radius: 8px; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">${cropIcon}</span>
+                    <div>
+                      <strong style="color: var(--color-primary); font-size: 12px;">${crop}</strong>
+                      <div style="font-size: 10px; color: var(--color-text-muted);">
+                        ${currentLanguage === 'ar' ? 'الكمية الإجمالية المستحقة:' : 'Total due qty:'} ${quantityText}
+                      </div>
+                    </div>
+                  </div>
+                  <button class="btn-secondary btn-sales-audit" data-farmer-id="${farmerId}" data-crop-type="${crop}" style="padding: 5px 10px; font-size: 10px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); border-radius: 6px; font-weight: 700;">
+                    <span class="material-icons-round" style="font-size: 12px;">analytics</span>
+                    <span>${currentLanguage === 'ar' ? 'جرد المبيعات' : 'Sales Audit'}</span>
+                  </button>
                 </div>
-                <div style="display: flex; justify-content: space-between; color: var(--color-text-muted); font-size:10px;">
-                  <span>${currentLanguage === 'ar' ? 'الكمية:' : 'Qty:'} ${item.box_count || 0} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}</span>
-                  <span>${priceLabel} <strong style="color:var(--color-primary-mid);">${formatVal(priceValue, true)}</strong></span>
-                </div>
-              </div>
-            `;
-          }).join('')}
+              `;
+            }).join('');
+          })()}
         </div>
       </div>
     `;
@@ -3063,9 +3071,17 @@ async function renderDuesList() {
       }
     });
   });
+
+  document.querySelectorAll('.btn-sales-audit').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const farmerId = parseInt(btn.dataset.farmerId);
+      const crop = btn.dataset.cropType;
+      await showSalesAuditSheet(farmerId, crop);
+    });
+  });
 }
 
-function showCustomConfirm(title, message) {
+function showCustomConfirm(title, message, okText = '', cancelText = '') {
   return new Promise((resolve) => {
     const dialog = document.getElementById('custom-confirm-dialog');
     if (!dialog) {
@@ -3083,6 +3099,12 @@ function showCustomConfirm(title, message) {
     const okBtn = document.getElementById('btn-confirm-ok');
     const cancelBtn = document.getElementById('btn-confirm-cancel');
     
+    const defaultOkText = okBtn ? okBtn.textContent : (currentLanguage === 'ar' ? 'تأكيد' : 'Confirm');
+    const defaultCancelText = cancelBtn ? cancelBtn.textContent : (currentLanguage === 'ar' ? 'إلغاء' : 'Cancel');
+    
+    if (okBtn && okText) okBtn.textContent = okText;
+    if (cancelBtn && cancelText) cancelBtn.textContent = cancelText;
+    
     const onOk = () => {
       dialog.style.display = 'none';
       cleanup();
@@ -3096,13 +3118,321 @@ function showCustomConfirm(title, message) {
     };
     
     function cleanup() {
-      if (okBtn) okBtn.removeEventListener('click', onOk);
-      if (cancelBtn) cancelBtn.removeEventListener('click', onCancel);
+      if (okBtn) {
+        okBtn.removeEventListener('click', onOk);
+        if (okText) okBtn.textContent = defaultOkText;
+      }
+      if (cancelBtn) {
+        cancelBtn.removeEventListener('click', onCancel);
+        if (cancelText) cancelBtn.textContent = defaultCancelText;
+      }
     }
     
     if (okBtn) okBtn.addEventListener('click', onOk);
     if (cancelBtn) cancelBtn.addEventListener('click', onCancel);
   });
+}
+
+function showCustomAlert(title, message) {
+  return new Promise((resolve) => {
+    const dialog = document.getElementById('custom-alert-dialog');
+    if (!dialog) {
+      window.alert(message);
+      resolve();
+      return;
+    }
+    
+    const titleEl = document.getElementById('alert-title');
+    const msgEl = document.getElementById('alert-message');
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    
+    dialog.style.display = 'flex';
+    
+    const okBtn = document.getElementById('btn-alert-ok');
+    
+    const onOk = () => {
+      dialog.style.display = 'none';
+      if (okBtn) okBtn.removeEventListener('click', onOk);
+      resolve();
+    };
+    
+    if (okBtn) okBtn.addEventListener('click', onOk);
+  });
+}
+
+async function printCropSalesAudit(farmerId, crop) {
+  // 1. Get all farmer dues
+  const allDues = await dbGetAll('farmer_dues');
+  // Filter for this farmer and this crop
+  const cropSales = allDues.filter(d => d.farmer_id === farmerId && d.crop_type === crop);
+  
+  // 2. Sort by date descending
+  cropSales.sort((a, b) => b.created_at - a.created_at);
+
+  // 3. Get sale invoices and items to map the details properly
+  const saleInvoices = await dbGetAll('sale_invoices');
+  const saleItems = await dbGetAll('sale_items');
+  const farmers = await dbGetAll('farmers');
+  const farmer = farmers.find(f => f.id === farmerId);
+  const farmerName = farmer ? farmer.name : (currentLanguage === 'ar' ? 'فلاح غير معروف' : 'Unknown Farmer');
+
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US', {
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  });
+
+  const container = document.getElementById('receipt-paper');
+  if (!container) return;
+
+  container.className = `thermal-paper w-${printerPaperWidth}`;
+
+  const is58mm = printerPaperWidth === '58';
+  const fontSizeClass = is58mm ? 'font-size: 13px; line-height: 1.3;' : 'font-size: 15px; line-height: 1.45;';
+  const headerFontSizeClass = is58mm ? 'font-size: 18px;' : 'font-size: 22px;';
+
+  let totalWeight = 0;
+  let totalBoxes = 0;
+  let totalSoldPrice = 0;
+
+  let itemsHtml = cropSales.map((item, idx) => {
+    const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
+    const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
+    const saleItem = saleItems.find(si => si.id === item.sale_item_id);
+
+    const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    
+    // Weight and box count
+    const weightVal = item.weight_kg || 0;
+    const boxCountVal = item.box_count || 0;
+
+    totalWeight += weightVal;
+    totalBoxes += boxCountVal;
+    totalSoldPrice += item.sold_price || 0;
+
+    // Calculate unit price sold per kg or per unit
+    let unitPrice = 0;
+    let isWeightBased = weightVal > 0;
+
+    if (saleItem && saleItem.unit_price) {
+      unitPrice = saleItem.unit_price;
+    } else {
+      if (isWeightBased) {
+        unitPrice = Math.round(item.sold_price / weightVal);
+      } else if (boxCountVal > 0) {
+        unitPrice = Math.round(item.sold_price / boxCountVal);
+      }
+    }
+
+    const qtyText = isWeightBased 
+      ? `${formatVal(weightVal)} كغم` 
+      : `${formatVal(boxCountVal)} عدد`;
+
+    return `
+      <tr style="border-bottom: 1px dashed #000; font-size: 11px;">
+        <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
+        <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
+        <td style="padding: 6px 2px; text-align: center;">${formatVal(unitPrice)}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Handjet', monospace; font-size: 14px; letter-spacing: 2px;">${orderId}</td>
+      </tr>
+    `;
+  }).join('');
+
+  if (cropSales.length === 0) {
+    itemsHtml = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 12px; color: #666; font-size: 11px;">
+          ${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لهذا الصنف حالياً.' : 'No sales registered for this crop yet.'}
+        </td>
+      </tr>
+    `;
+  }
+
+  container.innerHTML = `
+    <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
+      <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
+      <h3 style="font-size: 14px; font-weight: 700; color: #333; margin: 0 0 4px 0;">جرد مبيعات الصنف / Crop Sales Audit</h3>
+      <div style="font-size: 12px; color: #000; font-weight: 600; margin-bottom: 2px;">الفلاح: ${farmerName}</div>
+      <div style="font-size: 12px; color: #000; font-weight: 600; margin-bottom: 2px;">الصنف: ${crop}</div>
+      <div style="font-size: 12px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
+    </div>
+    
+    <table style="width: 100%; direction: rtl; border-collapse: collapse; ${fontSizeClass} margin-bottom: 8px;">
+      <thead>
+        <tr style="border-bottom: 1.5px dashed #000; font-weight: 800; font-size: 11.5px;">
+          <th style="padding: 4px 0; text-align: right;">التاريخ</th>
+          <th style="padding: 4px 0; text-align: center;">الكمية</th>
+          <th style="padding: 4px 0; text-align: center;">السعر</th>
+          <th style="padding: 4px 0; text-align: left;">رمز الفاتورة</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+
+    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 700; font-size: 12px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+        <span>إجمالي الكمية:</span>
+        <span>${totalWeight > 0 ? `${formatVal(totalWeight)} كغم` : ''} ${totalBoxes > 0 ? `(${formatVal(totalBoxes)} صندوق)` : ''}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;">
+        <span>إجمالي المبيعات:</span>
+        <span>${formatVal(totalSoldPrice, true)}</span>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 11px; font-weight: 700; color: #444;">
+      نظام علوة للمحاسبة الذكي © ${now.getFullYear()}
+    </div>
+  `;
+
+  // Log in events
+  logAppEvent(
+    `طباعة جرد مبيعات الفلاح ل صنف ${crop}`,
+    `Printed farmer sales audit for crop ${crop}`
+  );
+
+  // Set dataset ID to -1 to enable direct raster/system printing of `#receipt-paper` contents
+  document.getElementById('btn-execute-print').dataset.id = "-1";
+  document.getElementById('btn-execute-sysprint').dataset.id = "-1";
+  document.getElementById('btn-share-receipt').dataset.id = "-1";
+
+  openBottomSheet('sheet-print-preview');
+}
+
+async function showSalesAuditSheet(farmerId, crop) {
+  // 1. Get all farmer dues
+  const allDues = await dbGetAll('farmer_dues');
+  // Filter for this farmer and this crop
+  const cropSales = allDues.filter(d => d.farmer_id === farmerId && d.crop_type === crop);
+  
+  // 2. Sort by date descending
+  cropSales.sort((a, b) => b.created_at - a.created_at);
+
+  // 3. Get sale invoices and items to map the details properly
+  const saleInvoices = await dbGetAll('sale_invoices');
+  const saleItems = await dbGetAll('sale_items');
+
+  const body = document.getElementById('farmer-dues-details-body');
+  if (!body) return;
+
+  // Update title dynamically
+  const sheetTitle = document.getElementById('txt-farmer-dues-details-title');
+  if (sheetTitle) {
+    sheetTitle.textContent = currentLanguage === 'ar'
+      ? `جرد مبيعات ${crop}`
+      : `Sales Audit for ${crop}`;
+  }
+
+  // Header banner containing the button "جرد الأسعار"
+  let headerHtml = `
+    <div style="background: rgba(9, 132, 227, 0.05); border: 1.5px dashed rgba(9, 132, 227, 0.2); border-radius: 12px; padding: 12px; margin-bottom: 12px; text-align: center;">
+      <p style="font-size: 11px; color: var(--color-text-muted); margin-bottom: 8px; line-line-height: 1.4;">
+        ${currentLanguage === 'ar' 
+          ? 'لعرض وتدقيق تفاصيل المبيعات الخاصة بالفلاح:' 
+          : 'To view and verify sales details for the farmer:'}
+      </p>
+      <button id="btn-price-audit-note" class="btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background-color: var(--color-warning); color: #000; font-weight: 700; border: none; padding: 12px; border-radius: 8px; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s active;">
+        <span class="material-icons-round" style="font-size: 18px;">receipt_long</span>
+        <span>${currentLanguage === 'ar' ? 'جرد الأسعار' : 'Price Audit'}</span>
+      </button>
+    </div>
+  `;
+
+  // Grid list of items
+  let itemsHtml = cropSales.map(item => {
+    const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
+    const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
+    const saleItem = saleItems.find(si => si.id === item.sale_item_id);
+
+    const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    
+    // Weight and box count
+    const weightVal = item.weight_kg || 0;
+    const boxCountVal = item.box_count || 0;
+
+    // Calculate unit price sold per kg or per unit
+    let unitPrice = 0;
+    let isWeightBased = weightVal > 0;
+
+    if (saleItem && saleItem.unit_price) {
+      unitPrice = saleItem.unit_price;
+    } else {
+      if (isWeightBased) {
+        unitPrice = Math.round(item.sold_price / weightVal);
+      } else if (boxCountVal > 0) {
+        unitPrice = Math.round(item.sold_price / boxCountVal);
+      }
+    }
+
+    const cropIcon = getCropIcon(item.crop_type);
+
+    return `
+      <div class="premium-card" style="padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #e2e8f0; box-shadow: none; border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; margin-bottom: 2px;">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 14px;">${cropIcon}</span>
+            <span style="font-weight: 700; color: var(--color-primary); font-size: 12px;">${item.crop_type}</span>
+          </div>
+          <span style="font-size: 11px; color: var(--color-success); font-weight: 700;">${currentLanguage === 'ar' ? 'سعر الكيلو المباع: ' : 'Price/kg: '}${isWeightBased ? formatVal(unitPrice, true) : '-'}</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 10px; direction: rtl; text-align: right;">
+          <div>
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'رمز الفاتورة:' : 'Invoice ID:'}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Handjet', monospace; font-size: 12.5px; vertical-align: middle;">${orderId}</span>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'التاريخ:' : 'Date:'}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark);">${itemDate}</span>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'الكمية (كغم):' : 'Weight (kg):'}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark);">${weightVal > 0 ? formatVal(weightVal) : '-'}</span>
+          </div>
+          <div>
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'العدد:' : 'Count:'}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark);">${boxCountVal > 0 ? formatVal(boxCountVal) : '-'}</span>
+          </div>
+        </div>
+
+        ${!isWeightBased ? `
+          <div style="font-size: 10px; display: flex; justify-content: space-between; background: rgba(0,0,0,0.01); padding: 2px 6px; border-radius: 4px; margin-top: 2px;">
+            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'سعر القطعة/الصندوق:' : 'Price per unit/box:'}</span>
+            <strong style="color: var(--color-success);">${formatVal(unitPrice, true)}</strong>
+          </div>
+        ` : ''}
+
+        <div style="border-top: 1px dashed #e2e8f0; padding-top: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 2px;">
+          <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'إجمالي المبيعات:' : 'Total Sold:'}</span>
+          <strong style="color: var(--color-primary);">${formatVal(item.sold_price, true)}</strong>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (cropSales.length === 0) {
+    itemsHtml = `
+      <div style="text-align: center; padding: 24px; color: var(--color-text-muted);">
+        <span class="material-icons-round" style="font-size: 32px; margin-bottom: 8px; color: #cbd5e1;">info</span>
+        <p style="font-size: 12px;">${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لهذا الصنف حالياً.' : 'No sales registered for this crop yet.'}</p>
+      </div>
+    `;
+  }
+
+  body.innerHTML = headerHtml + `<div style="display: flex; flex-direction: column; gap: 10px;">` + itemsHtml + `</div>`;
+
+  // Bind note click
+  const btnNote = document.getElementById('btn-price-audit-note');
+  if (btnNote) {
+    btnNote.addEventListener('click', async () => {
+      await printCropSalesAudit(farmerId, crop);
+    });
+  }
+
+  // Open the bottom sheet
+  openBottomSheet('sheet-farmer-dues-details');
 }
 
 async function renderPortersList() {
@@ -3111,241 +3441,332 @@ async function renderPortersList() {
 
   portersList.innerHTML = '';
 
-  const payouts = await dbGetAll('porter_payouts');
-  const unpaidPayouts = payouts.filter(p => !p.is_paid);
-
-  const totalUnpaidPorterAmount = unpaidPayouts.reduce((sum, p) => sum + p.amount, 0);
-  const totalUnpaidBoxesCount = unpaidPayouts.reduce((sum, p) => sum + p.box_count, 0);
-
-  // Main Card
-  const card = document.createElement('div');
-  card.className = 'premium-card stagger-item';
-
-  card.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-      <div>
-        <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
-          ID: PORTER-BOX
-        </span>
-        <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${currentLanguage === 'ar' ? 'صندوق مستحقات الحمالين' : 'Porter Dues Box'}</h4>
-        <span style="font-size:10px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'تحتسب تلقائياً من عمولة التحميل لكل صندوق مبيع ومزامنتها' : 'Porter commission automatically calculated and synced'}</span>
-      </div>
-      <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
-        <span class="debt-status-tag unpaid" style="font-size:9px; background: rgba(0, 119, 182, 0.08); color: var(--color-info); border: 1px solid rgba(0, 119, 182, 0.15); border-radius: 4px; padding: 2px 6px;">
-          ⏳ ${currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout'}
-        </span>
-      </div>
-    </div>
-
-    <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
-      <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${currentLanguage === 'ar' ? 'الكمية الإجمالية المعلقة' : 'Total Pending Qty'}</span>
-        <span style="font-weight:700;">${formatVal(totalUnpaidBoxesCount)} ${currentLanguage === 'ar' ? 'صندوق مباع' : 'boxes sold'}</span>
-      </div>
-    </div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-      <div>
-        <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'إجمالي مستحقات الحمالين' : 'Total Porter Dues'}</span>
-        <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(totalUnpaidPorterAmount, true)}</h3>
-      </div>
-      <div style="display:flex; gap:6px;">
-        <button class="btn-secondary btn-toggle-porters-details" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-          <span class="material-icons-round" style="font-size:14px;">list</span>
-          <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
-        </button>
-        ${totalUnpaidPorterAmount > 0 ? `
-          <button class="btn-secondary btn-open-porters-pay" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">payments</span>
-            <span>${currentLanguage === 'ar' ? 'دفع' : 'Pay'}</span>
-          </button>
-        ` : ''}
-      </div>
-    </div>
-  `;
-
-  portersList.appendChild(card);
-
-  // 1. Details Section (Collapsible)
-  const detailsSection = document.createElement('div');
-  detailsSection.id = 'porters-details-section';
-  detailsSection.style.display = 'none';
-  detailsSection.style.marginTop = '12px';
-  detailsSection.className = 'premium-card stagger-item';
-  detailsSection.style.animationDelay = '0.05s';
-
-  // Populate Details
-  if (unpaidPayouts.length === 0) {
-    detailsSection.innerHTML = `
-      <h4 style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 6px;">
-        ${currentLanguage === 'ar' ? 'تفاصيل مستحقات الحمالين' : 'Porter Dues Details'}
-      </h4>
-      <p style="font-size: 11px; color: var(--color-text-muted); text-align: center; margin: 10px 0;">
-        ${currentLanguage === 'ar' ? 'لا توجد مستحقات معلقة لعرضها.' : 'No pending dues to display.'}
-      </p>
-    `;
-  } else {
-    let detailsHtml = `
-      <h4 style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-        <span>${currentLanguage === 'ar' ? 'تفاصيل مستحقات الحمالين المعلقة' : 'Pending Porter Dues Details'}</span>
-        <span style="font-size: 10px; font-weight: 600; background: rgba(0,0,0,0.05); color: var(--color-primary-mid); padding: 2px 6px; border-radius: 4px;">${unpaidPayouts.length} ${currentLanguage === 'ar' ? 'مبيعة معلقة' : 'pending items'}</span>
-      </h4>
-      <div style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 2px;">
-    `;
-
-    unpaidPayouts.sort((a,b) => b.created_at - a.created_at).forEach(p => {
-      const dateStr = new Date(p.created_at).toLocaleString(currentLanguage === 'ar' ? 'ar-IQ' : 'en-US', { dateStyle: 'short', timeStyle: 'short' });
-      const cropName = p.crop_type || (currentLanguage === 'ar' ? 'صناديق بضاعة' : 'Cargo boxes');
-      const icon = p.crop_type ? getCropIcon(p.crop_type) : '📦';
-      detailsHtml += `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); padding: 8px 10px; border-radius: 8px; font-size: 12px;">
-          <div>
-            <div style="font-weight: 700; color: var(--color-primary); display: flex; align-items: center; gap: 4px;">
-              <span>${icon}</span>
-              <span>${cropName}</span>
-              <span style="font-size: 10px; font-weight: normal; color: var(--color-text-muted);">• ${p.box_count} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}</span>
-            </div>
-            <div style="font-size: 10px; color: var(--color-text-muted); margin-top: 2px;">
-              <span class="material-icons-round" style="font-size: 10px; vertical-align: middle;">schedule</span>
-              <span style="vertical-align: middle;">${dateStr}</span>
-            </div>
-          </div>
-          <div style="text-align: left;">
-            <span style="font-weight: 800; color: var(--color-primary-mid); font-size: 13px;">${formatVal(p.amount, true)}</span>
-          </div>
-        </div>
-      `;
-    });
-
-    detailsHtml += `</div>`;
-    detailsSection.innerHTML = detailsHtml;
-  }
-
-  portersList.appendChild(detailsSection);
-
-  // 2. Pay Section (Collapsible Form)
-  const paySection = document.createElement('div');
-  paySection.id = 'porters-pay-section';
-  paySection.style.display = 'none';
-  paySection.style.marginTop = '12px';
-  paySection.className = 'premium-card stagger-item';
-  paySection.style.animationDelay = '0.05s';
-
-  paySection.innerHTML = `
-    <h4 style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 6px;">
-      ${currentLanguage === 'ar' ? 'صرف وتوزيع مستحقات الحمالين' : 'Distribute and Payout Porters'}
-    </h4>
-    
-    <div class="form-group" style="margin-bottom: 12px;">
-      <label style="font-size: 11px; font-weight: 700; color: var(--color-primary); display: block; margin-bottom: 4px;">
-        ${currentLanguage === 'ar' ? 'عدد الحمالين لتوزيع المبلغ الاجمالي عليهم:' : 'Number of porters to distribute the total amount:'}
-      </label>
-      <input type="number" id="porters-count-input" class="form-input" min="1" value="1" style="text-align: center; font-weight: 700; font-size: 16px; border: 1.5px solid var(--color-primary-light); height: 44px;" required>
-    </div>
-
-    <div style="background: rgba(0, 150, 199, 0.05); border: 1px solid rgba(0, 150, 199, 0.15); border-radius: 8px; padding: 10px; text-align: center; margin-bottom: 16px;">
-      <span style="font-size: 11px; color: var(--color-text-muted); display: block;">${currentLanguage === 'ar' ? 'حصة كل حمال (المبلغ الاجمالي مقسماً بالتساوي):' : 'Share of each porter (total amount divided equally):'}</span>
-      <h3 id="porter-individual-share-lbl" style="font-size: 18px; font-weight: 800; color: var(--color-primary); margin-top: 4px;">${formatVal(totalUnpaidPorterAmount, true)}</h3>
-    </div>
-
-    <div style="display: flex; gap: 8px;">
-      <button class="btn-primary btn-confirm-porter-payout" style="flex: 2; padding: 10px; font-size: 12px; font-weight: 800;">
-        ${currentLanguage === 'ar' ? 'تأكيد الدفع والخصم من الخزينة' : 'Confirm Payout'}
-      </button>
-      <button class="btn-secondary btn-cancel-porter-payout" style="flex: 1; padding: 10px; font-size: 12px; font-weight: 600; border-color: rgba(0,0,0,0.15); color: var(--color-text-dark);">
-        ${currentLanguage === 'ar' ? 'إلغاء' : 'Cancel'}
-      </button>
-    </div>
-  `;
-
-  portersList.appendChild(paySection);
-
-  // Toggle Details
-  const toggleDetailsBtn = card.querySelector('.btn-toggle-porters-details');
-  toggleDetailsBtn.addEventListener('click', () => {
-    if (detailsSection.style.display === 'none') {
-      detailsSection.style.display = 'block';
-      paySection.style.display = 'none'; // hide pay section
-    } else {
-      detailsSection.style.display = 'none';
-    }
-  });
-
-  // Toggle Pay
-  const openPayBtn = card.querySelector('.btn-open-porters-pay');
-  if (openPayBtn) {
-    openPayBtn.addEventListener('click', () => {
-      if (paySection.style.display === 'none') {
-        paySection.style.display = 'block';
-        detailsSection.style.display = 'none'; // hide details
-        document.getElementById('porters-count-input').focus();
-      } else {
-        paySection.style.display = 'none';
-      }
-    });
-  }
-
-  // Cancel Pay
-  const cancelPayBtn = paySection.querySelector('.btn-cancel-porter-payout');
-  cancelPayBtn.addEventListener('click', () => {
-    paySection.style.display = 'none';
-  });
-
-  // Dynamic share calculation
-  const portersCountInput = paySection.querySelector('#porters-count-input');
-  const individualShareLbl = paySection.querySelector('#porter-individual-share-lbl');
-
-  function calculateShare() {
-    const count = parseInt(portersCountInput.value) || 1;
-    if (count <= 0) {
-      individualShareLbl.textContent = formatVal(0, true);
-      return;
-    }
-    const share = Math.round(totalUnpaidPorterAmount / count);
-    individualShareLbl.textContent = formatVal(share, true);
-  }
-
-  portersCountInput.addEventListener('input', calculateShare);
-
-  // Confirm Payout
-  const confirmPayBtn = paySection.querySelector('.btn-confirm-porter-payout');
-  confirmPayBtn.addEventListener('click', async () => {
-    const count = parseInt(portersCountInput.value) || 0;
-    if (count <= 0) {
-      showToast(currentLanguage === 'ar' ? 'يرجى إدخال عدد حمالين صحيح (1 على الأقل)' : 'Please enter a valid number of porters (at least 1)', 'warning', true);
-      return;
-    }
-
-    const share = Math.round(totalUnpaidPorterAmount / count);
-    const confirmTitle = currentLanguage === 'ar' ? 'تأكيد دفع مستحقات الحمالين' : 'Confirm Porter Payout';
-    const confirmMessage = currentLanguage === 'ar' ? 
-      `هل أنت متأكد من دفع مبلغ ${formatVal(totalUnpaidPorterAmount, true)} دينار عراقي؟\nسيتم توزيعها على ${count} حمالين، بمعدل ${formatVal(share, true)} لكل حمال، وسيتم خصم المبلغ من الخزينة.` :
-      `Are you sure you want to payout ${formatVal(totalUnpaidPorterAmount, true)} IQD?\nIt will be distributed to ${count} porters (${formatVal(share, true)} each), and deducted from the safe box.`;
-    
-    const isConfirmed = await showCustomConfirm(confirmTitle, confirmMessage);
-    if (!isConfirmed) return;
-
+  // 1. Auto-cleanup settled records after 1 week (7 days)
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const allPayouts = await dbGetAll('porter_payouts');
+  const payoutsToClean = allPayouts.filter(p => p.is_paid && p.paid_at && p.paid_at < oneWeekAgo);
+  if (payoutsToClean.length > 0) {
     const tx = db.transaction('porter_payouts', 'readwrite');
     const store = tx.objectStore('porter_payouts');
-    unpaidPayouts.forEach(p => {
-      p.is_paid = true;
-      p.paid_porters_count = count;
-      p.porter_share = share;
-      p.paid_at = Date.now();
-      store.put(p);
+    payoutsToClean.forEach(p => store.delete(p.id));
+  }
+
+  // Refetch payouts after potential cleanup
+  const payouts = await dbGetAll('porter_payouts');
+
+  // Helper functions for daily grouping
+  function getDayKey(timestamp) {
+    const date = new Date(timestamp);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function getDayLabel(dayKey) {
+    const todayKey = getDayKey(Date.now());
+    const yesterdayKey = getDayKey(Date.now() - 86400000);
+    if (dayKey === todayKey) {
+      return currentLanguage === 'ar' ? 'اليوم' : 'Today';
+    } else if (dayKey === yesterdayKey) {
+      return currentLanguage === 'ar' ? 'أمس' : 'Yesterday';
+    } else {
+      const [y, m, d] = dayKey.split('-');
+      return currentLanguage === 'ar' ? `${d}/${m}/${y}` : `${m}/${d}/${y}`;
+    }
+  }
+
+  // Group by day key
+  const todayKey = getDayKey(Date.now());
+  const groups = {};
+  groups[todayKey] = []; // Ensure at least today's card is always opened/available
+
+  payouts.forEach(p => {
+    const key = getDayKey(p.created_at);
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(p);
+  });
+
+  const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  sortedKeys.forEach((dayKey, idx) => {
+    const dayPayouts = groups[dayKey];
+    const unpaidDayPayouts = dayPayouts.filter(p => !p.is_paid);
+    const paidDayPayouts = dayPayouts.filter(p => p.is_paid);
+    
+    const totalUnpaidAmount = unpaidDayPayouts.reduce((sum, p) => sum + p.amount, 0);
+    const totalUnpaidBoxes = unpaidDayPayouts.reduce((sum, p) => sum + p.box_count, 0);
+    
+    const totalPaidAmount = paidDayPayouts.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaidBoxes = paidDayPayouts.reduce((sum, p) => sum + p.box_count, 0);
+    
+    const totalBoxes = totalUnpaidBoxes + totalPaidBoxes;
+
+    const card = document.createElement('div');
+    card.className = 'premium-card stagger-item';
+    card.style.animationDelay = `${idx * 0.05}s`;
+
+    const dayLabel = getDayLabel(dayKey);
+    let statusText = '';
+    let statusClass = '';
+    if (unpaidDayPayouts.length > 0) {
+      statusText = currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout';
+      statusClass = 'late';
+    } else if (dayPayouts.length > 0) {
+      statusText = currentLanguage === 'ar' ? 'تمت التسوية' : 'Settled';
+      statusClass = 'ok';
+    } else {
+      statusText = currentLanguage === 'ar' ? 'يوم جديد (فارغ)' : 'New Day (Empty)';
+      statusClass = 'info';
+    }
+
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
+        <div>
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
+            ID: ${dayKey}
+          </span>
+          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${dayLabel}</h4>
+          <span style="font-size:10px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'جرد الصناديق والمستحقات لهذا اليوم' : 'Daily boxes and dues for this day'}</span>
+        </div>
+        <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+          <span class="debt-status-tag ${statusClass === 'info' ? 'ok' : statusClass}" style="font-size:9px; border-radius: 4px; padding: 2px 6px; ${statusClass === 'info' ? 'background: #e2e8f0; color: #475569; border-color: #cbd5e1;' : ''}">
+            ${statusClass === 'ok' ? '✅' : (statusClass === 'late' ? '⏳' : '📝')} ${statusText}
+          </span>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+        <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
+          <span>${currentLanguage === 'ar' ? 'إجمالي الصناديق المباعة' : 'Total Boxes Sold'}</span>
+          <span style="font-weight:700;">${formatVal(totalBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'boxes'}</span>
+        </div>
+        ${totalPaidBoxes > 0 ? `
+          <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
+            <span>${currentLanguage === 'ar' ? 'الصناديق المسواة (المدفوعة)' : 'Settled Boxes (Paid)'}</span>
+            <span style="font-weight:700; color: var(--color-success);">${formatVal(totalPaidBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'boxes'}</span>
+          </div>
+        ` : ''}
+        ${totalUnpaidBoxes > 0 ? `
+          <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
+            <span>${currentLanguage === 'ar' ? 'الصناديق المعلقة (غير المدفوعة)' : 'Pending Boxes (Unpaid)'}</span>
+            <span style="font-weight:700; color: var(--color-warning);">${formatVal(totalUnpaidBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'boxes'}</span>
+          </div>
+        ` : ''}
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
+        <div>
+          <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'المبلغ الإجمالي المعلق' : 'Total Pending Amount'}</span>
+          <h3 style="font-size:16px; font-weight:700; color:${totalUnpaidAmount > 0 ? 'var(--color-warning)' : 'var(--color-success)'};">${formatVal(totalUnpaidAmount, true)}</h3>
+          ${totalPaidAmount > 0 ? `
+            <span style="font-size:9.5px; color: var(--color-success); font-weight: 700; display: block; margin-top: 2px;">
+              ${currentLanguage === 'ar' ? 'تم توزيع ودفع: ' : 'Paid & distributed: '}${formatVal(totalPaidAmount, true)}
+            </span>
+          ` : ''}
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-secondary btn-toggle-porters-details" data-day="${dayKey}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
+            <span class="material-icons-round" style="font-size:14px;">list</span>
+            <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
+          </button>
+          ${totalUnpaidAmount > 0 ? `
+            <button class="btn-secondary btn-open-porters-pay" data-day="${dayKey}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
+              <span class="material-icons-round" style="font-size:14px;">payments</span>
+              <span>${currentLanguage === 'ar' ? 'دفع' : 'Pay'}</span>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- Collapsible Details for this day -->
+      <div id="details-section-${dayKey}" style="display: none; margin-top: 12px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
+        <h4 style="font-size: 12px; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">
+          ${currentLanguage === 'ar' ? 'تفاصيل حركات اليوم' : 'Daily Transaction Details'}
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;">
+          ${dayPayouts.length === 0 ? `
+            <p style="font-size: 10.5px; color: var(--color-text-muted); text-align: center; margin: 8px 0;">
+              ${currentLanguage === 'ar' ? 'لا توجد مبيعات أو مستحقات حمالين لهذا اليوم حتى الآن.' : 'No sales or porter dues for this day yet.'}
+            </p>
+          ` : dayPayouts.sort((a,b) => b.created_at - a.created_at).map(p => {
+              const timeStr = new Date(p.created_at).toLocaleTimeString(currentLanguage === 'ar' ? 'ar-IQ' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+              const statusBadge = p.is_paid 
+                ? `<span style="font-size: 9.5px; color: var(--color-success); font-weight: 700;">✅ ${currentLanguage === 'ar' ? 'تم الصرف' : 'Paid'}</span>` 
+                : `<span style="font-size: 9.5px; color: var(--color-warning); font-weight: 700;">⏳ معلق</span>`;
+              return `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.01); border: 1px solid rgba(0,0,0,0.03); padding: 6px 8px; border-radius: 6px; font-size: 11px;">
+                  <div>
+                    <div style="font-weight: 700; color: var(--color-text-dark); display: flex; align-items: center; gap: 4px;">
+                      <span>${p.crop_type ? getCropIcon(p.crop_type) : '📦'}</span>
+                      <span>${p.crop_type || (currentLanguage === 'ar' ? 'صناديق بضاعة' : 'Cargo boxes')}</span>
+                      <span style="font-size: 9.5px; font-weight: normal; color: var(--color-text-muted);">• ${p.box_count} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}</span>
+                    </div>
+                    <div style="font-size: 9.5px; color: var(--color-text-muted); margin-top: 1px;">
+                      <span>${timeStr}</span>
+                      ${p.is_paid && p.paid_porters_count ? `<span style="margin-right: 6px; color: var(--color-primary-mid); font-weight: 700;">• ${currentLanguage === 'ar' ? 'وزعت على' : 'split among'} ${p.paid_porters_count}</span>` : ''}
+                    </div>
+                  </div>
+                  <div style="text-align: left; display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                    <span style="font-weight: 800; color: var(--color-primary-mid);">${formatVal(p.amount, true)}</span>
+                    ${statusBadge}
+                  </div>
+                </div>
+              `;
+            }).join('')
+          }
+        </div>
+      </div>
+
+      <!-- Collapsible Pay Form for this day -->
+      <div id="pay-section-${dayKey}" style="display: none; margin-top: 12px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
+        <h4 style="font-size: 12px; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">
+          ${currentLanguage === 'ar' ? 'صرف وتوزيع مستحقات اليوم' : 'Distribute and Payout Day Dues'}
+        </h4>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label style="font-size: 10.5px; font-weight: 700; color: var(--color-primary); display: block; margin-bottom: 2px;">
+            ${currentLanguage === 'ar' ? 'عدد الحمالين لتوزيع المبلغ الاجمالي عليهم:' : 'Number of porters to distribute the total amount:'}
+          </label>
+          <input type="number" id="porters-count-input-${dayKey}" class="form-input" min="1" value="" placeholder="${currentLanguage === 'ar' ? 'لا شيء' : 'None'}" style="text-align: center; font-weight: 700; font-size: 14px; border: 1.5px solid var(--color-primary-light); height: 36px; padding: 2px;" required>
+        </div>
+
+        <div style="background: rgba(0, 150, 199, 0.04); border: 1px solid rgba(0, 150, 199, 0.1); border-radius: 6px; padding: 8px; text-align: center; margin-bottom: 10px;">
+          <span style="font-size: 10px; color: var(--color-text-muted); display: block;">${currentLanguage === 'ar' ? 'حصة كل حمال (مبلغ اليوم مقسماً بالتساوي):' : 'Share of each porter (day amount divided equally):'}</span>
+          <h3 id="porter-individual-share-lbl-${dayKey}" style="font-size: 16px; font-weight: 800; color: var(--color-primary); margin-top: 2px;">${formatVal(totalUnpaidAmount, true)}</h3>
+        </div>
+
+        <div style="display: flex; gap: 6px;">
+          <button class="btn-primary btn-confirm-porter-payout-day" data-day="${dayKey}" style="flex: 2; padding: 8px; font-size: 11px; font-weight: 800;">
+            ${currentLanguage === 'ar' ? 'تأكيد الدفع والخصم' : 'Confirm Payout'}
+          </button>
+          <button class="btn-secondary btn-cancel-porter-payout-day" data-day="${dayKey}" style="flex: 1; padding: 8px; font-size: 11px; font-weight: 600; border-color: rgba(0,0,0,0.1); color: var(--color-text-dark);">
+            ${currentLanguage === 'ar' ? 'إلغاء' : 'Cancel'}
+          </button>
+        </div>
+      </div>
+    `;
+
+    portersList.appendChild(card);
+
+    // Bind event listeners for this day card
+    const toggleDetailsBtn = card.querySelector('.btn-toggle-porters-details');
+    const detailsDiv = card.querySelector(`#details-section-${dayKey}`);
+    const payDiv = card.querySelector(`#pay-section-${dayKey}`);
+
+    toggleDetailsBtn.addEventListener('click', () => {
+      if (detailsDiv.style.display === 'none') {
+        detailsDiv.style.display = 'block';
+        payDiv.style.display = 'none';
+      } else {
+        detailsDiv.style.display = 'none';
+      }
     });
 
-    tx.oncomplete = async () => {
-      logAppEvent(
-        `صرف وتوزيع أجور الحمالين لعدد ${count} حمالين`,
-        `Paid and distributed porters dues to ${count} porters`,
-        totalUnpaidPorterAmount
-      );
-      playSound('success');
-      showToast(currentLanguage === 'ar' ? 'تم صرف وتوزيع أجور الحمالين والخصم تلقائياً من الخزنة بنجاح!' : 'Porters dues successfully distributed and deducted from safe box!', 'check_circle');
-      await refreshAllUI();
-    };
+    const openPayBtn = card.querySelector('.btn-open-porters-pay');
+    if (openPayBtn) {
+      openPayBtn.addEventListener('click', () => {
+        if (payDiv.style.display === 'none') {
+          payDiv.style.display = 'block';
+          detailsDiv.style.display = 'none';
+          const input = card.querySelector(`#porters-count-input-${dayKey}`);
+          if (input) input.focus();
+        } else {
+          payDiv.style.display = 'none';
+        }
+      });
+    }
+
+    const cancelPayBtn = card.querySelector('.btn-cancel-porter-payout-day');
+    if (cancelPayBtn) {
+      cancelPayBtn.addEventListener('click', () => {
+        payDiv.style.display = 'none';
+      });
+    }
+
+    const portersCountInput = card.querySelector(`#porters-count-input-${dayKey}`);
+    const individualShareLbl = card.querySelector(`#porter-individual-share-lbl-${dayKey}`);
+
+    if (portersCountInput && individualShareLbl) {
+      portersCountInput.addEventListener('input', () => {
+        const count = parseInt(portersCountInput.value) || 0;
+        if (count <= 0) {
+          individualShareLbl.textContent = formatVal(0, true);
+          return;
+        }
+        const share = Math.round(totalUnpaidAmount / count);
+        individualShareLbl.textContent = formatVal(share, true);
+      });
+    }
+
+    const confirmPayBtn = card.querySelector('.btn-confirm-porter-payout-day');
+    if (confirmPayBtn) {
+      confirmPayBtn.addEventListener('click', async () => {
+        const count = parseInt(portersCountInput.value) || 0;
+        if (count <= 0) {
+          showToast(currentLanguage === 'ar' ? 'يرجى إدخال عدد حمالين صحيح (1 على الأقل)' : 'Please enter a valid number of porters (at least 1)', 'warning', true);
+          return;
+        }
+
+        const share = Math.round(totalUnpaidAmount / count);
+        const confirmTitle = currentLanguage === 'ar' ? 'تأكيد دفع مستحقات الحمالين' : 'Confirm Porter Payout';
+        const confirmMessage = currentLanguage === 'ar' ? 
+          `هل أنت متأكد من دفع مبلغ ${formatVal(totalUnpaidAmount, true)} دينار عراقي لليوم (${dayLabel})؟\nسيتم توزيعها على ${count} حمالين، بمعدل ${formatVal(share, true)} لكل حمال، وسيتم خصم المبلغ من الخزينة.` :
+          `Are you sure you want to payout ${formatVal(totalUnpaidAmount, true)} IQD for (${dayLabel})?\nIt will be distributed to ${count} porters (${formatVal(share, true)} each), and deducted from the safe box.`;
+        
+        const isConfirmed = await showCustomConfirm(confirmTitle, confirmMessage);
+        if (!isConfirmed) return;
+
+        const tx = db.transaction('porter_payouts', 'readwrite');
+        const store = tx.objectStore('porter_payouts');
+        unpaidDayPayouts.forEach(p => {
+          p.is_paid = true;
+          p.paid_porters_count = count;
+          p.porter_share = share;
+          p.paid_at = Date.now();
+          store.put(p);
+        });
+
+        tx.oncomplete = async () => {
+          logAppEvent(
+            `صرف وتوزيع أجور الحمالين لليوم ${dayLabel} لعدد ${count} حمالين`,
+            `Paid and distributed porters dues for ${dayLabel} to ${count} porters`,
+            totalUnpaidAmount
+          );
+          playSound('success');
+          showToast(currentLanguage === 'ar' ? 'تم صرف وتوزيع أجور الحمالين والخصم تلقائياً من الخزنة بنجاح!' : 'Porters dues successfully distributed and deducted from safe box!', 'check_circle');
+          await refreshAllUI();
+        };
+      });
+    }
   });
+
+  // 3. Add beautiful footer note
+  const noteDiv = document.createElement('div');
+  noteDiv.style.marginTop = '16px';
+  noteDiv.style.padding = '12px 16px';
+  noteDiv.style.borderRadius = '12px';
+  noteDiv.style.background = 'rgba(0, 150, 199, 0.03)';
+  noteDiv.style.border = '1px solid rgba(0, 150, 199, 0.08)';
+  noteDiv.style.fontSize = '11px';
+  noteDiv.style.color = 'var(--color-primary-mid)';
+  noteDiv.style.lineHeight = '1.6';
+  noteDiv.style.direction = 'rtl';
+  noteDiv.style.textAlign = 'right';
+  
+  noteDiv.innerHTML = `
+    <div style="display: flex; gap: 8px; align-items: flex-start;">
+      <span class="material-icons-round" style="font-size: 16px; margin-top: 2px; color: var(--color-primary);">info</span>
+      <div>
+        <strong>${currentLanguage === 'ar' ? 'ملاحظة حول نظام العمل اليومي والأرشفة:' : 'Note on Daily Work & Archiving:'}</strong><br>
+        ${currentLanguage === 'ar' 
+          ? 'يتم حساب الصناديق المباعة يومياً على حدة وتراكمها لكل يوم بشكل منفصل. مع بداية كل يوم جديد، تُفتتح بطاقة يومية جديدة تلقائياً لتسجيل حركات ذلك اليوم. يتم تصفية وحذف البطاقات التي تمت تسويتها تلقائياً بعد مرور أسبوع واحد (7 أيام) من تاريخ الصرف والتسوية.' 
+          : 'Sold boxes are calculated per day and accumulated for each day separately. At the start of a new day, a new daily card opens automatically. Settled cards are automatically archived and deleted 1 week (7 days) after the settlement date.'}
+      </div>
+    </div>
+  `;
+  portersList.appendChild(noteDiv);
 }
 
 async function openPaymentSheet(debtId) {
@@ -4544,6 +4965,7 @@ async function openPrintPreview(saleId) {
         <!-- Left half: Monospace text & Invoice code -->
         <div style="flex: 1; text-align: left; font-family: 'Courier New', Courier, monospace; color: #000; word-break: break-word;">
           <div style="font-size: 16px; font-weight: 900; margin-bottom: 4px;">Invoice: <span style="font-family: 'Handjet', monospace; font-size: 22px; font-weight: 900; vertical-align: middle;">${orderId}</span></div>
+          <div style="font-size: 14px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Handjet', monospace; font-size: 19px; font-weight: 900; vertical-align: middle;">${officeCashier}</span></div>
           <div style="font-size: 12.5px; font-weight: 700; line-height: 1.3;">This Invoice was successfully registered in the system</div>
         </div>
         <!-- Right half: QR code -->
@@ -5705,17 +6127,19 @@ async function executePrintJob(saleId) {
     return;
   }
 
-  // Get invoice data
-  const sale = await dbGet('sale_invoices', saleId);
-  if (!sale) {
-    showToast(currentLanguage === 'ar' ? 'لم يتم العثور على الفاتورة!' : 'Invoice not found!', 'error', true);
-    return;
-  }
-  const customer = await dbGet('customers', sale.customer_id);
-  if (!customer) return;
+  // Get invoice data (only for specific sale invoice print jobs)
+  if (saleId && saleId !== -1 && !isNaN(saleId)) {
+    const sale = await dbGet('sale_invoices', saleId);
+    if (!sale) {
+      showToast(currentLanguage === 'ar' ? 'لم يتم العثور على الفاتورة!' : 'Invoice not found!', 'error', true);
+      return;
+    }
+    const customer = await dbGet('customers', sale.customer_id);
+    if (!customer) return;
 
-  const saleItems = await dbGetAll('sale_items');
-  const items = saleItems.filter(it => it.sale_invoice_id === saleId);
+    const saleItems = await dbGetAll('sale_items');
+    const items = saleItems.filter(it => it.sale_invoice_id === saleId);
+  }
 
   // Active Visual simulator animation on-screen
   const printSimulator = document.getElementById('print-simulator');
@@ -6075,19 +6499,28 @@ function saveOfficeInfo() {
   const nameInput = document.getElementById('setting-office-name').value.trim();
   const phoneInput = document.getElementById('setting-office-phone').value.trim();
   const locationInput = document.getElementById('setting-office-location').value.trim();
+  const cashierInput = document.getElementById('setting-office-cashier').value.trim();
 
-  if (!nameInput || !phoneInput || !locationInput) {
-    showToast(currentLanguage === 'ar' ? 'الرجاء تعبئة جميع معلومات العلوة والترويسة' : 'Please input all office info fields', 'warning', true);
+  if (!nameInput || !phoneInput || !locationInput || !cashierInput) {
+    showToast(currentLanguage === 'ar' ? 'الرجاء تعبئة جميع معلومات العلوة والترويسة واسم المحاسب' : 'Please input all office info fields including Accountant Name', 'warning', true);
+    return;
+  }
+
+  const englishRegex = /^[A-Za-z0-9\s.,'#&-]+$/;
+  if (!englishRegex.test(cashierInput)) {
+    showToast(currentLanguage === 'ar' ? 'يجب أن يكون اسم المحاسب باللغة الإنجليزية حصراً!' : 'Accountant name must be in English only!', 'warning', true);
     return;
   }
 
   officeName = nameInput;
   officePhone = phoneInput;
   officeLocation = locationInput;
+  officeCashier = cashierInput;
 
   localStorage.setItem('alwa_office_name', officeName);
   localStorage.setItem('alwa_office_phone', officePhone);
   localStorage.setItem('alwa_office_location', officeLocation);
+  localStorage.setItem('alwa_office_cashier', officeCashier);
   
   officeChangesCount++;
   localStorage.setItem('alwa_office_changes_count', officeChangesCount.toString());
@@ -6653,6 +7086,8 @@ function applyBilingualTranslations() {
   document.getElementById('lbl-name-setting').textContent = t.lblOfficeName;
   document.getElementById('lbl-phone-setting').textContent = t.lblOfficePhone;
   document.getElementById('lbl-location-setting').textContent = t.lblOfficeLocation;
+  const elCashierSetting = document.getElementById('lbl-cashier-setting');
+  if (elCashierSetting) elCashierSetting.textContent = t.lblOfficeCashier;
   document.getElementById('btn-save-office-settings').textContent = t.btnSaveOffice;
 
   document.getElementById('lbl-numeral-title').textContent = t.txtNumeralTitle;
@@ -6754,6 +7189,8 @@ function openBottomSheet(id) {
   document.body.classList.add('sheet-open');
 
   sheet.style.display = 'block';
+  sheet.style.transform = ''; // Clear any leftover drag transforms
+  sheet.style.transition = ''; // Restore default transition
   overlay.style.display = 'block';
   
   setTimeout(() => {
@@ -6782,6 +7219,8 @@ function closeBottomSheet(id) {
 
   setTimeout(() => {
     sheet.style.display = 'none';
+    sheet.style.transform = ''; // Reset drag transforms
+    sheet.style.transition = ''; // Restore transition
     
     // Check if other sheets are active to decide if overlay stays
     const openSheets = document.querySelectorAll('.bottom-sheet.show, .bottom-sheet.open');
@@ -6797,6 +7236,94 @@ function handleOverlayClick() {
   const openSheets = document.querySelectorAll('.bottom-sheet.show, .bottom-sheet.open');
   openSheets.forEach(sheet => {
     closeBottomSheet(sheet.id);
+  });
+}
+
+// Setup dragging and tactile touch-drag control on bottom sheet drag handles
+function setupBottomSheetDragToClose() {
+  const handles = document.querySelectorAll('.bottom-sheet-drag-handle');
+  handles.forEach(handle => {
+    const sheet = handle.closest('.bottom-sheet');
+    if (!sheet) return;
+
+    // Direct click/tap on the handle also closes/minimizes it smoothly
+    handle.addEventListener('click', (e) => {
+      // Prevent closing if we are in the middle of a drag
+      if (handle.dataset.dragging === 'true') return;
+      closeBottomSheet(sheet.id);
+    });
+
+    let isDragging = false;
+    let startY = 0;
+    let currentY = 0;
+
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return; // Left click only for mouse
+      
+      isDragging = true;
+      handle.dataset.dragging = 'false';
+      startY = e.clientY;
+      currentY = startY;
+      
+      sheet.style.transition = 'none';
+      handle.style.cursor = 'grabbing';
+      
+      handle.setPointerCapture(e.pointerId);
+    });
+
+    handle.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      
+      currentY = e.clientY;
+      const deltaY = currentY - startY;
+      
+      if (deltaY > 10) {
+        handle.dataset.dragging = 'true';
+      }
+
+      if (deltaY > 0) {
+        sheet.style.transform = `translate(-50%, ${deltaY}px)`;
+      } else {
+        // Upward resistance
+        sheet.style.transform = `translate(-50%, ${deltaY * 0.15}px)`;
+      }
+    });
+
+    const endDrag = (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      
+      sheet.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+      handle.style.cursor = '';
+      
+      const deltaY = currentY - startY;
+      const sheetHeight = sheet.offsetHeight || 300;
+      
+      if (deltaY > sheetHeight * 0.2 || deltaY > 120) {
+        // Dragged down far enough, close the sheet
+        sheet.style.transform = 'translate(-50%, 100%)';
+        closeBottomSheet(sheet.id);
+      } else {
+        // Snap back
+        sheet.style.transform = 'translate(-50%, 0)';
+        setTimeout(() => {
+          if (sheet.classList.contains('open')) {
+            sheet.style.transition = '';
+          }
+        }, 300);
+      }
+      
+      setTimeout(() => {
+        handle.dataset.dragging = 'false';
+      }, 50);
+
+      try {
+        handle.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    };
+
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
   });
 }
 
@@ -6850,6 +7377,8 @@ function updateUIActiveTab(tabId) {
     if (setOfficePhone) setOfficePhone.value = officePhone;
     const setOfficeLoc = document.getElementById('setting-office-location');
     if (setOfficeLoc) setOfficeLoc.value = officeLocation;
+    const setOfficeCashier = document.getElementById('setting-office-cashier');
+    if (setOfficeCashier) setOfficeCashier.value = officeCashier;
   }
 }
 
@@ -7348,6 +7877,7 @@ async function startApp() {
     });
 
     document.getElementById('sheet-overlay').addEventListener('click', handleOverlayClick);
+    setupBottomSheetDragToClose();
 
     // 12. Bind Sub-tabs within Accounts Screen
     const subtabs = document.querySelectorAll('.subtab-btn, .segmented-control-btn');

@@ -520,6 +520,10 @@
             <label id="lbl-office-location">موقع العلوة (العنوان)</label>
             <input type="text" class="form-input" id="setting-office-location" value="جمهورية العراق">
           </div>
+          <div class="form-group">
+            <label id="lbl-office-cashier">اسم المحاسب (بالإنجليزي حصراً)</label>
+            <input type="text" class="form-input" id="setting-office-cashier" value="Cashier One" placeholder="e.g. Accountant Name">
+          </div>
           <button class="btn-primary" id="btn-save-office-settings" style="padding: 10px; font-size: 12px;">حفظ المعلومات</button>
         </div>
 
@@ -1023,7 +1027,7 @@
         
         <div class="form-group" style="margin-top: 16px;">
           <label style="font-weight: 700; font-size: 12px; margin-bottom: 6px; display: block;" id="lbl-porter-payout-count">عدد الحمالين المتواجدين اليوم</label>
-          <input type="number" class="form-input" id="porter-payout-count" placeholder="أدخل عدد الحمالين..." min="1" value="1" style="font-size: 14px;">
+          <input type="number" class="form-input" id="porter-payout-count" placeholder="لا شيء" min="1" value="" style="font-size: 14px;">
         </div>
         
         <div class="premium-card" style="background-color: rgba(82, 183, 136, 0.08); border: 1px dashed rgba(82, 183, 136, 0.3); padding: 16px; margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: center;">
@@ -1046,6 +1050,20 @@
         <div class="dialog-actions">
           <button class="btn-secondary" id="btn-confirm-cancel">إلغاء</button>
           <button class="btn-primary" id="btn-confirm-ok">تأكيد</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Alert Dialog -->
+    <div id="custom-alert-dialog" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop">
+        <div class="dialog-icon-container" style="background-color: rgba(9, 132, 227, 0.1); color: var(--color-primary);">
+          <span class="material-icons-round dialog-icon">info</span>
+        </div>
+        <h3 id="alert-title" class="dialog-title">تنبيه</h3>
+        <p id="alert-message" class="dialog-message" style="line-height: 1.6; text-align: center; max-width: 320px; font-size: 13px;"></p>
+        <div class="dialog-actions" style="width: 100%;">
+          <button class="btn-primary" id="btn-alert-ok" style="width: 100%; font-weight: 700;">موافق</button>
         </div>
       </div>
     </div>
