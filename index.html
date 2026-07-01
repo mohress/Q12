@@ -878,14 +878,10 @@
           </div>
         </div>
 
-        <div class="summary-grid" style="grid-template-columns: repeat(3, 1fr) !important; gap: 8px;">
+        <div class="summary-grid" style="grid-template-columns: repeat(2, 1fr) !important; gap: 8px;">
           <button class="btn-primary" id="btn-execute-print" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px;">
             <span class="material-icons-round" style="font-size: 16px;">bluetooth</span>
             <span id="txt-print-execute">طباعة بلوتوث</span>
-          </button>
-          <button class="btn-primary" id="btn-execute-system-print" style="padding: 10px 4px; font-size: 11px; background-color: var(--color-primary-mid) !important; display: flex; align-items: center; justify-content: center; gap: 4px;">
-            <span class="material-icons-round" style="font-size: 16px;">print</span>
-            <span id="txt-system-print-execute">طباعة النظام</span>
           </button>
           <button class="btn-secondary" id="btn-share-receipt-png" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--color-primary-light);">
             <span class="material-icons-round" style="font-size: 16px;">share</span>
@@ -1182,6 +1178,7 @@
   <!-- Audio sounds for notifications -->
   <audio id="sound-success" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-84.wav" preload="auto"></audio>
   <audio id="sound-alert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>
+  <audio id="sound-print" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
 
   <!-- HTML2Canvas to generate image backups of receipt sharing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>

@@ -145,36 +145,6 @@ document.getElementById = function(id) {
   };
 };
 
-// ==============================================
-// GLOBAL DIGITS MONOFRIK REMAPPER
-// ==============================================
-function toMonofrikDigits(val) {
-  if (val === undefined || val === null) return '';
-  let str = val.toString();
-  // Map Arabic numbers (٠١٢٣٤٥٦٧٨٩) to English numbers (0123456789)
-  const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
-  const enNums = ['0','1','2','3','4','5','6','7','8','9'];
-  arNums.forEach((ar, idx) => {
-    str = str.replaceAll(ar, enNums[idx]);
-  });
-  // Map '0' to 'O'
-  str = str.replaceAll('0', 'O');
-  return str;
-}
-
-// Override Date locale formatting to automatically use Monofrik numbers
-const origToLocaleDateString = Date.prototype.toLocaleDateString;
-Date.prototype.toLocaleDateString = function(locale, options) {
-  const res = origToLocaleDateString.call(this, locale, options);
-  return toMonofrikDigits(res);
-};
-
-const origToLocaleString = Date.prototype.toLocaleString;
-Date.prototype.toLocaleString = function(locale, options) {
-  const res = origToLocaleString.call(this, locale, options);
-  return toMonofrikDigits(res);
-};
-
 /**
  * Alwa Accounts Manager - Complete Application Controller
  * Powered by Antigravity AI
@@ -304,7 +274,7 @@ function renderAppLogs() {
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 11px;">
         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-          <span style="color: var(--color-primary-mid); font-weight: 800; font-family: var(--font-family);">[${timeStr}]</span>
+          <span style="color: var(--color-primary-mid); font-weight: 800; font-family: monospace;">[${timeStr}]</span>
           <span style="font-weight: 700; color: var(--color-text-dark);">${actionText}</span>
         </div>
         ${log.amount > 0 ? `<span style="font-weight: 800; color: ${amountColor}; margin-right: 8px;">${amountText}</span>` : ''}
@@ -779,18 +749,24 @@ function formatVal(number, isCurrency = false) {
     valStr = number.toString();
   }
 
-  return toMonofrikDigits(valStr);
+  if (numeralSystem === 'ar') {
+    const enNums = ['0','1','2','3','4','5','6','7','8','9', ','];
+    const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', '،'];
+    return valStr.split('').map(char => {
+      const idx = enNums.indexOf(char);
+      return idx !== -1 ? arNums[idx] : char;
+    }).join('');
+  }
+  return valStr;
 }
 
 function parseNumberInput(str) {
-  if (str === undefined || str === null) return 0;
   const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
   const enNums = ['0','1','2','3','4','5','6','7','8','9'];
   let cleanStr = str.toString();
   arNums.forEach((ar, idx) => {
     cleanStr = cleanStr.replaceAll(ar, enNums[idx]);
   });
-  cleanStr = cleanStr.replaceAll('O', '0').replaceAll('o', '0');
   return parseFloat(cleanStr) || 0;
 }
 
@@ -973,7 +949,7 @@ async function checkAndBootstrapData() {
 // ==============================================
 function playSound(type) {
   if (!soundEnabled) return;
-  const sound = document.getElementById(type === 'success' ? 'sound-success' : 'sound-alert');
+  const sound = document.getElementById(type === 'success' ? 'sound-success' : (type === 'print' ? 'sound-print' : 'sound-alert'));
   if (sound) {
     sound.currentTime = 0;
     sound.play().catch(e => console.log('Audio playback blocked'));
@@ -1834,8 +1810,8 @@ async function renderSalesList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: ${isSettled ? '#6b7280' : 'var(--color-primary-mid)'}; margin-bottom:4px; display:inline-block; font-family: var(--font-family);">
-            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${toMonofrikDigits(orderId)}</span>
+          <span class="lang-badge" style="background-color: ${isSettled ? '#6b7280' : 'var(--color-primary-mid)'}; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
+            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
@@ -1973,8 +1949,8 @@ async function renderSalesArchiveList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: #6b7280; margin-bottom:4px; display:inline-block; font-family: var(--font-family);">
-            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${toMonofrikDigits(orderId)}</span>
+          <span class="lang-badge" style="background-color: #6b7280; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
+            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
@@ -2849,8 +2825,8 @@ async function renderDebtsList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: var(--font-family);">
-            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${toMonofrikDigits(orderId)}</span>
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
+            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address || ''} ${customer.phone ? `• ${customer.phone}` : ''}</span>
@@ -2973,7 +2949,7 @@ async function renderDuesList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: var(--font-family); letter-spacing: 0.5px;">
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
             ID: FMR-${farmerId}
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${farmer.name}</h4>
@@ -3257,7 +3233,7 @@ async function printCropSalesAudit(farmerId, crop) {
         <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
         <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
         <td style="padding: 6px 2px; text-align: center;">${formatVal(unitPrice)}</td>
-        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik', monospace; font-size: 14px;">${toMonofrikDigits(orderId)}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 14px;">${orderId}</td>
       </tr>
     `;
   }).join('');
@@ -3405,7 +3381,7 @@ async function showSalesAuditSheet(farmerId, crop) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 10px; direction: rtl; text-align: right;">
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'رمز الفاتورة:' : 'Invoice ID:'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik', monospace; font-size: 11px; vertical-align: middle;">${toMonofrikDigits(orderId)}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik' !important; font-size: 11px; vertical-align: middle;">${orderId}</span>
           </div>
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'التاريخ:' : 'Date:'}</span>
@@ -3549,7 +3525,7 @@ async function renderPortersList() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: var(--font-family); letter-spacing: 0.5px;">
+          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
             ID: ${dayKey}
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${dayLabel}</h4>
@@ -4939,7 +4915,7 @@ async function openPrintPreview(saleId) {
     <div style="${fontSizeClass} border-bottom: 1.5px dashed #000; padding-bottom: 6px; margin-bottom: 6px; line-height: 1.4; direction: rtl;">
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>رقم الفاتورة:</span>
-        <span style="font-weight:700;"># ${formatVal(sale.id)} (<span style="font-family: 'Monofrik', monospace; font-size: 15px; font-weight: 900; vertical-align: middle;">${toMonofrikDigits(orderId)}</span>)</span>
+        <span style="font-family: 'Monofrik' !important; font-weight: 900; font-size: 16px; vertical-align: middle;"># ${formatVal(sale.id)} (${orderId})</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>الزبون:</span>
@@ -4987,9 +4963,9 @@ async function openPrintPreview(saleId) {
       <!-- Row 1 & 2: Left half (Text info) and Right half (QR) -->
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
         <!-- Left half: Monospace text & Invoice code -->
-        <div style="flex: 1; text-align: left; font-family: 'Courier New', Courier, monospace; color: #000; word-break: break-word;">
-          <div style="font-size: 19px; font-weight: 900; margin-bottom: 4px; padding-top: 10px;">Invoice: <span style="font-family: 'Monofrik', monospace; font-size: 21px; font-weight: 900; vertical-align: middle;">${toMonofrikDigits(orderId)}</span></div>
-          <div style="font-size: 17px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Monofrik', monospace; font-size: 18px; font-weight: 900; vertical-align: middle;">${toMonofrikDigits(officeCashier)}</span></div>
+        <div style="flex: 1; text-align: left; font-family: 'Monofrik' !important; color: #000; word-break: break-word;">
+          <div style="font-size: 19px; font-weight: 900; margin-bottom: 4px; padding-top: 10px;">Invoice: <span style="font-family: 'Monofrik' !important; font-size: 21px; font-weight: normal; vertical-align: middle;">${orderId}</span></div>
+          <div style="font-size: 17px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Monofrik' !important; font-size: 18px; font-weight: normal; vertical-align: middle;">${officeCashier}</span></div>
           <div style="font-size: 15px; font-weight: 700; line-height: 1.3;">This Invoice was successfully registered in the system</div>
         </div>
         <!-- Right half: QR code -->
@@ -6699,7 +6675,7 @@ async function showInvoiceDetails(invoiceId, type) {
       <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: var(--font-family); font-size: 11px; font-weight: 800; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px;">#${formatVal(imp.id)}</span>
+            <span style="font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px;">#${formatVal(imp.id)}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
@@ -6886,7 +6862,7 @@ async function showInvoiceDetails(invoiceId, type) {
               <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
                 ${currentLanguage === 'ar' ? 'المتبقي بذمة الزبون:' : 'Outstanding Debt:'}
               </span>
-              <strong style="color: #ef4444; font-size: 12.5px; font-weight: 800; font-family: var(--font-family);">${formatVal(outstanding, true)}</strong>
+              <strong style="color: #ef4444; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(outstanding, true)}</strong>
             </div>
 
             <!-- Middle Column: Paid -->
@@ -6894,7 +6870,7 @@ async function showInvoiceDetails(invoiceId, type) {
               <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
                 ${currentLanguage === 'ar' ? 'المبلغ المسدد:' : 'Paid So Far:'}
               </span>
-              <strong style="color: #10b981; font-size: 12.5px; font-weight: 800; font-family: var(--font-family);">${formatVal(paidAmount, true)}</strong>
+              <strong style="color: #10b981; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(paidAmount, true)}</strong>
             </div>
 
             <!-- Right Column: Original -->
@@ -6902,7 +6878,7 @@ async function showInvoiceDetails(invoiceId, type) {
               <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
                 ${currentLanguage === 'ar' ? 'المبلغ الأصلي للفاتورة:' : 'Original Invoice Total:'}
               </span>
-              <strong style="color: #1e293b; font-size: 12.5px; font-weight: 800; font-family: var(--font-family);">${formatVal(originalTotal, true)}</strong>
+              <strong style="color: #1e293b; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(originalTotal, true)}</strong>
             </div>
           </div>
         </div>
@@ -6914,7 +6890,7 @@ async function showInvoiceDetails(invoiceId, type) {
       <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: 'Monofrik', monospace; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${toMonofrikDigits(sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0')))}</span>
+            <span style="font-family: 'Monofrik' !important; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
@@ -6969,25 +6945,25 @@ async function showInvoiceDetails(invoiceId, type) {
         ${totalCommissions > 0 ? `
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'عمولة المكتب (7%):' : 'Office Commission (7%):'}</span>
-            <span style="font-weight: 700; color: var(--color-primary); font-family: var(--font-family);">+ ${formatVal(totalCommissions, true)}</span>
+            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(totalCommissions, true)}</span>
           </div>
         ` : ''}
         ${totalCarrying > 0 ? `
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'أجور تحميل (حمالية):' : 'Carrying Fee:'}</span>
-            <span style="font-weight: 700; color: var(--color-primary); font-family: var(--font-family);">+ ${formatVal(totalCarrying, true)}</span>
+            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(totalCarrying, true)}</span>
           </div>
         ` : ''}
         ${sale.bags_cost > 0 ? `
           <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'أجور الأكياس والكراتين:' : 'Bags/Boxes Cost:'}</span>
-            <span style="font-weight: 700; color: var(--color-primary); font-family: var(--font-family);">+ ${formatVal(sale.bags_cost, true)}</span>
+            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(sale.bags_cost, true)}</span>
           </div>
         ` : ''}
         
         <div style="display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 900; color: var(--color-primary); border-top: 1px dashed rgba(0,0,0,0.08); margin-top: 6px; padding-top: 6px;">
           <span>${currentLanguage === 'ar' ? 'صافي الإجمالي المستحق:' : 'Grand Total:'}</span>
-          <span style="font-family: var(--font-family);">${formatVal(sale.total_amount, true)}</span>
+          <span style="font-family: monospace;">${formatVal(sale.total_amount, true)}</span>
         </div>
       </div>
 
@@ -7265,90 +7241,7 @@ function handleOverlayClick() {
 
 // Setup dragging and tactile touch-drag control on bottom sheet drag handles
 function setupBottomSheetDragToClose() {
-  const handles = document.querySelectorAll('.bottom-sheet-drag-handle');
-  handles.forEach(handle => {
-    const sheet = handle.closest('.bottom-sheet');
-    if (!sheet) return;
-
-    // Direct click/tap on the handle also closes/minimizes it smoothly
-    handle.addEventListener('click', (e) => {
-      // Prevent closing if we are in the middle of a drag
-      if (handle.dataset.dragging === 'true') return;
-      closeBottomSheet(sheet.id);
-    });
-
-    let isDragging = false;
-    let startY = 0;
-    let currentY = 0;
-
-    handle.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0 && e.pointerType === 'mouse') return; // Left click only for mouse
-      
-      isDragging = true;
-      handle.dataset.dragging = 'false';
-      startY = e.clientY;
-      currentY = startY;
-      
-      sheet.style.transition = 'none';
-      handle.style.cursor = 'grabbing';
-      
-      handle.setPointerCapture(e.pointerId);
-    });
-
-    handle.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
-      
-      currentY = e.clientY;
-      const deltaY = currentY - startY;
-      
-      if (deltaY > 10) {
-        handle.dataset.dragging = 'true';
-      }
-
-      if (deltaY > 0) {
-        sheet.style.transform = `translate(-50%, ${deltaY}px)`;
-      } else {
-        // Upward resistance
-        sheet.style.transform = `translate(-50%, ${deltaY * 0.15}px)`;
-      }
-    });
-
-    const endDrag = (e) => {
-      if (!isDragging) return;
-      isDragging = false;
-      
-      sheet.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
-      handle.style.cursor = '';
-      
-      const deltaY = currentY - startY;
-      const sheetHeight = sheet.offsetHeight || 300;
-      
-      if (deltaY > sheetHeight * 0.2 || deltaY > 120) {
-        // Dragged down far enough, close the sheet
-        sheet.style.transform = 'translate(-50%, 100%)';
-        closeBottomSheet(sheet.id);
-      } else {
-        // Snap back
-        sheet.style.transform = 'translate(-50%, 0)';
-        setTimeout(() => {
-          if (sheet.classList.contains('open')) {
-            sheet.style.transition = '';
-          }
-        }, 300);
-      }
-      
-      setTimeout(() => {
-        handle.dataset.dragging = 'false';
-      }, 50);
-
-      try {
-        handle.releasePointerCapture(e.pointerId);
-      } catch (err) {}
-    };
-
-    handle.addEventListener('pointerup', endDrag);
-    handle.addEventListener('pointercancel', endDrag);
-  });
+  // Completely disabled as requested to keep the handle purely passive/static
 }
 
 // ==============================================
@@ -8010,6 +7903,7 @@ async function startApp() {
 
     // 17. Bind printer action execution
     document.getElementById('btn-execute-print').addEventListener('click', (e) => {
+      playSound('print');
       const saleId = parseInt(e.target.closest('button').dataset.id);
       executePrintJob(saleId);
     });
