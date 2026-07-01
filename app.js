@@ -2,6 +2,32 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import html2canvas from 'html2canvas';
 
+// Helper to replace all numbers with Monofrik-compatible digits where '0' is 'O'
+function cleanNumberString(str) {
+  if (str === undefined || str === null) return '';
+  let s = str.toString();
+  const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  const enNums = ['0','1','2','3','4','5','6','7','8','9'];
+  arNums.forEach((ar, idx) => {
+    s = s.replaceAll(ar, enNums[idx]);
+  });
+  s = s.replaceAll('0', 'O');
+  return s;
+}
+
+// Override Date prototype formatting methods to automatically output Monofrik-compatible strings
+const originalToLocaleDateString = Date.prototype.toLocaleDateString;
+Date.prototype.toLocaleDateString = function(...args) {
+  const result = originalToLocaleDateString.apply(this, args);
+  return cleanNumberString(result);
+};
+
+const originalToLocaleString = Date.prototype.toLocaleString;
+Date.prototype.toLocaleString = function(...args) {
+  const result = originalToLocaleString.apply(this, args);
+  return cleanNumberString(result);
+};
+
 // Global Element Mappings and Safety Fallbacks to Reconcile index.html & app.js
 const originalGetElementById = document.getElementById;
 document.getElementById = function(id) {
@@ -749,21 +775,14 @@ function formatVal(number, isCurrency = false) {
     valStr = number.toString();
   }
 
-  if (numeralSystem === 'ar') {
-    const enNums = ['0','1','2','3','4','5','6','7','8','9', ','];
-    const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', '،'];
-    return valStr.split('').map(char => {
-      const idx = enNums.indexOf(char);
-      return idx !== -1 ? arNums[idx] : char;
-    }).join('');
-  }
-  return valStr;
+  return cleanNumberString(valStr);
 }
 
 function parseNumberInput(str) {
   const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
   const enNums = ['0','1','2','3','4','5','6','7','8','9'];
   let cleanStr = str.toString();
+  cleanStr = cleanStr.replaceAll('O', '0').replaceAll('o', '0');
   arNums.forEach((ar, idx) => {
     cleanStr = cleanStr.replaceAll(ar, enNums[idx]);
   });
@@ -1781,7 +1800,7 @@ async function renderSalesList() {
     const items = allSaleItems.filter(it => it.sale_invoice_id === sale.id);
     const itemNamesStr = items.map(it => it.crop_type).join('، ');
 
-    const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
+    const orderId = cleanNumberString(sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0')));
     const matchId = '#' + sale.id.toString();
     const matchesSearch = customer.name.toLowerCase().includes(searchQuery) ||
                           itemNamesStr.toLowerCase().includes(searchQuery) ||
@@ -1811,7 +1830,7 @@ async function renderSalesList() {
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
           <span class="lang-badge" style="background-color: ${isSettled ? '#6b7280' : 'var(--color-primary-mid)'}; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
-            ID: <span class="font-handjet" style="font-size: 14.5px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
+            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
@@ -1922,7 +1941,7 @@ async function renderSalesArchiveList() {
     const items = allSaleItems.filter(it => it.sale_invoice_id === sale.id);
     const itemNamesStr = items.map(it => it.crop_type).join('، ');
 
-    const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
+    const orderId = cleanNumberString(sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0')));
     const matchId = '#' + sale.id.toString();
     const matchesSearch = customer.name.toLowerCase().includes(searchQuery) ||
                           itemNamesStr.toLowerCase().includes(searchQuery) ||
@@ -1950,7 +1969,7 @@ async function renderSalesArchiveList() {
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
           <span class="lang-badge" style="background-color: #6b7280; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
-            ID: <span class="font-handjet" style="font-size: 14.5px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
+            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
@@ -2785,7 +2804,7 @@ async function renderDebtsList() {
     if (!customer) continue;
 
     const saleInvoice = allSaleInvoices.find(s => s.id === debt.sale_invoice_id);
-    const orderId = saleInvoice?.order_id || ('ALW-' + String(debt.sale_invoice_id).padStart(3, '0'));
+    const orderId = cleanNumberString(saleInvoice?.order_id || ('ALW-' + String(debt.sale_invoice_id).padStart(3, '0')));
     const items = allSaleItems.filter(it => it.sale_invoice_id === debt.sale_invoice_id);
     const itemNamesStr = items.map(it => it.crop_type).join('، ');
 
@@ -2826,7 +2845,7 @@ async function renderDebtsList() {
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
         <div>
           <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
-            ID: <span class="font-handjet" style="font-size: 14.5px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
+            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
           <span style="font-size:10px; color:var(--color-text-muted);">${customer.address || ''} ${customer.phone ? `• ${customer.phone}` : ''}</span>
@@ -3188,8 +3207,8 @@ async function printCropSalesAudit(farmerId, crop) {
   container.className = `thermal-paper w-${printerPaperWidth}`;
 
   const is58mm = printerPaperWidth === '58';
-  const fontSizeClass = is58mm ? 'font-size: 13px; line-height: 1.3;' : 'font-size: 15px; line-height: 1.45;';
-  const headerFontSizeClass = is58mm ? 'font-size: 18px;' : 'font-size: 22px;';
+  const fontSizeClass = is58mm ? 'font-size: 16px; line-height: 1.3;' : 'font-size: 18px; line-height: 1.45;';
+  const headerFontSizeClass = is58mm ? 'font-size: 22px;' : 'font-size: 26px;';
 
   let totalWeight = 0;
   let totalBoxes = 0;
@@ -3197,7 +3216,7 @@ async function printCropSalesAudit(farmerId, crop) {
 
   let itemsHtml = cropSales.map((item, idx) => {
     const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
-    const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
+    const orderId = cleanNumberString(saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A');
     const saleItem = saleItems.find(si => si.id === item.sale_item_id);
 
     const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
@@ -3229,11 +3248,11 @@ async function printCropSalesAudit(farmerId, crop) {
       : `${formatVal(boxCountVal)} عدد`;
 
     return `
-      <tr style="border-bottom: 1px dashed #000; font-size: 11px;">
+      <tr style="border-bottom: 1px dashed #000; font-size: 13.5px;">
         <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
         <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
         <td style="padding: 6px 2px; text-align: center;">${formatVal(unitPrice)}</td>
-        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Handjet', monospace; font-size: 14px; letter-spacing: 2px;">${orderId}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik', monospace; font-size: 14px;">${orderId}</td>
       </tr>
     `;
   }).join('');
@@ -3241,7 +3260,7 @@ async function printCropSalesAudit(farmerId, crop) {
   if (cropSales.length === 0) {
     itemsHtml = `
       <tr>
-        <td colspan="4" style="text-align: center; padding: 12px; color: #666; font-size: 11px;">
+        <td colspan="4" style="text-align: center; padding: 12px; color: #666; font-size: 13px;">
           ${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لهذا الصنف حالياً.' : 'No sales registered for this crop yet.'}
         </td>
       </tr>
@@ -3251,15 +3270,15 @@ async function printCropSalesAudit(farmerId, crop) {
   container.innerHTML = `
     <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
       <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
-      <h3 style="font-size: 14px; font-weight: 700; color: #333; margin: 0 0 4px 0;">جرد مبيعات الصنف / Crop Sales Audit</h3>
-      <div style="font-size: 12px; color: #000; font-weight: 600; margin-bottom: 2px;">الفلاح: ${farmerName}</div>
-      <div style="font-size: 12px; color: #000; font-weight: 600; margin-bottom: 2px;">الصنف: ${crop}</div>
-      <div style="font-size: 12px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
+      <h3 style="font-size: 17px; font-weight: 700; color: #333; margin: 0 0 4px 0;">جرد مبيعات الصنف / Crop Sales Audit</h3>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600; margin-bottom: 2px;">الفلاح: ${farmerName}</div>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600; margin-bottom: 2px;">الصنف: ${crop}</div>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
     </div>
     
     <table style="width: 100%; direction: rtl; border-collapse: collapse; ${fontSizeClass} margin-bottom: 8px;">
       <thead>
-        <tr style="border-bottom: 1.5px dashed #000; font-weight: 800; font-size: 11.5px;">
+        <tr style="border-bottom: 1.5px dashed #000; font-weight: 800; font-size: 14px;">
           <th style="padding: 4px 0; text-align: right;">التاريخ</th>
           <th style="padding: 4px 0; text-align: center;">الكمية</th>
           <th style="padding: 4px 0; text-align: center;">السعر</th>
@@ -3271,18 +3290,18 @@ async function printCropSalesAudit(farmerId, crop) {
       </tbody>
     </table>
 
-    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 700; font-size: 12px;">
+    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 700; font-size: 14.5px;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
         <span>إجمالي الكمية:</span>
         <span>${totalWeight > 0 ? `${formatVal(totalWeight)} كغم` : ''} ${totalBoxes > 0 ? `(${formatVal(totalBoxes)} صندوق)` : ''}</span>
       </div>
-      <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;">
+      <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 17px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;">
         <span>إجمالي المبيعات:</span>
         <span>${formatVal(totalSoldPrice, true)}</span>
       </div>
     </div>
 
-    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 11px; font-weight: 700; color: #444;">
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 13px; font-weight: 700; color: #444;">
       نظام علوة للمحاسبة الذكي © ${now.getFullYear()}
     </div>
   `;
@@ -3343,7 +3362,7 @@ async function showSalesAuditSheet(farmerId, crop) {
   // Grid list of items
   let itemsHtml = cropSales.map(item => {
     const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
-    const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
+    const orderId = cleanNumberString(saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A');
     const saleItem = saleItems.find(si => si.id === item.sale_item_id);
 
     const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
@@ -3381,7 +3400,7 @@ async function showSalesAuditSheet(farmerId, crop) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 10px; direction: rtl; text-align: right;">
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'رمز الفاتورة:' : 'Invoice ID:'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Handjet', monospace; font-size: 12.5px; vertical-align: middle;">${orderId}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik', monospace; font-size: 11px; vertical-align: middle;">${orderId}</span>
           </div>
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'التاريخ:' : 'Date:'}</span>
@@ -4870,12 +4889,12 @@ async function openPrintPreview(saleId) {
   }
 
   const formattedDate = new Date(sale.created_at).toLocaleString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
-  const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
+  const orderId = cleanNumberString(sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0')));
 
   const is58mm = printerPaperWidth === '58';
-  const fontSizeClass = is58mm ? 'font-size: 14.5px; line-height: 1.35;' : 'font-size: 17px; line-height: 1.45;';
-  const tableFontSizeClass = is58mm ? 'font-size: 13.5px; line-height: 1.3;' : 'font-size: 15.5px; line-height: 1.4;';
-  const headerFontSizeClass = is58mm ? 'font-size: 20px;' : 'font-size: 24px;';
+  const fontSizeClass = is58mm ? 'font-size: 17.5px; line-height: 1.35;' : 'font-size: 20px; line-height: 1.45;';
+  const tableFontSizeClass = is58mm ? 'font-size: 18.5px; line-height: 1.3;' : 'font-size: 21.3px; line-height: 1.4;';
+  const headerFontSizeClass = is58mm ? 'font-size: 24px;' : 'font-size: 29px;';
   const paddingClass = is58mm ? 'padding: 3px 0;' : 'padding: 5px 0;';
   const borderStyle = 'border-bottom: 1.2px dashed #000;';
 
@@ -4891,10 +4910,10 @@ async function openPrintPreview(saleId) {
 
     return `
       <tr style="${rowBorder} height: auto;">
-        <td style="text-align: right; width: 35%; ${paddingClass} white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${cropName}">${cropName}</td>
-        <td style="text-align: center; width: 25%; ${paddingClass}">${priceStr}</td>
-        <td style="text-align: center; width: 25%; ${paddingClass}">${weightStr}</td>
-        <td style="text-align: left; width: 15%; ${paddingClass} font-weight: 700;">${boxesStr}</td>
+        <td style="text-align: right; width: auto; ${paddingClass} white-space: normal; word-break: break-word; line-height: 1.25; padding-left: 8px;" title="${cropName}">${cropName}</td>
+        <td style="text-align: center; width: 1%; white-space: nowrap; ${paddingClass} padding-left: 12px; padding-right: 12px; vertical-align: bottom !important; padding-bottom: 0px !important;">${priceStr}</td>
+        <td style="text-align: center; width: 1%; white-space: nowrap; ${paddingClass} padding-left: 12px; padding-right: 12px; vertical-align: bottom !important; padding-bottom: 0px !important;">${weightStr}</td>
+        <td style="text-align: left; width: 1%; white-space: nowrap; ${paddingClass} padding-left: 4px; font-weight: 700; vertical-align: bottom !important; padding-bottom: 0px !important;">${boxesStr}</td>
       </tr>
     `;
   }).join('');
@@ -4915,7 +4934,7 @@ async function openPrintPreview(saleId) {
     <div style="${fontSizeClass} border-bottom: 1.5px dashed #000; padding-bottom: 6px; margin-bottom: 6px; line-height: 1.4; direction: rtl;">
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>رقم الفاتورة:</span>
-        <span style="font-weight:700;"># ${formatVal(sale.id)} (<span style="font-family: 'Handjet', monospace; font-size: 16px; font-weight: 900; vertical-align: middle;">${orderId}</span>)</span>
+        <span style="font-weight:700;"># ${formatVal(sale.id)} (<span style="font-family: 'Monofrik', monospace; font-size: 15px; font-weight: 900; vertical-align: middle;">${orderId}</span>)</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>الزبون:</span>
@@ -4931,13 +4950,13 @@ async function openPrintPreview(saleId) {
       </div>
     </div>
 
-    <table class="receipt-table" style="width: 100%; border-collapse: collapse; ${tableFontSizeClass} table-layout: fixed; direction: rtl; margin-bottom: 6px;">
+    <table class="receipt-table" style="width: 100%; border-collapse: collapse; ${tableFontSizeClass} table-layout: auto; direction: rtl; margin-bottom: 6px;">
       <thead>
         <tr style="border-bottom: 1.5px dashed #000; height: 24px;">
-          <th style="text-align: right; font-weight:700; width: 35%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'الصنف' : 'Item'}</th>
-          <th style="text-align: center; font-weight:700; width: 25%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
-          <th style="text-align: center; font-weight:700; width: 25%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
-          <th style="text-align: left; font-weight:700; width: 15%; padding-bottom: 2px;">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</th>
+          <th style="text-align: right; font-weight:700; width: auto; padding-left: 8px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'الصنف' : 'Item'}</th>
+          <th style="text-align: center; font-weight:700; width: 1%; white-space: nowrap; padding-left: 12px; padding-right: 12px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
+          <th style="text-align: center; font-weight:700; width: 1%; white-space: nowrap; padding-left: 12px; padding-right: 12px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
+          <th style="text-align: left; font-weight:700; width: 1%; white-space: nowrap; padding-left: 4px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</th>
         </tr>
       </thead>
       <tbody>
@@ -4948,13 +4967,13 @@ async function openPrintPreview(saleId) {
     <div style="${fontSizeClass} border-top: 1.5px dashed #000; margin-top: 4px; padding-top: 6px; line-height: 1.4; direction: rtl;">
       ${sale.bags_cost > 0 ? `
         <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
-          <span>تكلفة الأكياس والكراتين:</span>
-          <span style="font-weight:600;">${formatVal(sale.bags_cost, true)}</span>
+          <span style="padding-top: 8px; display: inline-block;">تكلفة الأكياس والكراتين:</span>
+          <span style="font-weight:600; padding-top: 4px; display: inline-block;">${formatVal(sale.bags_cost, true)}</span>
         </div>
       ` : ''}
       <div style="display:flex; justify-content:space-between; font-weight: 800; ${sale.bags_cost > 0 ? 'border-top: 1.2px dashed #000; margin-top: 4px; padding-top: 4px;' : ''}">
-        <span>الإجمالي المستحق:</span>
-        <span style="font-size: 1.1em;">${formatVal(sale.total_amount, true)}</span>
+        <span style="padding-top: 8px; display: inline-block;">الإجمالي المستحق:</span>
+        <span style="font-size: 1.3em; padding-top: 4px; display: inline-block;">${formatVal(sale.total_amount, true)}</span>
       </div>
     </div>
 
@@ -4964,9 +4983,9 @@ async function openPrintPreview(saleId) {
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
         <!-- Left half: Monospace text & Invoice code -->
         <div style="flex: 1; text-align: left; font-family: 'Courier New', Courier, monospace; color: #000; word-break: break-word;">
-          <div style="font-size: 16px; font-weight: 900; margin-bottom: 4px;">Invoice: <span style="font-family: 'Handjet', monospace; font-size: 22px; font-weight: 900; vertical-align: middle;">${orderId}</span></div>
-          <div style="font-size: 14px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Handjet', monospace; font-size: 19px; font-weight: 900; vertical-align: middle;">${officeCashier}</span></div>
-          <div style="font-size: 12.5px; font-weight: 700; line-height: 1.3;">This Invoice was successfully registered in the system</div>
+          <div style="font-size: 19px; font-weight: 900; margin-bottom: 4px; padding-top: 10px;">Invoice: <span style="font-family: 'Monofrik', monospace; font-size: 21px; font-weight: 900; vertical-align: middle;">${orderId}</span></div>
+          <div style="font-size: 17px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Monofrik', monospace; font-size: 18px; font-weight: 900; vertical-align: middle;">${officeCashier}</span></div>
+          <div style="font-size: 15px; font-weight: 700; line-height: 1.3;">This Invoice was successfully registered in the system</div>
         </div>
         <!-- Right half: QR code -->
         <div style="text-align: right; flex-shrink: 0;">
@@ -4979,7 +4998,7 @@ async function openPrintPreview(saleId) {
         <canvas id="receipt-barcode-canvas" style="display: block; width: 100%; max-width: 100%; height: 90px; margin: 0 auto;"></canvas>
       </div>
 
-      <div style="text-align: center; font-size: 11px; color: #000; font-weight: 700; margin-top: 8px; direction: rtl;">
+      <div style="text-align: center; font-size: 13px; color: #000; font-weight: 700; margin-top: 8px; direction: rtl;">
         شكرًا لتعاملكم معنا - علوة الغابة الخضراء
       </div>
     </div>
@@ -6156,7 +6175,7 @@ async function executePrintJob(saleId) {
   // --- PIXEL-PERFECT HTML2CANVAS ELEMENT CAPTURE & CONVERSION ---
   const is58mm = printerPaperWidth === '58';
   const canvasWidth = is58mm ? 384 : 576; // Exact target ESC/POS printable pixel width
-  const designWidth = is58mm ? 272 : 380; // The CSS max-width of our on-screen receipt preview
+  const designWidth = is58mm ? 326 : 456; // The CSS max-width of our on-screen receipt preview
 
   const container = document.getElementById('receipt-paper');
   if (!container) {
@@ -6173,8 +6192,8 @@ async function executePrintJob(saleId) {
   clone.style.margin = '0';
   clone.style.padding = '4px 2px';
   clone.style.boxSizing = 'border-box';
-  clone.style.width = is58mm ? '272px' : '380px';
-  clone.style.maxWidth = is58mm ? '272px' : '380px';
+  clone.style.width = is58mm ? '326px' : '456px';
+  clone.style.maxWidth = is58mm ? '326px' : '456px';
   clone.style.zIndex = '-9999';
   clone.style.backgroundColor = '#FFFFFF';
   clone.style.transform = 'none';
@@ -6890,7 +6909,7 @@ async function showInvoiceDetails(invoiceId, type) {
       <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: 'Handjet', monospace; font-size: 18px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px; line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
+            <span style="font-family: 'Monofrik', monospace; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
@@ -7536,8 +7555,8 @@ async function printDailyInventoryList() {
   }
 
   const is58mm = printerPaperWidth === '58';
-  const fontSizeClass = is58mm ? 'font-size: 13.5px; line-height: 1.3;' : 'font-size: 15.5px; line-height: 1.45;';
-  const headerFontSizeClass = is58mm ? 'font-size: 18px;' : 'font-size: 22px;';
+  const fontSizeClass = is58mm ? 'font-size: 16px; line-height: 1.3;' : 'font-size: 18.5px; line-height: 1.45;';
+  const headerFontSizeClass = is58mm ? 'font-size: 22px;' : 'font-size: 26px;';
   const borderStyle = 'border-bottom: 1.2px dashed #000;';
 
   const formattedDate = now.toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US', {
@@ -7566,7 +7585,7 @@ async function printDailyInventoryList() {
           <span>الكمية المتبقية:</span>
           <span style="font-weight: 800; color: #000;">${remainingQty}</span>
         </div>
-        <div style="margin-top: 4px; font-size: 11.5px; color: #444; line-height: 1.3;">
+        <div style="margin-top: 4px; font-size: 14px; color: #444; line-height: 1.3;">
           <div><strong style="color: #000;">الفلاح المستورد منه:</strong> ${farmersList}</div>
           <div style="margin-top: 2px;"><strong style="color: #000;">الزبون المباع له:</strong> ${customersList}</div>
         </div>
@@ -7577,15 +7596,15 @@ async function printDailyInventoryList() {
   container.innerHTML = `
     <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
       <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
-      <h3 style="font-size: 14px; font-weight: 700; color: #333; margin: 0 0 8px 0;">قائمة الجرد اليومية / Daily Inventory</h3>
-      <div style="font-size: 12px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
+      <h3 style="font-size: 17px; font-weight: 700; color: #333; margin: 0 0 8px 0;">قائمة الجرد اليومية / Daily Inventory</h3>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
     </div>
     
     <div style="margin-bottom: 12px;">
       ${itemsHtml}
     </div>
 
-    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 11px; font-weight: 700; color: #444;">
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 13px; font-weight: 700; color: #444;">
       نظام علوة للمحاسبة الذكي © ${now.getFullYear()}
     </div>
   `;
