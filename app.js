@@ -3233,7 +3233,7 @@ async function printCropSalesAudit(farmerId, crop) {
         <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
         <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
         <td style="padding: 6px 2px; text-align: center;">${formatVal(unitPrice)}</td>
-        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik', sans-serif !important; font-size: 14px;">${orderId}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 14px;">${orderId}</td>
       </tr>
     `;
   }).join('');
@@ -3381,7 +3381,7 @@ async function showSalesAuditSheet(farmerId, crop) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 10px; direction: rtl; text-align: right;">
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'رمز الفاتورة:' : 'Invoice ID:'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik', sans-serif !important; font-size: 11px; vertical-align: middle;">${orderId}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik' !important; font-size: 11px; vertical-align: middle;">${orderId}</span>
           </div>
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'التاريخ:' : 'Date:'}</span>
@@ -4914,8 +4914,8 @@ async function openPrintPreview(saleId) {
 
     <div style="${fontSizeClass} border-bottom: 1.5px dashed #000; padding-bottom: 6px; margin-bottom: 6px; line-height: 1.4; direction: rtl;">
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-        <span style="">رقم الفاتورة:</span>
-        <span style="font-family: 'Monofrik', sans-serif !important; font-weight: 900; font-size: 16px; vertical-align: middle;"># ${formatVal(sale.id)} (${orderId})</span>
+        <span>رقم الفاتورة:</span>
+        <span style="font-family: 'Monofrik' !important; font-weight: 900; font-size: 16px; vertical-align: middle;"># ${formatVal(sale.id)} (${orderId})</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>الزبون:</span>
@@ -4964,8 +4964,8 @@ async function openPrintPreview(saleId) {
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
         <!-- Left half: Monospace text & Invoice code -->
         <div style="flex: 1; text-align: left; color: #000; word-break: break-word;">
-          <div style="font-size: 19px; font-weight: 900; margin-bottom: 4px; padding-top: 10px;">Invoice: <span style="font-family: 'Monofrik', sans-serif !important; font-size: 21px; font-weight: normal; vertical-align: middle;">${orderId}</span></div>
-          <div style="font-size: 17px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Monofrik', sans-serif !important; font-size: 18px; font-weight: normal; vertical-align: middle;">${officeCashier}</span></div>
+          <div style="font-size: 19px; font-weight: 900; margin-bottom: 4px; padding-top: 10px;">Invoice: <span class="font-monofrik" style="font-family: 'Monofrik' !important; font-size: 21px; font-weight: normal; vertical-align: middle;">${orderId}</span></div>
+          <div style="font-size: 17px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Monofrik' !important; font-size: 18px; font-weight: normal; vertical-align: middle;">${officeCashier}</span></div>
           <div style="font-size: 15px; font-weight: 700; line-height: 1.3;">This Invoice was successfully registered in the system</div>
         </div>
         <!-- Right half: QR code -->
@@ -6890,7 +6890,7 @@ async function showInvoiceDetails(invoiceId, type) {
       <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: 'Monofrik', sans-serif !important; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
+            <span style="font-family: 'Monofrik' !important; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
@@ -7453,56 +7453,97 @@ async function printDailyInventoryList() {
   }
 
   const is58mm = printerPaperWidth === '58';
-  const fontSizeClass = is58mm ? 'font-size: 16px; line-height: 1.3;' : 'font-size: 18.5px; line-height: 1.45;';
-  const headerFontSizeClass = is58mm ? 'font-size: 22px;' : 'font-size: 26px;';
-  const borderStyle = 'border-bottom: 1.2px dashed #000;';
+  const itemFontSize = is58mm ? '15px' : '18px';
+  const qtyFontSize = is58mm ? '15px' : '18px';
+  const subQtyFontSize = is58mm ? '11px' : '13px';
+  const metaFontSize = is58mm ? '11px' : '13px';
+  const headerFontSizeClass = is58mm ? 'font-size: 21px;' : 'font-size: 25px;';
 
   const formattedDate = now.toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US', {
     year: 'numeric', month: '2-digit', day: '2-digit'
   });
 
-  let itemsHtml = Object.values(inventoryMap).map((it, idx) => {
+  const isAr = currentLanguage === 'ar';
+  const colCrop = isAr ? 'الصنف' : 'Crop';
+  const colSold = isAr ? 'المباع' : 'Sold';
+  const colRemaining = isAr ? 'المتبقي' : 'Remaining';
+  const lblFarmer = isAr ? 'المورد' : 'Supplier';
+  const lblCustomer = isAr ? 'الزبائن' : 'Customers';
+
+  let itemsHtml = `
+    <table style="width: 100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: var(--font-family) !important;">
+      <thead>
+        <tr style="border-bottom: 2px solid #000; font-weight: 900; color: #000; font-size: ${is58mm ? '13px' : '15px'};">
+          <th style="padding: 3px 1px; text-align: right; width: 44%; font-family: var(--font-family) !important;">${colCrop}</th>
+          <th style="padding: 3px 1px; text-align: center; width: 28%; font-family: var(--font-family) !important;">${colSold}</th>
+          <th style="padding: 3px 1px; text-align: center; width: 28%; font-family: var(--font-family) !important;">${colRemaining}</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  itemsHtml += Object.values(inventoryMap).map((it, idx) => {
     const isCount = it.unit === 'count';
-    const soldQty = isCount ? `${formatVal(it.soldBoxes)} عدد` : `${formatWeight(it.soldWeight, 'kg')} (${formatVal(it.soldBoxes)} ص)`;
-    const remainingQty = isCount ? `${formatVal(it.remainingBoxes)} عدد` : `${formatWeight(it.remainingWeight, 'kg')} (${formatVal(it.remainingBoxes)} ص)`;
+    const soldQty = isCount 
+      ? `<strong>${formatVal(it.soldBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">عدد</span>` 
+      : `<strong>${formatWeight(it.soldWeight, 'kg')}</strong><div style="font-size: ${subQtyFontSize}; font-weight: normal; color: #555; margin-top: 1px;">(${formatVal(it.soldBoxes)} ص)</div>`;
+      
+    const remainingQty = isCount 
+      ? `<strong>${formatVal(it.remainingBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">عدد</span>` 
+      : `<strong>${formatWeight(it.remainingWeight, 'kg')}</strong><div style="font-size: ${subQtyFontSize}; font-weight: normal; color: #555; margin-top: 1px;">(${formatVal(it.remainingBoxes)} ص)</div>`;
     
-    const farmersList = Array.from(it.farmers).join('، ') || (currentLanguage === 'ar' ? 'غير محدد' : 'Unknown');
-    const customersList = Array.from(it.customers).join('، ') || (currentLanguage === 'ar' ? 'غير مححد' : 'Unknown');
+    const farmersList = Array.from(it.farmers).filter(Boolean).join('، ') || '';
+    const customersList = Array.from(it.customers).filter(Boolean).join('، ') || '';
+    
+    const hasMeta = (farmersList && farmersList !== 'Unknown' && farmersList !== 'غير محدد') || 
+                    (customersList && customersList !== 'Unknown' && customersList !== 'غير محدد');
+
+    let metaRow = '';
+    if (hasMeta) {
+      metaRow = `
+        <div style="font-size: ${metaFontSize}; color: #555; font-weight: normal; margin-top: 2px; line-height: 1.25; border-right: 2px solid #ccc; padding-right: 4px;">
+          ${farmersList ? `<div><strong>🌾 ${lblFarmer}:</strong> ${farmersList}</div>` : ''}
+          ${customersList ? `<div style="margin-top: 1px;"><strong>👥 ${lblCustomer}:</strong> ${customersList}</div>` : ''}
+        </div>
+      `;
+    }
 
     return `
-      <div style="${borderStyle} padding: 8px 0; direction: rtl; text-align: right; ${fontSizeClass}">
-        <div style="display: flex; justify-content: space-between; font-weight: 800; color: #000;">
-          <span>[${idx + 1}] ${it.cropType}</span>
-          <span style="color: var(--color-primary-dark);">${it.unit === 'count' ? 'عدد فقط' : 'وزن وصندوق'}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 4px; font-weight: 600;">
-          <span>الكمية المباعة:</span>
-          <span style="font-weight: 800; color: #000;">${soldQty}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 2px; font-weight: 600;">
-          <span>الكمية المتبقية:</span>
-          <span style="font-weight: 800; color: #000;">${remainingQty}</span>
-        </div>
-        <div style="margin-top: 4px; font-size: 14px; color: #444; line-height: 1.3;">
-          <div><strong style="color: #000;">الفلاح المستورد منه:</strong> ${farmersList}</div>
-          <div style="margin-top: 2px;"><strong style="color: #000;">الزبون المباع له:</strong> ${customersList}</div>
-        </div>
-      </div>
+      <tr style="border-bottom: 1px dashed #bbb; vertical-align: top;">
+        <td style="padding: 6px 1px; font-size: ${itemFontSize}; color: #000; text-align: right; line-height: 1.3; font-family: var(--font-family) !important;">
+          <div style="font-weight: bold; color: #000;">
+            <span style="color: #666; font-size: 13px; margin-left: 2px;">#${idx + 1}</span>
+            <span>${it.cropType}</span>
+          </div>
+          ${metaRow}
+        </td>
+        <td style="padding: 6px 1px; text-align: center; font-size: ${qtyFontSize}; color: #000; line-height: 1.2; font-family: var(--font-family) !important;">
+          ${soldQty}
+        </td>
+        <td style="padding: 6px 1px; text-align: center; font-size: ${qtyFontSize}; color: #000; line-height: 1.2; font-family: var(--font-family) !important;">
+          ${remainingQty}
+        </td>
+      </tr>
     `;
   }).join('');
 
+  itemsHtml += `
+      </tbody>
+    </table>
+  `;
+
   container.innerHTML = `
-    <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
-      <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
-      <h3 style="font-size: 17px; font-weight: 700; color: #333; margin: 0 0 8px 0;">قائمة الجرد اليومية / Daily Inventory</h3>
-      <div style="font-size: 14.5px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
+    <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 6px; margin-bottom: 8px; direction: rtl; font-family: var(--font-family) !important;">
+      <h2 style="${headerFontSizeClass} font-weight: 900; color: #000; margin: 0 0 4px 0; line-height: 1.2; font-family: var(--font-family) !important;">${officeName}</h2>
+      <h3 style="font-size: ${is58mm ? '14px' : '16px'}; font-weight: 800; color: #000; margin: 0 0 6px 0; font-family: var(--font-family) !important;">قائمة الجرد اليومية / Inventory</h3>
+      <div style="font-size: ${is58mm ? '12px' : '14px'}; color: #000; font-weight: 700; font-family: var(--font-family) !important;">التاريخ: ${formattedDate}</div>
     </div>
     
-    <div style="margin-bottom: 12px;">
+    <div style="margin-bottom: 8px; font-family: var(--font-family) !important;">
       ${itemsHtml}
     </div>
 
-    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 13px; font-weight: 700; color: #444;">
+    <div style="text-align: center; margin-top: 8px; padding-top: 6px; border-top: 1.5px dashed #000; font-size: ${is58mm ? '11px' : '13px'}; font-weight: 800; color: #000; font-family: var(--font-family) !important;">
       نظام علوة للمحاسبة الذكي © ${now.getFullYear()}
     </div>
   `;
