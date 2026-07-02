@@ -158,7 +158,7 @@ let bleCharacteristic = null;
 let currentLanguage = localStorage.getItem('alwa_lang') || 'ar';
 let numeralSystem = 'en'; // 'ar' for Eastern Arabic (١٢٣), 'en' for Western Arabic (123)
 let activeTab = 'screen-import';
-let soundEnabled = localStorage.getItem('alwa_sound') === 'true';
+let soundEnabled = localStorage.getItem('alwa_sound') !== 'false';
 let importPriceEnabled = false; // Permanently disabled as per user request
 let isPrinterConnected = false;
 let printerPaperWidth = '58'; // '58' or '80'
@@ -3233,7 +3233,7 @@ async function printCropSalesAudit(farmerId, crop) {
         <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
         <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
         <td style="padding: 6px 2px; text-align: center;">${formatVal(unitPrice)}</td>
-        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 14px;">${orderId}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik', sans-serif !important; font-size: 14px;">${orderId}</td>
       </tr>
     `;
   }).join('');
@@ -3295,7 +3295,7 @@ async function printCropSalesAudit(farmerId, crop) {
 
   // Set dataset ID to -1 to enable direct raster/system printing of `#receipt-paper` contents
   document.getElementById('btn-execute-print').dataset.id = "-1";
-  document.getElementById('btn-execute-sysprint').dataset.id = "-1";
+  if (document.getElementById('btn-execute-sysprint')) document.getElementById('btn-execute-sysprint').dataset.id = "-1";
   document.getElementById('btn-share-receipt').dataset.id = "-1";
 
   openBottomSheet('sheet-print-preview');
@@ -3381,7 +3381,7 @@ async function showSalesAuditSheet(farmerId, crop) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 10px; direction: rtl; text-align: right;">
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'رمز الفاتورة:' : 'Invoice ID:'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik' !important; font-size: 11px; vertical-align: middle;">${orderId}</span>
+            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik', sans-serif !important; font-size: 11px; vertical-align: middle;">${orderId}</span>
           </div>
           <div>
             <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'التاريخ:' : 'Date:'}</span>
@@ -4860,7 +4860,7 @@ async function openPrintPreview(saleId) {
 
   // Set Global variable to hold active printable order id
   document.getElementById('btn-execute-print').dataset.id = saleId;
-  document.getElementById('btn-execute-sysprint').dataset.id = saleId;
+  if (document.getElementById('btn-execute-sysprint')) document.getElementById('btn-execute-sysprint').dataset.id = saleId;
   document.getElementById('btn-share-receipt').dataset.id = saleId;
 
   // Build high-fidelity thermal receipt container
@@ -4914,8 +4914,8 @@ async function openPrintPreview(saleId) {
 
     <div style="${fontSizeClass} border-bottom: 1.5px dashed #000; padding-bottom: 6px; margin-bottom: 6px; line-height: 1.4; direction: rtl;">
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
-        <span>رقم الفاتورة:</span>
-        <span style="font-family: 'Monofrik' !important; font-weight: 900; font-size: 16px; vertical-align: middle;"># ${formatVal(sale.id)} (${orderId})</span>
+        <span style="">رقم الفاتورة:</span>
+        <span style="font-family: 'Monofrik', sans-serif !important; font-weight: 900; font-size: 16px; vertical-align: middle;"># ${formatVal(sale.id)} (${orderId})</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom: 2px;">
         <span>الزبون:</span>
@@ -4963,9 +4963,9 @@ async function openPrintPreview(saleId) {
       <!-- Row 1 & 2: Left half (Text info) and Right half (QR) -->
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
         <!-- Left half: Monospace text & Invoice code -->
-        <div style="flex: 1; text-align: left; font-family: 'Monofrik' !important; color: #000; word-break: break-word;">
-          <div style="font-size: 19px; font-weight: 900; margin-bottom: 4px; padding-top: 10px;">Invoice: <span style="font-family: 'Monofrik' !important; font-size: 21px; font-weight: normal; vertical-align: middle;">${orderId}</span></div>
-          <div style="font-size: 17px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Monofrik' !important; font-size: 18px; font-weight: normal; vertical-align: middle;">${officeCashier}</span></div>
+        <div style="flex: 1; text-align: left; color: #000; word-break: break-word;">
+          <div style="font-size: 19px; font-weight: 900; margin-bottom: 4px; padding-top: 10px;">Invoice: <span style="font-family: 'Monofrik', sans-serif !important; font-size: 21px; font-weight: normal; vertical-align: middle;">${orderId}</span></div>
+          <div style="font-size: 17px; font-weight: 900; margin-bottom: 4px;">Cashier: <span style="font-family: 'Monofrik', sans-serif !important; font-size: 18px; font-weight: normal; vertical-align: middle;">${officeCashier}</span></div>
           <div style="font-size: 15px; font-weight: 700; line-height: 1.3;">This Invoice was successfully registered in the system</div>
         </div>
         <!-- Right half: QR code -->
@@ -6890,7 +6890,7 @@ async function showInvoiceDetails(invoiceId, type) {
       <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: 'Monofrik' !important; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
+            <span style="font-family: 'Monofrik', sans-serif !important; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
@@ -7145,7 +7145,7 @@ function applyBilingualTranslations() {
 
   document.getElementById('sheet-preview-title-h3').textContent = t.sheetPrintPreviewTitle;
   document.getElementById('btn-execute-print').innerHTML = `<span class="material-icons-round">bluetooth</span> ${t.btnExecutePrint}`;
-  document.getElementById('btn-execute-sysprint').innerHTML = `<span class="material-icons-round">print</span> ${t.btnExecuteSystemPrint}`;
+  if (document.getElementById('btn-execute-sysprint')) document.getElementById('btn-execute-sysprint').innerHTML = `<span class="material-icons-round">print</span> ${t.btnExecuteSystemPrint}`;
   document.getElementById('btn-share-receipt').innerHTML = `<span class="material-icons-round">image</span> ${t.btnShareReceipt}`;
 
   document.getElementById('sheet-payment-title-h3').textContent = t.sheetPaymentTitle;
@@ -7515,7 +7515,7 @@ async function printDailyInventoryList() {
 
   // Set dataset ID to -1 to prevent printing a single receipt when print button is pressed
   document.getElementById('btn-execute-print').dataset.id = "-1";
-  document.getElementById('btn-execute-sysprint').dataset.id = "-1";
+  if (document.getElementById('btn-execute-sysprint')) document.getElementById('btn-execute-sysprint').dataset.id = "-1";
   document.getElementById('btn-share-receipt').dataset.id = "-1";
 
   openBottomSheet('sheet-print-preview');
@@ -7905,10 +7905,13 @@ async function startApp() {
     document.getElementById('btn-execute-print').addEventListener('click', (e) => {
       playSound('print');
       const saleId = parseInt(e.target.closest('button').dataset.id);
-      executePrintJob(saleId);
+      setTimeout(() => executePrintJob(saleId), 50);
     });
 
-    document.getElementById('btn-execute-sysprint').addEventListener('click', executeSystemPrintJob);
+    const btnExecuteSysprint = document.getElementById('btn-execute-sysprint');
+    if (btnExecuteSysprint) {
+      btnExecuteSysprint.addEventListener('click', executeSystemPrintJob);
+    }
     document.getElementById('btn-share-receipt').addEventListener('click', shareReceiptAsImage);
 
     // 18. Bind Office Info Save
