@@ -158,6 +158,7 @@ let bleCharacteristic = null;
 let currentLanguage = localStorage.getItem('alwa_lang') || 'ar';
 let numeralSystem = 'en'; // 'ar' for Eastern Arabic (١٢٣), 'en' for Western Arabic (123)
 let activeTab = 'screen-import';
+let isNavigatingViaHistory = false;
 let soundEnabled = localStorage.getItem('alwa_sound') !== 'false';
 let importPriceEnabled = false; // Permanently disabled as per user request
 let isPrinterConnected = false;
@@ -3092,6 +3093,11 @@ async function deleteSaleInvoice(saleId) {
   });
 
   tx.oncomplete = async () => {
+    invalidateDbCache('sale_invoices');
+    invalidateDbCache('sale_items');
+    invalidateDbCache('debts');
+    invalidateDbCache('farmer_dues');
+    invalidateDbCache('porter_payouts');
     logAppEvent(
       `حذف فاتورة بيع للزبون: ${invoice.customer_name}`,
       `Deleted sale invoice for customer: ${invoice.customer_name}`
@@ -3153,6 +3159,8 @@ async function deleteImportInvoice(impId) {
   });
 
   tx.oncomplete = async () => {
+    invalidateDbCache('import_invoices');
+    invalidateDbCache('import_items');
     const farmer = await dbGet('farmers', invoice.farmer_id);
     const farmerName = farmer ? farmer.name : '';
     logAppEvent(
@@ -4160,183 +4168,13 @@ async function showDailySalesAuditSheet() {
     return b.created_at - a.created_at;
   });
 
-  // Get sale invoices and items to map details properly
-  const saleInvoices = await dbGetAll('sale_invoices');
-  const saleItems = await dbGetAll('sale_items');
+  // Directly generate the thermal/system print receipt layout
+  await printDailySalesAudit(cropSales);
 
-  const body = document.getElementById('daily-sales-audit-body');
-  if (!body) return;
-
-  // Header banner containing print button for daily sales audit "جرد مبيعات يومي"
-  let headerHtml = `
-    <div style="background: rgba(9, 132, 227, 0.05); border: 1.5px dashed rgba(9, 132, 227, 0.2); border-radius: 12px; padding: 12px; margin-bottom: 12px; text-align: center;">
-      <p style="font-size: 11px; color: var(--color-text-muted); margin-bottom: 8px; line-height: 1.4;">
-        ${currentLanguage === 'ar' 
-          ? 'لطباعة وتدقيق تفاصيل المبيعات الإجمالية لليوم الحالي:' 
-          : 'To print and audit total sales details for the current day:'}
-      </p>
-      <button id="btn-daily-audit-print" class="btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background-color: var(--color-warning); color: #000; font-weight: 700; border: none; padding: 12px; border-radius: 8px; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s active;">
-        <span class="material-icons-round" style="font-size: 18px;">print</span>
-        <span>${currentLanguage === 'ar' ? 'طباعة جرد مبيعات اليوم' : 'Print Daily Sales Audit'}</span>
-      </button>
-    </div>
-  `;
-
-  let itemsHtml = '';
-  if (cropSales.length > 0) {
-    const groups = {};
-    cropSales.forEach(item => {
-      if (!groups[item.crop_type]) {
-        groups[item.crop_type] = [];
-      }
-      groups[item.crop_type].push(item);
-    });
-
-    for (const [cropType, groupItems] of Object.entries(groups)) {
-      const cropIcon = getCropIcon(cropType);
-      
-      itemsHtml += `
-        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid rgba(9, 132, 227, 0.1); padding-bottom: 6px; margin-top: 12px; margin-bottom: 4px; direction: rtl; width: 100%;">
-          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(9, 132, 227, 0.08); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid rgba(9, 132, 227, 0.12);">
-            ${cropIcon}
-          </div>
-          <span style="font-weight: 800; color: var(--color-text-dark); font-size: 12.5px;">${cropType}</span>
-          <span style="font-size: 10px; color: var(--color-text-muted); font-weight: 600; margin-right: auto; margin-left: 0; background: #f8fafc; padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0;">
-            ${groupItems.length} ${currentLanguage === 'ar' ? 'عمليات مبيعات' : 'sales'}
-          </span>
-        </div>
-      `;
-
-      groupItems.forEach(item => {
-        const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
-        const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
-        const saleItem = saleItems.find(si => si.id === item.sale_item_id);
-
-        const itemDate = formatCustomDate(item.created_at);
-        
-        const weightVal = item.weight_kg || 0;
-        const boxCountVal = item.box_count || 0;
-
-        let unitPrice = 0;
-        let isWeightBased = weightVal > 0;
-
-        if (saleItem && saleItem.unit_price) {
-          unitPrice = saleItem.unit_price;
-        } else {
-          if (isWeightBased) {
-            unitPrice = Math.round(item.sold_price / weightVal);
-          } else if (boxCountVal > 0) {
-            unitPrice = Math.round(item.sold_price / boxCountVal);
-          }
-        }
-
-        const itemUnit = (saleItem && saleItem.unit) ? saleItem.unit : (getCropUnitType(item.crop_type) === 'count' ? 'count' : 'kg');
-        
-        let qtyText = '';
-        const isArabic = (currentLanguage === 'ar' || numeralSystem === 'ar');
-
-        if (itemUnit === 'kg' || itemUnit === 'weight') {
-          const unitLabel = isArabic ? 'كغم' : 'kg';
-          qtyText = `${formatVal(weightVal)} ${unitLabel}`;
-          if (boxCountVal > 0) {
-            const boxLabel = isArabic ? 'صندوق' : 'box';
-            qtyText += ` (${formatVal(boxCountVal)} ${boxLabel})`;
-          }
-        } else if (itemUnit === 'liter') {
-          const unitLabel = isArabic ? 'لتر' : 'Ltr';
-          qtyText = `${formatVal(weightVal)} ${unitLabel}`;
-          if (boxCountVal > 0) {
-            const boxLabel = isArabic ? 'صندوق' : 'box';
-            qtyText += ` (${formatVal(boxCountVal)} ${boxLabel})`;
-          }
-        } else if (itemUnit === 'count') {
-          const unitLabel = isArabic ? 'قطعة' : 'pieces';
-          qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
-        } else if (itemUnit === 'box') {
-          const unitLabel = isArabic ? 'صندوق' : 'box';
-          qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
-        } else {
-          if (weightVal > 0) {
-            const unitLabel = isArabic ? 'كغم' : 'kg';
-            qtyText = `${formatVal(weightVal)} ${unitLabel}`;
-          } else {
-            const unitLabel = isArabic ? 'صندوق' : 'box';
-            qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
-          }
-        }
-
-        const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
-
-        let rateText = '';
-        if (isLoss) {
-          rateText = currentLanguage === 'ar' ? 'تلف' : 'Loss';
-        } else {
-          if (itemUnit === 'kg' || itemUnit === 'weight') {
-            rateText = isArabic ? `${formatVal(unitPrice, true)} / كغم` : `${formatVal(unitPrice, true)} / kg`;
-          } else if (itemUnit === 'liter') {
-            rateText = isArabic ? `${formatVal(unitPrice, true)} / لتر` : `${formatVal(unitPrice, true)} / Ltr`;
-          } else if (itemUnit === 'count') {
-            rateText = isArabic ? `${formatVal(unitPrice, true)} / قطعة` : `${formatVal(unitPrice, true)} / pc`;
-          } else if (itemUnit === 'box') {
-            rateText = isArabic ? `${formatVal(unitPrice, true)} / صندوق` : `${formatVal(unitPrice, true)} / box`;
-          } else {
-            rateText = formatVal(unitPrice, true);
-          }
-        }
-
-        const totalValHtml = isLoss 
-          ? `<span style="color: #ef4444; font-weight: 700;">${currentLanguage === 'ar' ? 'تلف' : 'Loss'}</span>`
-          : `<span style="color: var(--color-success); font-weight: 700;">${formatVal(item.sold_price, true)}</span>`;
-
-        itemsHtml += `
-          <div class="premium-card" style="padding: 10px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.01); border-radius: 12px; background-color: #ffffff; direction: rtl; text-align: right; min-height: 105px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-              <span style="font-weight: 800; color: var(--color-text-dark); font-size: 11px; font-family: inherit; background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;">${item.crop_type}</span>
-              <span style="font-weight: 700; color: var(--color-primary); font-family: 'Monofrik' !important; font-size: 9px; background: rgba(9, 132, 227, 0.06); padding: 1px 4px; border-radius: 3px; border: 1px solid rgba(9, 132, 227, 0.08);">${orderId}</span>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 1px; margin: 2px 0;">
-              <span style="font-size: 9px; color: var(--color-text-muted); font-weight: 500;">${currentLanguage === 'ar' ? 'سعر الوحدة:' : 'Unit Price:'}</span>
-              <span style="font-weight: 800; color: ${isLoss ? '#ef4444' : 'var(--color-primary)'}; font-size: 13.5px; line-height: 1.1;">${rateText}</span>
-            </div>
-
-            <div style="border-top: 1px solid #f1f5f9; padding-top: 5px; display: flex; flex-direction: column; gap: 2px;">
-              <div style="font-size: 9px; color: var(--color-text-muted); font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 2px; white-space: nowrap;">
-                <span style="color: var(--color-text-dark); overflow: hidden; text-overflow: ellipsis; max-width: 65px;">${qtyText}</span>
-                ${totalValHtml}
-              </div>
-              <div style="font-size: 8px; color: #94a3b8; font-weight: 500; text-align: left;">
-                ${itemDate}
-              </div>
-            </div>
-          </div>
-        `;
-      });
-    }
-  } else {
-    itemsHtml = `
-      <div style="text-align: center; padding: 24px; color: var(--color-text-muted); width: 100%; grid-column: 1 / -1;">
-        <span class="material-icons-round" style="font-size: 32px; margin-bottom: 8px; color: #cbd5e1;">info</span>
-        <p style="font-size: 12px;">${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لليوم حتى الآن.' : 'No sales registered for today yet.'}</p>
-      </div>
-    `;
-  }
-
-  const wrapperStyle = cropSales.length > 0 
-    ? 'display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;' 
-    : 'display: flex; flex-direction: column; gap: 10px;';
-
-  body.innerHTML = headerHtml + `<div style="${wrapperStyle}">` + itemsHtml + `</div>`;
-
-  // Bind print click for daily audit
-  const btnPrint = document.getElementById('btn-daily-audit-print');
-  if (btnPrint) {
-    btnPrint.addEventListener('click', async () => {
-      await printDailySalesAudit(cropSales);
-    });
-  }
-
-  openBottomSheet('sheet-daily-sales-audit');
+  // Directly trigger system print and keep the preview sheet open
+  setTimeout(() => {
+    window.print();
+  }, 300);
 }
 
 async function printDailySalesAudit(cropSales) {
@@ -4424,11 +4262,11 @@ async function printDailySalesAudit(cropSales) {
 
     return `
       ${groupHeaderHtml}
-      <tr style="${borderStyle} font-size: 16px; font-weight: 700;">
+      <tr style="${borderStyle} font-size: 18.5px; font-weight: 700;">
         <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
         <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
         <td style="padding: 6px 2px; text-align: center;">${displayPrice}</td>
-        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 16px;">${orderId}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 18.5px;">${orderId}</td>
       </tr>
     `;
   }).join('');
@@ -4502,9 +4340,16 @@ async function renderPortersList() {
   const allPayouts = await dbGetAll('porter_payouts');
   const payoutsToClean = allPayouts.filter(p => p.is_paid && p.paid_at && p.paid_at < oneWeekAgo);
   if (payoutsToClean.length > 0) {
-    const tx = db.transaction('porter_payouts', 'readwrite');
-    const store = tx.objectStore('porter_payouts');
-    payoutsToClean.forEach(p => store.delete(p.id));
+    await new Promise((resolve) => {
+      const tx = db.transaction('porter_payouts', 'readwrite');
+      const store = tx.objectStore('porter_payouts');
+      payoutsToClean.forEach(p => store.delete(p.id));
+      tx.oncomplete = () => {
+        invalidateDbCache('porter_payouts');
+        resolve();
+      };
+      tx.onerror = () => resolve(); // safety fallback
+    });
   }
 
   // Refetch payouts after potential cleanup
@@ -4575,7 +4420,7 @@ async function renderPortersList() {
       statusText = currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout';
       statusClass = 'late';
     } else if (dayPayouts.length > 0) {
-      statusText = currentLanguage === 'ar' ? 'تمت التسوية' : 'Settled';
+      statusText = currentLanguage === 'ar' ? 'تم تأكيد صرف المستحقات' : 'Disbursement Confirmed';
       statusClass = 'ok';
     } else {
       statusText = currentLanguage === 'ar' ? 'يوم جديد (فارغ)' : 'New Day (Empty)';
@@ -4637,7 +4482,12 @@ async function renderPortersList() {
               <span class="material-icons-round" style="font-size:14px;">payments</span>
               <span>${currentLanguage === 'ar' ? 'دفع' : 'Pay'}</span>
             </button>
-          ` : ''}
+          ` : (dayPayouts.length > 0 ? `
+            <div style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1px solid var(--color-success); background: rgba(82, 183, 136, 0.08); color: var(--color-success); border-radius: 8px; font-weight: 700;">
+              <span class="material-icons-round" style="font-size:14px; color: var(--color-success);">check_circle</span>
+              <span>${currentLanguage === 'ar' ? 'تم تأكيد الصرف' : 'Confirmed'}</span>
+            </div>
+          ` : '')}
         </div>
       </div>
 
@@ -4789,6 +4639,7 @@ async function renderPortersList() {
         });
 
         tx.oncomplete = async () => {
+          invalidateDbCache('porter_payouts');
           logAppEvent(
             `صرف وتوزيع أجور الحمالين لليوم ${dayLabel} لعدد ${count} حمالين`,
             `Paid and distributed porters dues for ${dayLabel} to ${count} porters`,
@@ -5039,6 +4890,7 @@ async function submitFarmerPayout() {
   }
 
   tx.oncomplete = async () => {
+    invalidateDbCache('farmer_dues');
     logAppEvent(
       `صرف مستحقات مالية للفلاح: ${farmer.name}`,
       `Paid dues to farmer: ${farmer.name}`,
@@ -7269,15 +7121,50 @@ async function handleScanAndConnect() {
         if (container && list) {
           container.style.display = 'flex';
           list.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:8px; padding:8px; text-align:center;">
-              <p style="font-size:11px; color:var(--color-danger); line-height:1.5;">
-                ${currentLanguage === 'ar' 
-                  ? 'المتصفح الحالي لا يدعم الاتصال المباشر بالطابعات (مثل Safari أو Firefox). يرجى فتح التطبيق على متصفح Google Chrome أو Edge.' 
-                  : 'Your current browser does not support Web Bluetooth (e.g., Safari or Firefox). Please open this app in Google Chrome or Microsoft Edge.'}
-              </p>
-              <div style="height:1px; background:rgba(0,0,0,0.06); margin:6px 0;"></div>
-              <p style="font-size:10px; color:var(--color-text-muted);">
-                ${currentLanguage === 'ar' ? 'للتجربة والاختبار السريع، يمكنك استخدام المحاكي المدمج أدناه:' : 'For testing, you can use the built-in printer simulator below:'}
+            <div style="display:flex; flex-direction:column; gap:12px; padding:4px; text-align:${currentLanguage === 'ar' ? 'right' : 'left'}; direction:${currentLanguage === 'ar' ? 'rtl' : 'ltr'};">
+              <div style="background: rgba(45, 106, 79, 0.04); border: 1.5px dashed var(--color-primary-light); border-radius: 10px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.01); text-align: right;">
+                <p style="font-weight: bold; color: var(--color-primary); font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; justify-content: flex-start; direction: rtl;">
+                  <span class="material-icons-round" style="font-size: 18px; color: var(--color-primary);">info</span>
+                  ${currentLanguage === 'ar' 
+                    ? 'تعليمات تشغيل الطابعة لأجهزة الأندرويد وتطبيق الـ APK:' 
+                    : 'Printer Setup Guide for Android APK / WebView:'}
+                </p>
+                
+                <p style="font-size: 11.5px; color: #2d3748; line-height: 1.6; margin-bottom: 10px; direction: rtl;">
+                  ${currentLanguage === 'ar'
+                    ? 'نظراً لأن نظام أندرويد يمنع الاتصال المباشر بالبلوتوث من داخل تطبيقات الويب المغلفة (APK WebView)، يمكنك تشغيل طابعتك الحرارية فوراً وبأعلى جودة عبر <strong>ميزة طباعة النظام المدمجة</strong> بالخطوات البسيطة التالية:'
+                    : 'Since Android restricts direct Bluetooth access within wrapped WebView apps (APK), you can easily print to your thermal printer using the built-in <strong>System Print</strong>:'}
+                </p>
+                
+                <ol style="font-size: 11px; color: #4a5568; padding-right: 20px; margin-bottom: 12px; line-height: 1.6; list-style-type: decimal; direction: rtl;">
+                  <li style="margin-bottom: 6px;">
+                    ${currentLanguage === 'ar'
+                      ? 'قم بتحميل تطبيق وسيط مجاني للطباعة من متجر Google Play (مثل تطبيق <strong>RawBT</strong> أو <strong>Bluetooth Print</strong>).'
+                      : 'Download a free print service bridge from Google Play Store (e.g., <strong>RawBT</strong> or <strong>Bluetooth Print</strong>).'}
+                  </li>
+                  <li style="margin-bottom: 6px;">
+                    ${currentLanguage === 'ar'
+                      ? 'افتح التطبيق الوسيط وقم بالاقتران مع طابعة البلوتوث الخاصة بك من داخله لتعريفها كطابعة افتراضية للنظام.'
+                      : 'Open the bridge app and pair with your Bluetooth Thermal Printer to register it as a system print service.'}
+                  </li>
+                  <li style="margin-bottom: 4px;">
+                    ${currentLanguage === 'ar'
+                      ? 'الآن، عند معاينة أي فاتورة في تطبيقنا، اضغط على زر <strong>"طباعة النظام"</strong> الجديد بالأسفل، ثم اختر التطبيق الوسيط (أو طابعتك) ليتم الطباعة فوراً!'
+                      : 'Now, when previewing any invoice, click the new <strong>"System Print"</strong> button and select the bridge service to print instantly!'}
+                  </li>
+                </ol>
+                
+                <div style="height: 1px; background: rgba(0,0,0,0.06); margin: 10px 0;"></div>
+                
+                <p style="font-size: 11px; color: var(--color-danger); line-height: 1.5; font-weight: 500; direction: rtl;">
+                  ${currentLanguage === 'ar'
+                    ? '💡 نصيحة: إذا كنت تتصفح من الهاتف عبر متصفح عادي، افتح التطبيق في <strong>Google Chrome</strong> أو <strong>Edge</strong> للربط المباشر ببلوتوث المتصفح دون تطبيقات وسيطة.'
+                    : '💡 Tip: If browsing on mobile, open in <strong>Google Chrome</strong> or <strong>Edge</strong> to use direct Web Bluetooth without third-party apps.'}
+                </p>
+              </div>
+              
+              <p style="font-size: 11px; color: var(--color-text-muted); text-align: center; margin-top: 6px;">
+                ${currentLanguage === 'ar' ? 'للتجربة والاختبار السريع دون طابعة حقيقية، يمكنك تشغيل محاكي الطابعة أدناه:' : 'For quick testing without a physical printer, you can run the simulator below:'}
               </p>
             </div>
           `;
@@ -8511,6 +8398,100 @@ function applyBilingualTranslations() {
 }
 
 // ==============================================
+// 16.5 SYSTEM BACK NAVIGATION & DIALOG OBSERVERS
+// ==============================================
+function setupDialogObservers() {
+  const dialogs = document.querySelectorAll('.dialog-overlay');
+  
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === 'style') {
+        const target = mutation.target;
+        const display = target.style.display;
+        const wasOpen = target.dataset.isOpen === 'true';
+        const isOpen = display && display !== 'none';
+        
+        if (isOpen && !wasOpen) {
+          target.dataset.isOpen = 'true';
+          if (!isNavigatingViaHistory) {
+            window.history.pushState({ type: 'dialog', dialogId: target.id }, '');
+          }
+        } else if (!isOpen && wasOpen) {
+          target.dataset.isOpen = 'false';
+          if (!isNavigatingViaHistory) {
+            window.history.back();
+          }
+        }
+      }
+    });
+  });
+  
+  dialogs.forEach((dialog) => {
+    dialog.dataset.isOpen = dialog.style.display && dialog.style.display !== 'none' ? 'true' : 'false';
+    observer.observe(dialog, { attributes: true, attributeFilter: ['style'] });
+  });
+}
+
+window.addEventListener('popstate', (event) => {
+  isNavigatingViaHistory = true;
+  try {
+    const state = event.state;
+    
+    // 1. Check if any dialog overlays are open and need to be closed
+    const dialogs = Array.from(document.querySelectorAll('.dialog-overlay'));
+    const openDialog = dialogs.find(d => d.style.display && d.style.display !== 'none');
+    
+    if (openDialog) {
+      const dialogCancelButtons = {
+        'custom-confirm-dialog': 'btn-confirm-cancel',
+        'custom-alert-dialog': 'btn-alert-ok',
+        'custom-choice-dialog': 'btn-choice-cancel',
+        'custom-prompt-dialog': 'btn-prompt-cancel',
+        'custom-safe-adjust-dialog': 'btn-safe-adj-cancel',
+        'custom-add-crop-dialog': 'btn-custom-crop-cancel',
+        'dialog-iframe-bluetooth': 'btn-iframe-ok',
+        'custom-keypad-dialog': 'btn-close-keypad'
+      };
+      
+      const btnId = dialogCancelButtons[openDialog.id];
+      const btn = btnId ? document.getElementById(btnId) : null;
+      if (btn) {
+        btn.click();
+      } else {
+        openDialog.style.display = 'none';
+        openDialog.dataset.isOpen = 'false';
+      }
+      return;
+    }
+    
+    // 2. Check if any bottom sheets are open and need to be closed
+    const openSheets = Array.from(document.querySelectorAll('.bottom-sheet.show, .bottom-sheet.open'));
+    if (openSheets.length > 0) {
+      const activeSheetIdInHistory = (state && state.type === 'sheet') ? state.sheetId : null;
+      openSheets.forEach(sheet => {
+        if (sheet.id !== activeSheetIdInHistory) {
+          closeBottomSheet(sheet.id);
+        }
+      });
+      return;
+    }
+    
+    // 3. Handle tab navigation
+    if (state && state.type === 'tab') {
+      updateUIActiveTab(state.tabId);
+    } else {
+      updateUIActiveTab('screen-import');
+    }
+  } catch (err) {
+    console.error('Error in popstate handler:', err);
+  } finally {
+    setTimeout(() => {
+      isNavigatingViaHistory = false;
+    }, 50);
+  }
+});
+
+// ==============================================
 // 17. BOTTOM SHEET GENERAL ACTIONS
 // ==============================================
 function openBottomSheet(id) {
@@ -8518,6 +8499,10 @@ function openBottomSheet(id) {
   const overlay = document.getElementById('sheet-overlay');
   
   if (!sheet || !overlay) return;
+
+  if (!isNavigatingViaHistory) {
+    window.history.pushState({ type: 'sheet', sheetId: id }, '');
+  }
 
   document.body.classList.add('sheet-open');
 
@@ -8593,6 +8578,11 @@ function closeBottomSheet(id) {
 
   if (!sheet || !overlay) return;
 
+  if (!isNavigatingViaHistory) {
+    window.history.back();
+    return;
+  }
+
   sheet.classList.remove('show', 'open');
   overlay.classList.remove('show', 'open');
 
@@ -8627,6 +8617,10 @@ function setupBottomSheetDragToClose() {
 // 18. TABS & MAIN NAVIGATION
 // ==============================================
 function updateUIActiveTab(tabId) {
+  if (!isNavigatingViaHistory && tabId !== activeTab) {
+    window.history.pushState({ type: 'tab', tabId: tabId }, '');
+  }
+
   activeTab = tabId;
   
   // Hide all screens
@@ -8778,42 +8772,53 @@ async function printDailyInventoryList() {
   const todaySaleIds = new Set(todaySales.map(s => s.id));
   const todaySaleItems = allSaleItems.filter(item => todaySaleIds.has(item.sale_invoice_id));
 
-  if (todaySaleItems.length === 0) {
-    showToast(currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لليوم لطباعة قائمة الجرد!' : 'No sales recorded today to generate an inventory list!', 'warning', true);
+  // Filter imports made today
+  const todayImports = allImports.filter(imp => imp.created_at >= todayStart && imp.created_at < todayEnd);
+  const todayImportIds = new Set(todayImports.map(imp => imp.id));
+  const todayImportItems = allImportItems.filter(item => todayImportIds.has(item.invoice_id));
+
+  // Collect all unique crops handled today
+  const activeCrops = new Set();
+  todaySaleItems.forEach(item => activeCrops.add(item.crop_type));
+  todayImportItems.forEach(item => activeCrops.add(item.crop_type));
+
+  if (activeCrops.size === 0) {
+    showToast(currentLanguage === 'ar' ? 'لا يوجد أي نشاط (استيراد أو بيع) مسجل لليوم لطباعة قائمة الجرد!' : 'No activity (import or sale) recorded today to generate an inventory list!', 'warning', true);
     return;
   }
 
   // Group by crop type
   const inventoryMap = {};
 
-  todaySaleItems.forEach(item => {
+  activeCrops.forEach(crop => {
+    // Determine the primary unit
+    const sampleItem = todaySaleItems.find(si => si.crop_type === crop) || 
+                       todayImportItems.find(ii => ii.crop_type === crop) || 
+                       allSaleItems.find(si => si.crop_type === crop) || 
+                       allImportItems.find(ii => ii.crop_type === crop);
+    const unit = sampleItem ? (sampleItem.unit || 'kg') : (getCropUnitType(crop) === 'count' ? 'count' : 'kg');
+
+    inventoryMap[crop] = {
+      cropType: crop,
+      unit: unit,
+      todayImportedWeight: 0,
+      todayImportedBoxes: 0,
+      todaySoldWeight: 0,
+      todaySoldBoxes: 0,
+      remainingWeight: 0,
+      remainingBoxes: 0,
+      farmers: new Set()
+    };
+  });
+
+  // Populate today's imports
+  todayImportItems.forEach(item => {
     const crop = item.crop_type;
-    if (!inventoryMap[crop]) {
-      inventoryMap[crop] = {
-        cropType: crop,
-        soldWeight: 0,
-        soldBoxes: 0,
-        farmers: new Set(),
-        customers: new Set(),
-        unit: item.unit || 'kg'
-      };
-    }
-    inventoryMap[crop].soldWeight += item.weight_kg || 0;
-    inventoryMap[crop].soldBoxes += item.box_count || 0;
+    if (inventoryMap[crop]) {
+      inventoryMap[crop].todayImportedWeight += item.weight_kg || 0;
+      inventoryMap[crop].todayImportedBoxes += item.box_count || 0;
 
-    // Find customer
-    const invoice = todaySales.find(s => s.id === item.sale_invoice_id);
-    if (invoice) {
-      const cust = allCustomers.find(c => c.id === invoice.customer_id);
-      if (cust) {
-        inventoryMap[crop].customers.add(cust.name);
-      }
-    }
-
-    // Find farmer
-    const impItem = allImportItems.find(ii => ii.id === item.import_item_id);
-    if (impItem) {
-      const impInvoice = allImports.find(ii => ii.id === impItem.invoice_id);
+      const impInvoice = todayImports.find(ii => ii.id === item.invoice_id);
       if (impInvoice) {
         const farmer = allFarmers.find(f => f.id === impInvoice.farmer_id);
         if (farmer) {
@@ -8823,7 +8828,27 @@ async function printDailyInventoryList() {
     }
   });
 
-  // Calculate remaining quantities for each crop
+  // Populate today's sales
+  todaySaleItems.forEach(item => {
+    const crop = item.crop_type;
+    if (inventoryMap[crop]) {
+      inventoryMap[crop].todaySoldWeight += item.weight_kg || 0;
+      inventoryMap[crop].todaySoldBoxes += item.box_count || 0;
+
+      const impItem = allImportItems.find(ii => ii.id === item.import_item_id);
+      if (impItem) {
+        const impInvoice = allImports.find(ii => ii.id === impItem.invoice_id);
+        if (impInvoice) {
+          const farmer = allFarmers.find(f => f.id === impInvoice.farmer_id);
+          if (farmer) {
+            inventoryMap[crop].farmers.add(farmer.name);
+          }
+        }
+      }
+    }
+  });
+
+  // Calculate remaining quantities for each crop (all-time imported minus all-time sold)
   for (const crop in inventoryMap) {
     const cropItems = allImportItems.filter(ii => ii.crop_type === crop);
     const totalImportedWeight = cropItems.reduce((sum, ii) => sum + (ii.weight_kg || 0), 0);
@@ -8833,6 +8858,10 @@ async function printDailyInventoryList() {
     const totalSoldWeight = cropSales.reduce((sum, si) => sum + (si.weight_kg || 0), 0);
     const totalSoldBoxes = cropSales.reduce((sum, si) => sum + (si.box_count || 0), 0);
 
+    inventoryMap[crop].totalImportedWeight = totalImportedWeight;
+    inventoryMap[crop].totalImportedBoxes = totalImportedBoxes;
+    inventoryMap[crop].totalSoldWeight = totalSoldWeight;
+    inventoryMap[crop].totalSoldBoxes = totalSoldBoxes;
     inventoryMap[crop].remainingWeight = Math.max(0, totalImportedWeight - totalSoldWeight);
     inventoryMap[crop].remainingBoxes = Math.max(0, totalImportedBoxes - totalSoldBoxes);
   }
@@ -8844,73 +8873,63 @@ async function printDailyInventoryList() {
   }
 
   const is58mm = printerPaperWidth === '58';
-  const itemFontSize = is58mm ? '15px' : '18px';
-  const qtyFontSize = is58mm ? '15px' : '18px';
-  const subQtyFontSize = is58mm ? '11px' : '13px';
-  const metaFontSize = is58mm ? '11px' : '13px';
-  const headerFontSizeClass = is58mm ? 'font-size: 21px;' : 'font-size: 25px;';
+  const fontSizeClass = is58mm ? 'font-size: 16px; line-height: 1.3;' : 'font-size: 18px; line-height: 1.45;';
+  const headerFontSizeClass = is58mm ? 'font-size: 22px;' : 'font-size: 26px;';
 
   const formattedDate = formatCustomDate(now);
 
   const isAr = currentLanguage === 'ar';
   const colCrop = isAr ? 'الصنف' : 'Crop';
+  const colImported = isAr ? 'المستورد' : 'Imported';
   const colSold = isAr ? 'المباع' : 'Sold';
   const colRemaining = isAr ? 'المتبقي' : 'Remaining';
   const lblFarmer = isAr ? 'المورد' : 'Supplier';
-  const lblCustomer = isAr ? 'الزبائن' : 'Customers';
+
+  function formatInventoryQty(weight, boxes, unit) {
+    const isCount = unit === 'count';
+    if (isCount) {
+      if (boxes === 0) {
+        return `0`;
+      }
+      return `<strong><span style="font-size: 17.5px; color: #000;">${formatVal(boxes)} ${isAr ? 'قطعة' : 'Pcs'}</span></strong>`;
+    } else {
+      if (weight === 0 && boxes === 0) {
+        return `0`;
+      }
+      const boxStr = boxes > 0 ? `<div style="font-size: 17px; color: #000;"><strong>${formatVal(boxes)} ${isAr ? 'صندوق' : (boxes === 1 ? 'Box' : 'Boxes')}</strong></div>` : '';
+      const weightStr = weight > 0 ? `<div style="font-size: 17px; font-weight: normal; color: #000; margin-top: 1px;">${formatWeight(weight, 'kg')}</div>` : '';
+      return `${boxStr}${weightStr}`;
+    }
+  }
 
   let itemsHtml = `
-    <table style="width: 100%; border-collapse: collapse; direction: rtl; text-align: right; font-family: var(--font-family) !important;">
+    <table style="width: 100%; border-collapse: collapse; direction: rtl; text-align: right; ${fontSizeClass} font-family: var(--font-family) !important; margin-bottom: 8px;">
       <thead>
-        <tr style="border-bottom: 2px solid #000; font-weight: 900; color: #000; font-size: ${is58mm ? '13px' : '15px'};">
-          <th style="padding: 3px 1px; text-align: right; width: 44%; font-family: var(--font-family) !important;">${colCrop}</th>
-          <th style="padding: 3px 1px; text-align: center; width: 28%; font-family: var(--font-family) !important;">${colSold}</th>
-          <th style="padding: 3px 1px; text-align: center; width: 28%; font-family: var(--font-family) !important;">${colRemaining}</th>
+        <tr style="border-bottom: 1.5px dashed #000; font-weight: 800; font-size: 16px; color: #000;">
+          <th style="padding: 4px 2px; text-align: right; width: 33.3%;">${colImported}</th>
+          <th style="padding: 4px 2px; text-align: center; width: 33.3%;">${colSold}</th>
+          <th style="padding: 4px 2px; text-align: left; width: 33.3%;">${colRemaining}</th>
         </tr>
       </thead>
       <tbody>
   `;
 
   itemsHtml += Object.values(inventoryMap).map((it, idx) => {
-    const isCount = it.unit === 'count';
-    const soldQty = isCount 
-      ? `<strong>${formatVal(it.soldBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">قطعة</span>` 
-      : `<strong>${formatWeight(it.soldWeight, 'kg')}</strong><div style="font-size: ${subQtyFontSize}; font-weight: normal; color: #555; margin-top: 1px;">(${formatVal(it.soldBoxes)} ص)</div>`;
-      
-    const remainingQty = isCount 
-      ? `<strong>${formatVal(it.remainingBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">قطعة</span>` 
-      : `<strong>${formatWeight(it.remainingWeight, 'kg')}</strong><div style="font-size: ${subQtyFontSize}; font-weight: normal; color: #555; margin-top: 1px;">(${formatVal(it.remainingBoxes)} ص)</div>`;
-    
-    const farmersList = Array.from(it.farmers).filter(Boolean).join('، ') || '';
-    const customersList = Array.from(it.customers).filter(Boolean).join('، ') || '';
-    
-    const hasMeta = (farmersList && farmersList !== 'Unknown' && farmersList !== 'غير محدد') || 
-                    (customersList && customersList !== 'Unknown' && customersList !== 'غير محدد');
-
-    let metaRow = '';
-    if (hasMeta) {
-      metaRow = `
-        <div style="font-size: ${metaFontSize}; color: #555; font-weight: normal; margin-top: 2px; line-height: 1.25; border-right: 2px solid #ccc; padding-right: 4px;">
-          ${farmersList ? `<div><strong>🌾 ${lblFarmer}:</strong> ${farmersList}</div>` : ''}
-          ${customersList ? `<div style="margin-top: 1px;"><strong>👥 ${lblCustomer}:</strong> ${customersList}</div>` : ''}
-        </div>
-      `;
-    }
-
     return `
-      <tr style="border-bottom: 1px dashed #bbb; vertical-align: top;">
-        <td style="padding: 6px 1px; font-size: ${itemFontSize}; color: #000; text-align: right; line-height: 1.3; font-family: var(--font-family) !important;">
-          <div style="font-weight: bold; color: #000;">
-            <span style="color: #666; font-size: 13px; margin-left: 2px;">#${idx + 1}</span>
-            <span>${it.cropType}</span>
-          </div>
-          ${metaRow}
+      <tr style="background: #eee; font-weight: 800; border-top: 1.5px solid #000; border-bottom: 1.5px solid #000;">
+        <td colspan="3" style="padding: 8px 2px; text-align: center; font-size: 17.5px; color: #000; font-weight: 900; font-family: var(--font-family) !important;">
+          <span>- ${it.cropType} -</span>
         </td>
-        <td style="padding: 6px 1px; text-align: center; font-size: ${qtyFontSize}; color: #000; line-height: 1.2; font-family: var(--font-family) !important;">
-          ${soldQty}
+      </tr>
+      <tr style="border-bottom: 1px dashed #000; font-size: 18.5px; font-weight: 700; vertical-align: top;">
+        <td style="padding: 8px 2px; text-align: right; color: #000; font-family: var(--font-family) !important;">
+          ${formatInventoryQty(it.totalImportedWeight, it.totalImportedBoxes, it.unit)}
         </td>
-        <td style="padding: 6px 1px; text-align: center; font-size: ${qtyFontSize}; color: #000; line-height: 1.2; font-family: var(--font-family) !important;">
-          ${remainingQty}
+        <td style="padding: 8px 2px; text-align: center; color: #000; font-family: var(--font-family) !important;">
+          ${formatInventoryQty(it.totalSoldWeight, it.totalSoldBoxes, it.unit)}
+        </td>
+        <td style="padding: 8px 2px; text-align: left; color: #000; font-weight: 900; font-family: var(--font-family) !important;">
+          ${formatInventoryQty(it.remainingWeight, it.remainingBoxes, it.unit)}
         </td>
       </tr>
     `;
@@ -8922,18 +8941,19 @@ async function printDailyInventoryList() {
   `;
 
   container.innerHTML = `
-    <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 6px; margin-bottom: 8px; direction: rtl; font-family: var(--font-family) !important;">
-      <h2 style="${headerFontSizeClass} font-weight: 900; color: #000; margin: 0 0 4px 0; line-height: 1.2; font-family: var(--font-family) !important;">${officeName}</h2>
-      <p style="font-size: ${is58mm ? '12px' : '14px'}; color: #000; font-weight: 800; margin: 0 0 4px 0; font-family: var(--font-family) !important;">بإدارة: ${officeOwner}</p>
-      <h3 style="font-size: ${is58mm ? '14px' : '16px'}; font-weight: 800; color: #000; margin: 0 0 6px 0; font-family: var(--font-family) !important;">قائمة الجرد اليومية / Inventory</h3>
-      <div style="font-size: ${is58mm ? '12px' : '14px'}; color: #000; font-weight: 700; font-family: var(--font-family) !important;">التاريخ: ${formattedDate}</div>
+    <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl; font-family: var(--font-family) !important;">
+      <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal; font-family: var(--font-family) !important;">${officeName}</h2>
+      <p style="font-size: 13.5px; color: #000; font-weight: 700; margin: 0 0 6px 0; font-family: var(--font-family) !important;">بإدارة: ${officeOwner}</p>
+      <h3 style="font-size: 17px; font-weight: 700; color: #333; margin: 0 0 4px 0; font-family: var(--font-family) !important;">${isAr ? 'قائمة الجرد اليومية للمستودع' : 'Daily Warehouse Inventory List'}</h3>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600; margin-bottom: 2px; font-family: var(--font-family) !important;">النوع: جرد ومطابقة كميات المحاصيل</div>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600; font-family: var(--font-family) !important;">التاريخ والوقت: ${formattedDate}</div>
     </div>
     
     <div style="margin-bottom: 8px; font-family: var(--font-family) !important;">
       ${itemsHtml}
     </div>
 
-    <div style="text-align: center; margin-top: 8px; padding-top: 6px; border-top: 1.5px dashed #000; font-size: ${is58mm ? '12px' : '13.5px'}; font-weight: 800; color: #000; direction: rtl; font-family: var(--font-family) !important; line-height: 1.4;">
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 13.5px; font-weight: 800; color: #000; direction: rtl; font-family: var(--font-family) !important; line-height: 1.4;">
       برمجة و تطوير شركة Prime™ Solutions 
       <br>
       Whatsapp: 07749883474
@@ -9146,6 +9166,10 @@ async function startApp() {
     // 5. Apply Bilingual & Layout values
     applyBilingualTranslations();
     updateHeaderDate();
+
+    // 5.5 Support hardware and system back navigation
+    setupDialogObservers();
+    window.history.replaceState({ type: 'tab', tabId: activeTab || 'screen-import' }, '');
 
     // 6. Bind Tab navigation triggers
     const navButtons = document.querySelectorAll('.nav-btn, .nav-item');
@@ -9643,7 +9667,10 @@ async function startApp() {
     });
 
     // ♿ Robust Virtual Keyboard open/close detection to hide/show .bottom-nav
-    const initialWindowHeight = window.innerHeight;
+    const maxHeights = {
+      portrait: window.innerHeight > window.innerWidth ? window.innerHeight : 0,
+      landscape: window.innerWidth > window.innerHeight ? window.innerHeight : 0
+    };
     
     function isInputActiveElement() {
       const activeEl = document.activeElement;
@@ -9657,11 +9684,19 @@ async function startApp() {
 
     function checkKeyboardState() {
       const currentHeight = window.innerHeight;
-      const heightDifference = initialWindowHeight - currentHeight;
+      const currentWidth = window.innerWidth;
+      const orientation = currentHeight < currentWidth ? 'landscape' : 'portrait';
+      
+      if (currentHeight > maxHeights[orientation]) {
+        maxHeights[orientation] = currentHeight;
+      }
+
       const isFocused = isInputActiveElement();
+      const baselineHeight = maxHeights[orientation] || currentHeight;
+      const heightDifference = baselineHeight - currentHeight;
 
       // If viewport is significantly smaller (mobile keyboard visible) OR an input is focused, hide bottom navigation
-      if (heightDifference > 120 || isFocused) {
+      if ((heightDifference > 120 && isFocused) || isFocused) {
         document.body.classList.add('keyboard-open');
       } else {
         document.body.classList.remove('keyboard-open');
@@ -9955,6 +9990,12 @@ document.addEventListener('deviceready', () => {
     StatusBar.setStyle({ style: Style.Dark });
     StatusBar.setBackgroundColor({ color: '#1B4332' });
   }
+  
+  // Handle native hardware backbutton by executing history back
+  document.addEventListener('backbutton', (e) => {
+    e.preventDefault();
+    window.history.back();
+  }, false);
 }, false);
 
 window.addEventListener('DOMContentLoaded', startApp);

@@ -13,6 +13,8 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
   <!-- Stylesheets -->
   <link rel="stylesheet" href="index.css">
+  <!-- Cordova / Capacitor hybrid mobile bridge for native Bluetooth & BLE plugin initialization -->
+  <script src="cordova.js"></script>
   <!-- Visual JavaScript error diagnostic tracker -->
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
@@ -274,7 +276,7 @@
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           <button id="btn-daily-sales-audit" class="btn-print-inventory-pro" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid)) !important;">
-            <span class="material-icons-round" style="font-size: 16px;">analytics</span>
+            <span class="material-icons-round" style="font-size: 16px;">print</span>
             <span>جرد مبيعات يومي</span>
           </button>
           <button id="btn-print-inventory" class="btn-print-inventory-pro">
@@ -1049,10 +1051,14 @@
           </div>
         </div>
 
-        <div class="summary-grid" style="grid-template-columns: repeat(2, 1fr) !important; gap: 8px;">
+        <div class="summary-grid" style="grid-template-columns: repeat(3, 1fr) !important; gap: 6px;">
           <button class="btn-primary" id="btn-execute-print" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px;">
             <span class="material-icons-round" style="font-size: 16px;">bluetooth</span>
             <span id="txt-print-execute">طباعة بلوتوث</span>
+          </button>
+          <button class="btn-secondary" id="btn-execute-system-print" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--color-info); color: var(--color-info); background-color: rgba(0, 119, 182, 0.05);">
+            <span class="material-icons-round" style="font-size: 16px;">print</span>
+            <span id="txt-print-system">طباعة النظام</span>
           </button>
           <button class="btn-secondary" id="btn-share-receipt-png" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--color-primary-light);">
             <span class="material-icons-round" style="font-size: 16px;">share</span>
