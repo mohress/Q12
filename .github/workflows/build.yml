@@ -1,4 +1,4 @@
-name: Mega-Smart Universal Android Builder (Pro V3)
+name: Mega-Smart Universal Android Builder (Pro V4)
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-mega-cache-
 
-    # 4. إعداد بيئة Node.js (للمشاريع الهجينة)
+    # 4. إعداد بيئة Node.js (لالمشاريع الهجينة)
     - name: Set up Node.js (Hybrid Only)
       if: steps.detect.outputs.framework == 'javascript-hybrid'
       uses: actions/setup-node@v4
@@ -88,17 +88,20 @@ jobs:
       with:
         gradle-version: '8.13'
 
-    # 🔥 10. خطوة حاسمة: التأكد من إنشاء مجلد أندرويد فوراً إذا كان مفقوداً في هذا المستودع
+    # 🔥 10. خطوة الإصلاح الحازم: تثبيت الـ CLI واستخدام الأمر الصريح بالكامل تلافياً للخطأ السابق
     - name: Capacitor Sync & Platform Add (Hybrid Only)
       if: steps.detect.outputs.framework == 'javascript-hybrid'
       run: |
+        echo "تثبيت أدوات Capacitor بشكل صريح في السيرفر..."
+        npm install @capacitor/cli @capacitor/core @capacitor/android --legacy-peer-deps --no-audit --no-fund
+        
         if [ ! -d "android" ]; then
-          echo "⚠️ مجلد android غير موجود في المستودع الحالي، جاري إنشاؤه عبر Capacitor..."
-          npx cap add android
+          echo "⚠️ مجلد android غير موجود، جاري إنشاؤه بالبرنامج الصريح..."
+          npx @capacitor/cli add android
         fi
-        npx cap sync android
+        npx @capacitor/cli sync android
 
-    # 🔥 11. خطوة البناء الذكي اللحظي (تكتشف المجلد وتصلحه وتبنيه في نفس الثانية تلافياً للخطأ السابق)
+    # 11. خطوة البناء والتجميع للأندرويد
     - name: Build Android APK
       run: |
         if [ -d "android" ]; then
@@ -108,10 +111,8 @@ jobs:
         fi
         echo "💡 مجلد البناء الفعلي المكتشف هو: $TARGET_DIR"
         
-        # تنظيف وحذف ملف الـ wrapper التالف إن وجد لتفادي مشاكل الحماية
         rm -f $TARGET_DIR/gradle/wrapper/gradle-wrapper.jar || true
         
-        # حقن كود إلغاء إيقاف البناء بسبب أخطاء الـ Lint
         GRADLE_FILE="$TARGET_DIR/app/build.gradle"
         if [ -f "$GRADLE_FILE" ]; then
           if ! grep -q "abortOnError" "$GRADLE_FILE"; then
@@ -119,13 +120,11 @@ jobs:
           fi
         fi
         
-        # إصلاح ترميز ملف gradlew للأنظمة السحابية
         if [ -f "$TARGET_DIR/gradlew" ]; then
           chmod +x $TARGET_DIR/gradlew || true
           sed -i 's/\r$//' $TARGET_DIR/gradlew || true
         fi
         
-        # التجميع الفعلي المباشر
         cd $TARGET_DIR
         ./gradlew assembleDebug || gradle assembleDebug
 
