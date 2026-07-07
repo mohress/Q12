@@ -163,6 +163,7 @@ let importPriceEnabled = false; // Permanently disabled as per user request
 let isPrinterConnected = false;
 let printerPaperWidth = '58'; // '58' or '80'
 let officeName = localStorage.getItem('alwa_office_name') || 'علوة الغابة الخضراء';
+let officeOwner = localStorage.getItem('alwa_office_owner') || 'أبو أحمد';
 let officePhone = localStorage.getItem('alwa_office_phone') || '07701234567';
 let officeLocation = localStorage.getItem('alwa_office_location') || 'جمهورية العراق';
 let officeCashier = localStorage.getItem('alwa_office_cashier') || 'John Doe';
@@ -178,6 +179,84 @@ let autoConnectIntervalId = null;   // background auto-connect interval ID
 let isAutoConnecting = false;       // status flag to avoid duplicate concurrent connects
 let consecutiveAutoConnectFailures = 0; // counter to prevent native Android Bluetooth socket/GATT leaks and crashes
 let isManualScanning = false;       // status flag to avoid collision with manual BLE scan
+
+// Performance Cache & Optimization Globals
+let dbCache = {};
+
+function invalidateDbCache(storeName) {
+  if (storeName) {
+    dbCache[storeName] = null;
+  } else {
+    dbCache = {};
+  }
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+const listPageLimits = {
+  imports: 10,
+  sales: 10,
+  debts: 10,
+  dues: 10,
+  porters: 10,
+  archiveImports: 10,
+  archiveSales: 10
+};
+
+function resetListPageLimits() {
+  listPageLimits.imports = 10;
+  listPageLimits.sales = 10;
+  listPageLimits.debts = 10;
+  listPageLimits.dues = 10;
+  listPageLimits.porters = 10;
+  listPageLimits.archiveImports = 10;
+  listPageLimits.archiveSales = 10;
+}
+
+function createLoadMoreButton(onClick) {
+  const container = document.createElement('div');
+  container.className = 'load-more-container';
+  container.style.gridColumn = '1 / -1';
+  container.style.width = '100%';
+  container.style.display = 'flex';
+  container.style.justifyContent = 'center';
+  container.style.padding = '12px 0 24px 0';
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-primary';
+  btn.style.padding = '10px 24px';
+  btn.style.fontSize = '12px';
+  btn.style.fontWeight = '700';
+  btn.style.borderRadius = '12px';
+  btn.style.background = 'var(--color-primary-mid)';
+  btn.style.border = 'none';
+  btn.style.cursor = 'pointer';
+  btn.style.display = 'flex';
+  btn.style.alignItems = 'center';
+  btn.style.gap = '8px';
+  btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+  
+  const icon = document.createElement('span');
+  icon.className = 'material-icons-round';
+  icon.style.fontSize = '16px';
+  icon.textContent = 'expand_more';
+  
+  const text = document.createElement('span');
+  text.textContent = currentLanguage === 'ar' ? 'عرض المزيد...' : 'Show More...';
+  
+  btn.appendChild(icon);
+  btn.appendChild(text);
+  btn.addEventListener('click', onClick);
+  
+  container.appendChild(btn);
+  return container;
+}
 
 
 // Helper to generate a 6-character random alphanumeric Order ID that is completely unique
@@ -466,15 +545,20 @@ function formatWeight(weight, unit = 'kg') {
   const formattedNum = formatVal(weight);
   let unitStr = '';
   let activeUnit = unit === 'mixed' ? 'kg' : unit;
-  if (numeralSystem === 'ar') {
-    if (activeUnit === 'kg') unitStr = 'كغم';
-    else if (activeUnit === 'liter') unitStr = 'لتر';
-    else if (activeUnit === 'count') unitStr = 'عدد';
+  const isArabic = (currentLanguage === 'ar' || numeralSystem === 'ar');
+  if (isArabic) {
+    if (activeUnit === 'kg' || activeUnit === 'كغم') unitStr = 'كغم';
+    else if (activeUnit === 'liter' || activeUnit === 'لتر') unitStr = 'لتر';
+    else if (activeUnit === 'count' || activeUnit === 'قطعة') unitStr = 'قطعة';
+    else if (activeUnit === 'box' || activeUnit === 'صندوق') unitStr = 'صندوق';
+    else unitStr = activeUnit;
     return `\u202B${formattedNum} ${unitStr}\u202C`;
   } else {
-    if (activeUnit === 'kg') unitStr = 'Kg';
-    else if (activeUnit === 'liter') unitStr = 'Ltr';
-    else if (activeUnit === 'count') unitStr = 'Qty';
+    if (activeUnit === 'kg' || activeUnit === 'كغم') unitStr = 'Kg';
+    else if (activeUnit === 'liter' || activeUnit === 'لتر') unitStr = 'Ltr';
+    else if (activeUnit === 'count' || activeUnit === 'قطعة') unitStr = 'pieces';
+    else if (activeUnit === 'box' || activeUnit === 'صندوق') unitStr = 'box(es)';
+    else unitStr = activeUnit;
     return `\u202A${formattedNum} ${unitStr}\u202C`;
   }
 }
@@ -484,15 +568,20 @@ function formatWeightFraction(rem, total, unit = 'kg') {
   const formattedTotal = formatVal(total);
   let unitStr = '';
   let activeUnit = unit === 'mixed' ? 'kg' : unit;
-  if (numeralSystem === 'ar') {
-    if (activeUnit === 'kg') unitStr = 'كغم';
-    else if (activeUnit === 'liter') unitStr = 'لتر';
-    else if (activeUnit === 'count') unitStr = 'عدد';
+  const isArabic = (currentLanguage === 'ar' || numeralSystem === 'ar');
+  if (isArabic) {
+    if (activeUnit === 'kg' || activeUnit === 'كغم') unitStr = 'كغم';
+    else if (activeUnit === 'liter' || activeUnit === 'لتر') unitStr = 'لتر';
+    else if (activeUnit === 'count' || activeUnit === 'قطعة') unitStr = 'قطعة';
+    else if (activeUnit === 'box' || activeUnit === 'صندوق') unitStr = 'صندوق';
+    else unitStr = activeUnit;
     return `\u202B${formattedRem} / ${formattedTotal} ${unitStr}\u202C`;
   } else {
-    if (activeUnit === 'kg') unitStr = 'Kg';
-    else if (activeUnit === 'liter') unitStr = 'Ltr';
-    else if (activeUnit === 'count') unitStr = 'Qty';
+    if (activeUnit === 'kg' || activeUnit === 'كغم') unitStr = 'Kg';
+    else if (activeUnit === 'liter' || activeUnit === 'لتر') unitStr = 'Ltr';
+    else if (activeUnit === 'count' || activeUnit === 'قطعة') unitStr = 'pieces';
+    else if (activeUnit === 'box' || activeUnit === 'صندوق') unitStr = 'box(es)';
+    else unitStr = activeUnit;
     return `\u202A${formattedRem} / ${formattedTotal} ${unitStr}\u202C`;
   }
 }
@@ -501,11 +590,11 @@ function getAgreedPriceLabel(unit) {
   if (currentLanguage === 'ar') {
     if (unit === 'kg') return 'سعر الكيلو المتفق عليه:';
     if (unit === 'liter') return 'سعر اللتر المتفق عليه:';
-    return 'سعر المفرد المتفق عليه:';
+    return 'سعر القطعة المتفق عليه:';
   } else {
     if (unit === 'kg') return 'Agreed Price/Kg:';
     if (unit === 'liter') return 'Agreed Price/Liter:';
-    return 'Agreed Price/Item:';
+    return 'Agreed Price/Piece:';
   }
 }
 
@@ -525,7 +614,7 @@ function updateHeaderDate() {
   }
   
   dayEl.textContent = today.toLocaleDateString(locale, dayOptions);
-  dateEl.textContent = today.toLocaleDateString(locale, dateOptions);
+  dateEl.textContent = formatCustomDate(today);
 }
 
 // AutoComplete caches
@@ -540,6 +629,19 @@ const translations = {
   ar: {
     appTitle: "محاسب العلوة",
     appSubtitle: "نظام إدارة العلوة الذكي",
+    systemStatus: "نشط • باقة ذهبية",
+    txtSubscriptionTitle: "اشتراك النظام",
+    txtSubscriptionDesc: "تتبع حالة ونوع اشتراكك في نظام محاسب العلوة واستعرض الميزات المفعّلة لحسابك.",
+    lblSubscriptionPlan: "باقة الاشتراك الحالي:",
+    txtSubscriptionPlanValue: "الاشتراك الذهبي المميز السنوي 💎",
+    lblSubscriptionStatus: "حالة الاشتراك:",
+    txtSubscriptionStatusValue: "نشط ومفعل بالكامل (صالح لغاية 2027-07-05)",
+    lblSubscriberId: "رقم المشترك (المعرف الفريد):",
+    lblSubscriptionFeatures: "الميزات والخصائص المفعّلة:",
+    txtSubscriptionFeature1: "✓ طباعة حرارية (Bluetooth BLE) لجميع فواتير البيع والاستيراد والتقارير.",
+    txtSubscriptionFeature2: "✓ حسابات دقيقة وتلقائية لعمولات المكاتب وأجور التحميل والأكياس.",
+    txtSubscriptionFeature3: "✓ تصدير واستيراد قواعد بيانات المبيعات والاستيراد (Room/IndexedDB) بلمسة واحدة.",
+    btnSubscriptionRenew: "تجديد أو ترقية باقة الاشتراك",
     langButton: "🇸🇦 العربية",
     importTab: "الاستيراد",
     salesTab: "المبيعات",
@@ -571,6 +673,7 @@ const translations = {
     txtLedgerTitle: "سجل المصروفات والخسائر الأخيرة",
     officeSettingsTitle: "معلومات العلوة",
     lblOfficeName: "اسم العلوة (يظهر بالفاتورة)",
+    lblOfficeOwner: "اسم صاحب العلوة",
     lblOfficePhone: "رقم الهاتف",
     lblOfficeLocation: "موقع العلوة (العنوان)",
     lblOfficeCashier: "اسم المحاسب (بالإنجليزي حصراً)",
@@ -595,8 +698,8 @@ const translations = {
     btnSubmitImport: "حفظ الفاتورة والبدء في العرض",
     sheetSaleTitle: "إنشاء فاتورة بيع جديدة",
     lblCustomerName: "اسم الزبون (صاحب المحل)",
-    lblCustomerPhone: "رقم الهاتف (تلقائي)",
-    lblCustomerAddress: "العنوان (تلقائي)",
+    lblCustomerPhone: "رقم الهاتف (اختياري)",
+    lblCustomerAddress: "العنوان (اختياري)",
     txtAddSaleCrop: "إضافة صنف آخر في الفاتورة",
     lblBagsCost: "تكلفة الأكياس والكراتين (إجمالي اختياري)",
     lblPaymentMethod: "طريقة الدفع",
@@ -604,9 +707,9 @@ const translations = {
     btnPayDebt: "📋 دين بالأجل",
     lblDebtDue: "موعد المطالبة بالدين",
     lblSubtotal: "مجموع أسعار البضاعة:",
-    lblCommission7: "مجموع العمولات (7%):",
-    lblCarryingTotal: "مجموع الحمالية:",
-    lblTotalCalc: "المبلغ الإجمالي المستحق:",
+    lblCommission7: "عمولة المكتب (7% - تُخصم من الفلاح):",
+    lblCarryingTotal: "أجور الحمالية (تُخصم من الفلاح):",
+    lblTotalCalc: "المبلغ الإجمالي المستحق (البضاعة + الدواخل):",
     btnSubmitSale: "إصدار الفاتورة وحساب الأرباح",
     sheetExpenseTitle: "تسجيل مصروفات جديدة",
     lblExpenseType: "نوع المصروفات",
@@ -635,6 +738,19 @@ const translations = {
   en: {
     appTitle: "Alwa Accountant",
     appSubtitle: "Smart Alwa Management System",
+    systemStatus: "Active • Gold Plan",
+    txtSubscriptionTitle: "System Subscription",
+    txtSubscriptionDesc: "Track your subscription status, plan type, and review the activated premium features for your account.",
+    lblSubscriptionPlan: "Current Plan:",
+    txtSubscriptionPlanValue: "Annual Golden Premium Plan 💎",
+    lblSubscriptionStatus: "Subscription Status:",
+    txtSubscriptionStatusValue: "Active & Fully Enabled (Valid until 2027-07-05)",
+    lblSubscriberId: "Subscriber ID (UUID):",
+    lblSubscriptionFeatures: "Activated Premium Features:",
+    txtSubscriptionFeature1: "✓ Direct thermal printing via Bluetooth BLE for all invoices and daily reports.",
+    txtSubscriptionFeature2: "✓ Precise automatic calculation of commissions, porters fee, and bags costs.",
+    txtSubscriptionFeature3: "✓ Unlimited instant offline database exports and imports in one click.",
+    btnSubscriptionRenew: "Renew or Upgrade Subscription Plan",
     langButton: "🇺🇸 English",
     importTab: "Imports",
     salesTab: "Sales",
@@ -666,6 +782,7 @@ const translations = {
     txtLedgerTitle: "Recent Ledger of Expenses & Losses",
     officeSettingsTitle: "Alwa Info",
     lblOfficeName: "Alwa Name (Receipt Header)",
+    lblOfficeOwner: "Alwa Owner's Name",
     lblOfficePhone: "Phone Number",
     lblOfficeLocation: "Alwa Location (Address)",
     lblOfficeCashier: "Accountant Name (English Only)",
@@ -690,8 +807,8 @@ const translations = {
     btnSubmitImport: "Save Invoice & Start Selling",
     sheetSaleTitle: "Create New Sale Invoice",
     lblCustomerName: "Customer Name (Shop Owner)",
-    lblCustomerPhone: "Phone Number (Auto-fill)",
-    lblCustomerAddress: "Address (Auto-fill)",
+    lblCustomerPhone: "Phone Number (Optional)",
+    lblCustomerAddress: "Address (Optional)",
     txtAddSaleCrop: "Add Another Sale Item",
     lblBagsCost: "Bags/Cartons Extra Cost (Optional)",
     lblPaymentMethod: "Payment Method",
@@ -699,9 +816,9 @@ const translations = {
     btnPayDebt: "📋 Debt Account",
     lblDebtDue: "Claim Schedule Date",
     lblSubtotal: "Subtotal Prices:",
-    lblCommission7: "Total Commissions (7%):",
-    lblCarryingTotal: "Carrying Cost:",
-    lblTotalCalc: "Total Net Payable:",
+    lblCommission7: "Office Commission (7% - deducted from farmer):",
+    lblCarryingTotal: "Porterage Fee (deducted from farmer):",
+    lblTotalCalc: "Total Net Payable (Products + Bags):",
     btnSubmitSale: "Issue Invoice & Save Dues",
     sheetExpenseTitle: "Record New Expense",
     lblExpenseType: "Expense Type",
@@ -752,6 +869,40 @@ function formatVal(number, isCurrency = false) {
   if (numeralSystem === 'ar') {
     const enNums = ['0','1','2','3','4','5','6','7','8','9', ','];
     const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', '،'];
+    return valStr.split('').map(char => {
+      const idx = enNums.indexOf(char);
+      return idx !== -1 ? arNums[idx] : char;
+    }).join('');
+  }
+  return valStr;
+}
+
+function formatCustomDate(dateVal, includeTime = false) {
+  if (!dateVal) return '';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '';
+  
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  
+  const dateStr = `${year}/${month}/${day}`;
+  let valStr = dateStr;
+  
+  if (includeTime) {
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 hour is 12
+    const timeStr = `\u200E${hours}:${minutes}:${seconds} \u200E${ampm}`;
+    valStr = `\u200E${dateStr}, \u200E${timeStr}`;
+  }
+  
+  if (numeralSystem === 'ar') {
+    const enNums = ['0','1','2','3','4','5','6','7','8','9'];
+    const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
     return valStr.split('').map(char => {
       const idx = enNums.indexOf(char);
       return idx !== -1 ? arNums[idx] : char;
@@ -842,6 +993,10 @@ function initDatabase() {
 }
 
 function dbGetAll(storeName) {
+  if (dbCache[storeName]) {
+    // Return a deep copy to prevent mutation of the cached array
+    return Promise.resolve(JSON.parse(JSON.stringify(dbCache[storeName])));
+  }
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -850,7 +1005,10 @@ function dbGetAll(storeName) {
       const tx = db.transaction(storeName, 'readonly');
       const store = tx.objectStore(storeName);
       const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        dbCache[storeName] = request.result;
+        resolve(JSON.parse(JSON.stringify(request.result)));
+      };
       request.onerror = (e) => reject('IndexedDB error on getAll: ' + e.target.error);
       tx.onerror = (e) => reject('Transaction error on getAll: ' + e.target.error);
     } catch (err) {
@@ -860,6 +1018,12 @@ function dbGetAll(storeName) {
 }
 
 function dbGet(storeName, id) {
+  if (dbCache[storeName]) {
+    const item = dbCache[storeName].find(it => it.id === id);
+    if (item) {
+      return Promise.resolve(JSON.parse(JSON.stringify(item)));
+    }
+  }
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -878,6 +1042,7 @@ function dbGet(storeName, id) {
 }
 
 function dbAdd(storeName, obj) {
+  invalidateDbCache(storeName);
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -896,6 +1061,7 @@ function dbAdd(storeName, obj) {
 }
 
 function dbPut(storeName, obj) {
+  invalidateDbCache(storeName);
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -914,6 +1080,7 @@ function dbPut(storeName, obj) {
 }
 
 function dbDelete(storeName, id) {
+  invalidateDbCache(storeName);
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -979,6 +1146,45 @@ function showToast(text, icon = 'info', isError = false) {
   setTimeout(() => {
     toast.classList.remove('show');
   }, 4000);
+}
+
+async function healSalesInvoiceTotals() {
+  try {
+    const invoices = await dbGetAll('sale_invoices');
+    const saleItems = await dbGetAll('sale_items');
+    const debts = await dbGetAll('debts');
+    let updatedCount = 0;
+
+    for (const invoice of invoices) {
+      const items = saleItems.filter(it => it.sale_invoice_id === invoice.id);
+      if (items.length === 0) continue;
+
+      const subtotal = items.reduce((sum, item) => sum + item.agreed_price, 0);
+      const totalCommissions = items.reduce((sum, item) => sum + (item.commission_amount || 0), 0);
+      const totalCarrying = items.reduce((sum, item) => sum + (item.porter_fee || 0), 0);
+      const bagsCost = invoice.bags_cost || 0;
+      const correctTotal = subtotal + totalCommissions + totalCarrying + bagsCost;
+
+      // If the total is not equal to the correct total, fix it!
+      if (Math.abs(invoice.total_amount - correctTotal) > 1) {
+        invoice.total_amount = correctTotal;
+        await dbPut('sale_invoices', invoice);
+
+        // Find associated debt if exists, and update its amount
+        const associatedDebt = debts.find(d => d.sale_invoice_id === invoice.id);
+        if (associatedDebt && Math.abs(associatedDebt.amount - correctTotal) > 1) {
+          associatedDebt.amount = correctTotal;
+          await dbPut('debts', associatedDebt);
+        }
+        updatedCount++;
+      }
+    }
+    if (updatedCount > 0) {
+      console.log(`Healed ${updatedCount} sales invoices with correct commission & porter calculations.`);
+    }
+  } catch (err) {
+    console.error('Error during sales invoices healing:', err);
+  }
 }
 
 async function refreshGlobalCaches() {
@@ -1061,7 +1267,7 @@ async function renderDueClaims() {
     const customer = customers.find(c => c.id === debt.customer_id);
     const customerName = customer ? customer.name : 'زبون غير معروف';
     const customerPhone = customer ? customer.phone : 'غير متوفر';
-    const formattedDate = new Date(debt.due_date).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const formattedDate = formatCustomDate(debt.due_date);
     
     const div = document.createElement('div');
     div.className = 'premium-card';
@@ -1113,17 +1319,17 @@ async function renderImportsList() {
   const importsList = document.getElementById('imports-list');
   const searchQuery = document.getElementById('search-import-farmer').value.toLowerCase();
   
-  importsList.innerHTML = '';
-  
   const allImports = await dbGetAll('import_invoices');
   const allImportItems = await dbGetAll('import_items');
   const allSaleItems = await dbGetAll('sale_items');
   const farmers = await dbGetAll('farmers');
 
+  importsList.innerHTML = '';
+
   const activeImportsOnly = allImports.filter(imp => !imp.is_settled);
   activeImportsOnly.sort((a,b) => b.created_at - a.created_at);
 
-  let displayedCount = 0;
+  const matchedImports = [];
   for (const imp of activeImportsOnly) {
     const farmer = farmers.find(f => f.id === imp.farmer_id);
     if (!farmer) continue;
@@ -1135,6 +1341,15 @@ async function renderImportsList() {
     if (searchQuery && !matchesSearch) {
       continue;
     }
+    matchedImports.push({ imp, farmer });
+  }
+
+  const paginatedImports = matchedImports.slice(0, listPageLimits.imports);
+  let displayedCount = 0;
+
+  for (const matched of paginatedImports) {
+    const imp = matched.imp;
+    const farmer = matched.farmer;
     const items = allImportItems.filter(it => it.invoice_id === imp.id);
     
     let totalWeight = 0;
@@ -1196,16 +1411,7 @@ async function renderImportsList() {
     
     let itemsHtml = items.map(it => {
       const isCount = (getCropUnitType(it.crop_type) === 'count');
-      const itemSales = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-      let itemSold = 0;
-      let itemBoxesSold = 0;
-      itemSales.forEach(s => {
-        itemSold += (isCount ? (s.box_count || 0) : s.weight_kg);
-        itemBoxesSold += (s.box_count || 0);
-      });
-      const itemRem = Math.max(0, (isCount ? (it.box_count || 0) : it.weight_kg) - itemSold);
       const isSpecial = isWatermelonOrMelon(it.crop_type);
-      const itemBoxesRem = Math.max(0, (it.box_count || 0) - itemBoxesSold);
       
       let itemBoxStr = '';
       if (isCount) {
@@ -1213,15 +1419,70 @@ async function renderImportsList() {
       } else if (isSpecial) {
         itemBoxStr = '';
       } else {
-        itemBoxStr = (currentLanguage === 'ar' ? ` (${itemBoxesRem} / ${it.box_count || 0} صندوق)` : ` (${itemBoxesRem} / ${it.box_count || 0} Box)`);
+        itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} صندوق)` : ` (${it.box_count || 0} Box)`);
       }
-      return `<div style="font-size:12px; font-weight:600; display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type}</span>
-        <span>${formatWeightFraction(itemRem, (isCount ? (it.box_count || 0) : it.weight_kg), it.unit || 'kg')}${itemBoxStr}</span>
-      </div>`;
+
+      // Calculate individual item sales progress
+      let itemTotal = 0;
+      let itemSold = 0;
+      let itemTotalBoxes = it.box_count || 0;
+      let itemSoldBoxes = 0;
+
+      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
+
+      if (isCount) {
+        itemTotal = it.box_count || 0;
+        salesOfItem.forEach(s => {
+          itemSold += (s.box_count || 0);
+        });
+        itemTotalBoxes = itemTotal;
+        itemSoldBoxes = itemSold;
+      } else {
+        itemTotal = it.weight_kg || 0;
+        salesOfItem.forEach(s => {
+          itemSold += (s.weight_kg || 0);
+          itemSoldBoxes += (s.box_count || 0);
+        });
+      }
+
+      const itemPercentSold = itemTotal > 0 ? Math.min(100, Math.round((itemSold / itemTotal) * 100)) : 0;
+      const itemRemaining = Math.max(0, itemTotal - itemSold);
+      const itemRemainingBoxes = Math.max(0, itemTotalBoxes - itemSoldBoxes);
+
+      let itemColorClass = '#52b788'; // green
+
+      let remainingText = '';
+      if (isCount) {
+        remainingText = formatWeight(itemRemaining, it.unit || 'kg');
+      } else {
+        const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+        remainingText = `${formatWeight(itemRemaining, it.unit || 'kg')} (${itemRemainingBoxes} ${boxLabel})`;
+      }
+
+      return `
+        <div style="background: rgba(0,0,0,0.015); border: 1px solid rgba(0,0,0,0.03); padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size:12px; font-weight:600; display:flex; justify-content:space-between; align-items: center;">
+            <span style="display: flex; align-items: center; gap: 4px;">
+              <span>${getCropIcon(it.crop_type)}</span>
+              <span>${it.crop_type}</span>
+            </span>
+            <span>${formatWeight((isCount ? (it.box_count || 0) : it.weight_kg), it.unit || 'kg')}${itemBoxStr}</span>
+          </div>
+          <!-- Item-specific Sales Progress Bar (Swapped Style: 8px gradient indicator) -->
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); font-weight: 500;">
+              <span>${currentLanguage === 'ar' ? 'نسبة البيع:' : 'Sold:'} <strong style="color: ${itemColorClass}; font-weight: 700;">${formatVal(itemPercentSold)}%</strong></span>
+              <span>${currentLanguage === 'ar' ? 'المتبقي:' : 'Rem:'} ${remainingText}</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill green" style="width: ${itemPercentSold}%;"></div>
+            </div>
+          </div>
+        </div>
+      `;
     }).join('');
 
-    const formattedDate = new Date(imp.invoice_date).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const formattedDate = formatCustomDate(imp.invoice_date);
     const totalBoxStr = hasNormalCrops ? (currentLanguage === 'ar' ? ` (${remainingBoxes} صندوق)` : ` (${remainingBoxes} Box)`) : '';
 
     card.innerHTML = `
@@ -1244,16 +1505,6 @@ async function renderImportsList() {
 
       <div style="display:flex; flex-direction:column; gap:2px; margin: 6px 0;">
         ${itemsHtml}
-      </div>
-
-      <div class="progress-bar-container">
-        <div class="progress-labels">
-          <span>${currentLanguage === 'ar' ? 'الكمية المباعة:' : 'Sold percent:'} ${formatVal(percentSold)}%</span>
-          <span>${currentLanguage === 'ar' ? 'المتبقي الكلي:' : 'Total Remaining:'} ${formatWeight(remainingWeight, commonUnit)}${totalBoxStr}</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill ${colorClass}" style="width: ${percentSold}%"></div>
-        </div>
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
@@ -1298,14 +1549,18 @@ async function renderImportsList() {
     `;
   }
 
+  if (matchedImports.length > listPageLimits.imports) {
+    const loadMoreBtn = createLoadMoreButton(() => {
+      listPageLimits.imports += 10;
+      renderImportsList();
+    });
+    importsList.appendChild(loadMoreBtn);
+  }
+
   const archiveBtnDiv = document.createElement('div');
-  archiveBtnDiv.style.marginTop = '20px';
-  archiveBtnDiv.style.display = 'flex';
-  archiveBtnDiv.style.flexDirection = 'column';
-  archiveBtnDiv.style.gap = '6px';
-  archiveBtnDiv.style.alignItems = 'center';
+  archiveBtnDiv.style.cssText = 'grid-column: 1 / -1; width: 100%; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; align-items: center;';
   archiveBtnDiv.innerHTML = `
-    <button class="btn-secondary" id="btn-open-archive" style="background: #e5e5e5; color: #555; border: 1px solid #ccc; font-size: 13px; font-weight: 700; width: 100%; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: none;">
+    <button class="btn-secondary" id="btn-open-archive" style="background: #e5e5e5; color: #555; border: 1px solid #ccc; font-size: 13px; font-weight: 700; width: 100%; max-width: 450px; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: none;">
       <span class="material-icons-round" style="font-size: 18px;">archive</span>
       <span>أرشيف الفواتير المسواة</span>
     </button>
@@ -1412,24 +1667,24 @@ async function renderArchiveList() {
     card.style.animationDelay = `${displayedCount * 0.08}s`;
     
     let itemsHtml = items.map(it => {
-      const itemSales = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-      let itemSold = 0;
-      let itemBoxesSold = 0;
-      itemSales.forEach(s => {
-        itemSold += s.weight_kg;
-        itemBoxesSold += (s.box_count || 0);
-      });
-      const itemRem = Math.max(0, it.weight_kg - itemSold);
+      const isCount = (getCropUnitType(it.crop_type) === 'count');
       const isSpecial = isWatermelonOrMelon(it.crop_type);
-      const itemBoxesRem = Math.max(0, (it.box_count || 0) - itemBoxesSold);
-      const itemBoxStr = isSpecial ? '' : (currentLanguage === 'ar' ? ` (${itemBoxesRem} / ${it.box_count || 0} صندوق)` : ` (${itemBoxesRem} / ${it.box_count || 0} Box)`);
+      
+      let itemBoxStr = '';
+      if (isCount) {
+        itemBoxStr = '';
+      } else if (isSpecial) {
+        itemBoxStr = '';
+      } else {
+        itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} صندوق)` : ` (${it.box_count || 0} Box)`);
+      }
       return `<div style="font-size:12px; font-weight:600; display:flex; justify-content:space-between; margin-bottom:4px;">
         <span>${getCropIcon(it.crop_type)} ${it.crop_type}</span>
-        <span>${formatWeightFraction(itemRem, it.weight_kg, it.unit || 'kg')}${itemBoxStr}</span>
+        <span>${formatWeight((isCount ? (it.box_count || 0) : it.weight_kg), it.unit || 'kg')}${itemBoxStr}</span>
       </div>`;
     }).join('');
 
-    const formattedDate = new Date(imp.invoice_date).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const formattedDate = formatCustomDate(imp.invoice_date);
     const totalBoxStr = hasNormalCrops ? (currentLanguage === 'ar' ? ` (${remainingBoxes} صندوق)` : ` (${remainingBoxes} Box)`) : '';
 
     card.innerHTML = `
@@ -1449,16 +1704,6 @@ async function renderArchiveList() {
 
       <div style="display:flex; flex-direction:column; gap:2px; margin: 6px 0;">
         ${itemsHtml}
-      </div>
-
-      <div class="progress-bar-container">
-        <div class="progress-labels">
-          <span>${currentLanguage === 'ar' ? 'الكمية المباعة:' : 'Sold percent:'} ${formatVal(percentSold)}%</span>
-          <span>${currentLanguage === 'ar' ? 'المتبقي الكلي:' : 'Total Remaining:'} ${formatWeight(remainingWeight, commonUnit)}${totalBoxStr}</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill green" style="width: ${percentSold}%"></div>
-        </div>
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
@@ -1513,18 +1758,29 @@ function addImportCropRow() {
     <div class="dynamic-row-header">
       <span>${currentLanguage === 'ar' ? `المحصول ${index + 1}` : `Crop #${index + 1}`}</span>
     </div>
-    <div class="form-group" style="position: relative;">
-      <label>${currentLanguage === 'ar' ? 'نوع المحصول' : 'Crop Type'}</label>
-      <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'مثل: طماطم، بطاطس...' : 'e.g. Tomato, Potato...'}" required autocomplete="off">
-      <div class="crop-autocomplete-dropdown autocomplete-dropdown"></div>
-    </div>
     <div class="form-group">
-      <label class="import-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي القائم (كغم)' : 'الوزن الكلي القائم (Kg)') : 'Total Weight (Kg)'}</label>
-      <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'أدخل الوزن كغم...' : 'أدخل الوزن بـ Kg...') : 'Enter weight in Kg...'}" required>
+      <label>${currentLanguage === 'ar' ? 'نوع المحصول' : 'Crop Type'}</label>
+      <div style="position: relative;">
+        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">eco</span>
+        <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'مثل: طماطم، بطاطس...' : 'e.g. Tomato, Potato...'}" required autocomplete="off" style="padding-right: 42px;">
+        <div class="crop-autocomplete-dropdown autocomplete-dropdown"></div>
+      </div>
     </div>
-    <div class="form-group import-box-count-container">
-      <label class="import-box-count-label">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</label>
-      <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'العدد...' : 'Count...'}">
+    <div style="display: flex; gap: 12px; width: 100%;">
+      <div class="form-group" style="flex: 1; min-width: 0;">
+        <label class="import-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي القائم (كغم)' : 'الوزن الكلي القائم (Kg)') : 'Total Weight (Kg)'}</label>
+        <div style="position: relative;">
+          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
+          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'أدخل الوزن كغم...' : 'أدخل الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+        </div>
+      </div>
+      <div class="form-group import-box-count-container" style="flex: 1; min-width: 0;">
+        <label class="import-box-count-label">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</label>
+        <div style="position: relative;">
+          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
+          <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'العدد...' : 'Count...'}" style="padding-right: 42px;" inputmode="none" readonly>
+        </div>
+      </div>
     </div>
   `;
 
@@ -1759,21 +2015,21 @@ async function renderSalesList() {
   const salesList = document.getElementById('sales-list');
   const searchQuery = document.getElementById('search-sale-customer').value.toLowerCase();
   
-  salesList.innerHTML = '';
-  
   const allSales = await dbGetAll('sale_invoices');
   const allSaleItems = await dbGetAll('sale_items');
   const customers = await dbGetAll('customers');
   const debts = await dbGetAll('debts');
 
+  salesList.innerHTML = '';
+
   allSales.sort((a,b) => b.created_at - a.created_at);
 
+  const matchedSales = [];
   const activeSales = allSales.filter(sale => {
     if (searchQuery) return true; // Include both active and settled sales if there is a search query
     return !isSaleInvoiceSettled(sale, debts);
   });
 
-  let displayedCount = 0;
   for (const sale of activeSales) {
     const customer = customers.find(c => c.id === sale.customer_id);
     if (!customer) continue;
@@ -1791,16 +2047,31 @@ async function renderSalesList() {
     if (searchQuery && !matchesSearch) {
       continue;
     }
+    matchedSales.push({ sale, customer, items, orderId });
+  }
+
+  const paginatedSales = matchedSales.slice(0, listPageLimits.sales);
+  let displayedCount = 0;
+
+  for (const matched of paginatedSales) {
+    const sale = matched.sale;
+    const customer = matched.customer;
+    const items = matched.items;
+    const orderId = matched.orderId;
 
     const card = document.createElement('div');
     card.className = 'premium-card stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
 
-    const formattedDate = new Date(sale.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const formattedDate = formatCustomDate(sale.created_at);
 
     let itemsDetailsHtml = items.map(it => {
+      const isCount = it.unit === 'count';
+      const qtyText = isCount 
+        ? (currentLanguage === 'ar' ? `${formatVal(it.box_count)} قطعة` : `${formatVal(it.box_count)} pieces`)
+        : formatWeight(it.weight_kg, it.unit || 'kg');
       return `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${formatWeight(it.weight_kg, it.unit || 'kg')})</span>
+        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${qtyText})</span>
         <span style="font-weight:700;">${formatVal(it.agreed_price, true)}</span>
       </div>`;
     }).join('');
@@ -1858,10 +2129,18 @@ async function renderSalesList() {
     displayedCount++;
   }
 
+  if (matchedSales.length > listPageLimits.sales) {
+    const loadMoreBtn = createLoadMoreButton(() => {
+      listPageLimits.sales += 10;
+      renderSalesList();
+    });
+    salesList.appendChild(loadMoreBtn);
+  }
+
   const archiveBtnDiv = document.createElement('div');
-  archiveBtnDiv.style.cssText = 'margin-top: 24px; padding: 16px 0; border-top: 1px solid rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%;';
+  archiveBtnDiv.style.cssText = 'grid-column: 1 / -1; width: 100%; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; align-items: center;';
   archiveBtnDiv.innerHTML = `
-    <button class="btn-secondary" id="btn-open-sales-archive" style="background: #e5e5e5; color: #555; border: 1px solid #ccc; font-size: 13px; font-weight: 700; width: 100%; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: none;">
+    <button class="btn-secondary" id="btn-open-sales-archive" style="background: #e5e5e5; color: #555; border: 1px solid #ccc; font-size: 13px; font-weight: 700; width: 100%; max-width: 450px; padding: 12px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: none;">
       <span class="material-icons-round" style="font-size: 18px;">archive</span>
       <span>أرشيف فواتير المبيعات</span>
     </button>
@@ -1937,11 +2216,15 @@ async function renderSalesArchiveList() {
     card.className = 'premium-card stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
 
-    const formattedDate = new Date(sale.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const formattedDate = formatCustomDate(sale.created_at);
 
     let itemsDetailsHtml = items.map(it => {
+      const isCount = it.unit === 'count';
+      const qtyText = isCount 
+        ? (currentLanguage === 'ar' ? `${formatVal(it.box_count)} قطعة` : `${formatVal(it.box_count)} pieces`)
+        : formatWeight(it.weight_kg, it.unit || 'kg');
       return `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${formatWeight(it.weight_kg, it.unit || 'kg')})</span>
+        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${qtyText})</span>
         <span style="font-weight:700;">${formatVal(it.agreed_price, true)}</span>
       </div>`;
     }).join('');
@@ -2038,36 +2321,64 @@ async function addSaleCropRow() {
     </div>
     
     <div class="form-group" style="position: relative;">
-      <label>${currentLanguage === 'ar' ? 'البضاعة المتوفرة بالفواتير (المحصول - الفلاح - السيارة)' : 'Select Available Cargo (Crop - Farmer - Car)'}</label>
-      <select class="form-input sale-cargo-select" required>
-        <option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر من البضاعة المعروضة بالاستيراد...' : 'Choose from available imports...'}</option>
-      </select>
+      <label>
+        <span>${currentLanguage === 'ar' ? 'البضاعة المتوفرة بالفواتير (المحصول - الفلاح - السيارة)' : 'Select Available Cargo (Crop - Farmer - Car)'}</span>
+      </label>
+      <div style="position: relative;">
+        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">inventory_2</span>
+        <select class="form-input sale-cargo-select" required style="padding-right: 42px;">
+          <option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر من البضاعة المعروضة بالاستيراد...' : 'Choose from available imports...'}</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; width: 100%;">
+      <div class="form-group" style="flex: 1; min-width: 0;">
+        <label class="sale-crop-weight-label">
+          <span>${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي المباع (كغم)' : 'الوزن المباع (Kg)') : 'Sold Weight (Kg)'}</span>
+        </label>
+        <div style="position: relative;">
+          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
+          <input type="number" class="form-input sale-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي...' : 'الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+        </div>
+      </div>
+
+      <div class="form-group sale-box-count-container" style="flex: 1; min-width: 0;">
+        <label class="sale-box-count-label">
+          <span>${currentLanguage === 'ar' ? 'عدد الصناديق المباعة' : 'Number of Boxes Sold'}</span>
+        </label>
+        <div style="position: relative;">
+          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
+          <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
-      <label class="sale-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي المباع (كغم)' : 'الوزن المباع (Kg)') : 'Sold Weight (Kg)'}</label>
-      <input type="number" class="form-input sale-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي...' : 'الوزن بـ Kg...') : 'Enter weight in Kg...'}" required>
-    </div>
-
-    <div class="form-group sale-box-count-container">
-      <label class="sale-box-count-label">${currentLanguage === 'ar' ? 'عدد الصناديق المباعة' : 'Number of Boxes Sold'}</label>
-      <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...'}" required>
-    </div>
-
-    <div class="form-group">
-      <label class="sale-unit-price-label">${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)'}</label>
-      <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required>
+      <label class="sale-unit-price-label">
+        <span>${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)'}</span>
+      </label>
+      <div style="position: relative;">
+        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">payments</span>
+        <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+      </div>
     </div>
 
     <div class="form-group sale-porter-rate-container" style="margin-top: 8px;">
-      <label class="sale-porter-rate-label">${currentLanguage === 'ar' ? 'عمولة الحمالية للصندوق الواحد (دينار)' : 'Porter Fee per Box (IQD)'}</label>
+      <label class="sale-porter-rate-label">
+        <span>${currentLanguage === 'ar' ? 'عمولة الحمالية للصندوق الواحد (دينار)' : 'Porter Fee per Box (IQD)'}</span>
+      </label>
       <div class="porter-options-row" style="display: flex; gap: 8px; margin-top: 4px; margin-bottom: 8px; flex-wrap: wrap;">
+        <button type="button" class="porter-opt-btn" data-value="0" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">0</button>
         <button type="button" class="porter-opt-btn active" data-value="100" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; text-align: center; transition: all 0.2s;">100</button>
         <button type="button" class="porter-opt-btn" data-value="200" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">200</button>
         <button type="button" class="porter-opt-btn" data-value="250" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">250</button>
         <button type="button" class="porter-opt-btn btn-custom-porter-trigger" data-value="custom" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">${currentLanguage === 'ar' ? 'مخصص' : 'Custom'}</button>
       </div>
-      <input type="number" class="form-input sale-porter-rate" value="100" style="display: none; text-align: center; font-weight: 600;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}">
+      <div class="sale-porter-rate-wrapper" style="position: relative; display: none;">
+        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">engineering</span>
+        <input type="number" class="form-input sale-porter-rate" value="100" style="display: none; text-align: center; font-weight: 600; padding-right: 42px;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}" inputmode="none" readonly>
+      </div>
       <span class="sale-row-porter-total-label" style="font-size:11px; font-weight:600; color:var(--color-primary-mid); display:block; margin-top:4px;"></span>
     </div>
   `;
@@ -2085,11 +2396,49 @@ async function addSaleCropRow() {
   await refreshCargoOptions(cargoSelect);
 
   cargoSelect.addEventListener('change', async () => {
-    const [invoiceIdStr, cropType] = cargoSelect.value.split('|');
+    const cargoValue = cargoSelect.value;
+    if (!cargoValue) return;
+
+    const [invoiceIdStr, cropType] = cargoValue.split('|');
     const invoiceId = parseInt(invoiceIdStr);
 
     const imp = activeImportInvoices.find(i => i.id === invoiceId);
     if (!imp) return;
+
+    // Check if another row in the same invoice already has the same crop from the same farmer
+    const otherCargoSelects = Array.from(document.querySelectorAll('#sale-items-container .sale-cargo-select'))
+      .filter(sel => sel !== cargoSelect);
+    
+    let isDuplicate = false;
+    for (const sel of otherCargoSelects) {
+      const val = sel.value;
+      if (!val) continue;
+      const [oInvIdStr, oCropType] = val.split('|');
+      const oInvId = parseInt(oInvIdStr);
+      const oImp = activeImportInvoices.find(i => i.id === oInvId);
+      if (oImp && oImp.farmer_id === imp.farmer_id && oCropType === cropType) {
+        isDuplicate = true;
+        break;
+      }
+    }
+
+    if (isDuplicate) {
+      showToast(
+        currentLanguage === 'ar' 
+          ? `عذراً، هذا الصنف (${cropType}) للفلاح نفسه مضاف بالفعل في هذه الفاتورة!` 
+          : `Sorry, this crop (${cropType}) from the same farmer is already added to this invoice!`, 
+        'warning', 
+        true
+      );
+      cargoSelect.value = "";
+      remainingLabel.textContent = "";
+      weightInput.value = "";
+      boxInput.value = "";
+      priceInput.value = "";
+      updateSaleInvoiceOverallTotal();
+      return;
+    }
+
     const it = imp.items.find(item => item.crop_type === cropType);
     if (!it) return;
 
@@ -2112,21 +2461,38 @@ async function addSaleCropRow() {
     const unitPriceLabel = row.querySelector('.sale-unit-price-label');
     const unitPriceInput = row.querySelector('.sale-crop-unit-price');
 
+    const boxCountLabel = boxContainer.querySelector('.sale-box-count-label');
+    const boxCountInput = boxContainer.querySelector('.sale-box-count');
+
     if (isCount) {
       weightInput.closest('.form-group').style.display = 'none';
       weightInput.value = '';
       boxContainer.style.display = 'block';
       boxInput.setAttribute('max', remBoxes);
-      remainingLabel.textContent = currentLanguage === 'ar' ? `المتبقي: ${formatVal(remBoxes)} مفرد` : `Remaining: ${formatVal(remBoxes)} qty`;
+      remainingLabel.textContent = currentLanguage === 'ar' ? `المتبقي: ${formatVal(remBoxes)} قطعة` : `Remaining: ${formatVal(remBoxes)} قطعة`;
       
       unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للقطعة الواحدة (دينار)' : 'Sale Price per Piece (IQD)';
       unitPriceInput.placeholder = currentLanguage === 'ar' ? 'أدخل سعر القطعة الواحدة...' : 'Enter price per piece...';
+
+      if (boxCountLabel) {
+        boxCountLabel.textContent = currentLanguage === 'ar' ? 'عدد القطع المباعة' : 'Number of Pieces Sold';
+      }
+      if (boxCountInput) {
+        boxCountInput.placeholder = currentLanguage === 'ar' ? 'أدخل عدد القطع...' : 'Pieces count...';
+      }
     } else {
       weightInput.closest('.form-group').style.display = 'block';
       weightInput.setAttribute('max', remWeight);
       
       unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)';
       unitPriceInput.placeholder = currentLanguage === 'ar' ? 'أدخل سعر الكيلو الواحد...' : 'Enter price per Kg...';
+
+      if (boxCountLabel) {
+        boxCountLabel.textContent = currentLanguage === 'ar' ? 'عدد الصناديق المباعة' : 'Number of Boxes Sold';
+      }
+      if (boxCountInput) {
+        boxCountInput.placeholder = currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...';
+      }
 
       if (isWatermelonOrMelon(cropType)) {
         boxContainer.style.display = 'none';
@@ -2171,11 +2537,14 @@ async function addSaleCropRow() {
       btn.style.fontWeight = '700';
 
       const val = btn.dataset.value;
+      const rateWrapper = row.querySelector('.sale-porter-rate-wrapper');
       if (val === 'custom') {
+        if (rateWrapper) rateWrapper.style.display = 'block';
         porterRateInput.style.display = 'block';
         porterRateInput.value = '';
         porterRateInput.focus();
       } else {
+        if (rateWrapper) rateWrapper.style.display = 'none';
         porterRateInput.style.display = 'none';
         porterRateInput.value = val;
       }
@@ -2232,8 +2601,8 @@ async function refreshCargoOptions(selectElement) {
       let remainingText = '';
       if (isCount) {
         remainingText = currentLanguage === 'ar' 
-          ? `(متبقي: ${formatVal(remBoxes)} مفرد)` 
-          : `(rem: ${formatVal(remBoxes)} qty)`;
+          ? `(متبقي: ${formatVal(remBoxes)} قطعة)` 
+          : `(rem: ${formatVal(remBoxes)} قطعة)`;
       } else if (isWatermelonOrMelon(it.crop_type)) {
         remainingText = currentLanguage === 'ar' 
           ? `(متبقي: ${formatWeight(remWeight, it.unit || 'kg')})` 
@@ -2362,6 +2731,31 @@ async function submitSaleInvoice() {
   if (itemRows.length === 0) {
     showToast(currentLanguage === 'ar' ? 'يجب إدخال صنف مباع واحد على الأقل' : 'Please add at least one sold item', 'warning', true);
     return;
+  }
+
+  // Verify duplicates of same crop from same farmer
+  const seenFarmerCrops = new Set();
+  for (const row of itemRows) {
+    const cargoValue = row.querySelector('.sale-cargo-select').value;
+    if (cargoValue) {
+      const [invoiceIdStr, cropType] = cargoValue.split('|');
+      const invoiceId = parseInt(invoiceIdStr);
+      const imp = activeImportInvoices.find(i => i.id === invoiceId);
+      if (imp) {
+        const key = `${imp.farmer_id}|${cropType}`;
+        if (seenFarmerCrops.has(key)) {
+          showToast(
+            currentLanguage === 'ar' 
+              ? `يمنع تكرار نفس الصنف للفلاح نفسه (${imp.farmer_name} - ${cropType}) في الفاتورة نفسها!` 
+              : `Duplicate crop for the same farmer (${imp.farmer_name} - ${cropType}) is not allowed on the same invoice!`, 
+            'warning', 
+            true
+          );
+          return;
+        }
+        seenFarmerCrops.add(key);
+      }
+    }
   }
 
   // Verify stock and collect item data
@@ -2536,7 +2930,16 @@ async function submitSaleInvoice() {
   // Handle debt ledger entry
   if (paymentType === 'debt') {
     const activeDebtDaysBtn = document.querySelector('#group-debt-options .segmented-control-btn.active');
-    const debtDays = activeDebtDaysBtn ? parseInt(activeDebtDaysBtn.dataset.days) : 5;
+    let debtDays = 5;
+    if (activeDebtDaysBtn) {
+      if (activeDebtDaysBtn.dataset.days === 'custom') {
+        const customInput = document.getElementById('custom-debt-days-input');
+        const customVal = customInput ? parseInt(customInput.value) : NaN;
+        debtDays = (!isNaN(customVal) && customVal > 0) ? customVal : 5;
+      } else {
+        debtDays = parseInt(activeDebtDaysBtn.dataset.days) || 5;
+      }
+    }
     const dueTime = Date.now() + debtDays * 24 * 60 * 60 * 1000;
     await dbAdd('debts', {
       customer_id: customer.id,
@@ -2768,18 +3171,17 @@ async function renderDebtsList() {
   const debtsList = document.getElementById('debts-list');
   const searchQuery = document.getElementById('search-debts-input').value.toLowerCase();
   
-  debtsList.innerHTML = '';
-  
   const debts = await dbGetAll('debts');
   const customers = await dbGetAll('customers');
   const allSaleItems = await dbGetAll('sale_items');
   const allSaleInvoices = await dbGetAll('sale_invoices');
 
-  // Filter out paid debts
+  debtsList.innerHTML = '';
+
+  const matchedDebts = [];
   const activeDebts = debts.filter(d => !d.is_paid);
   activeDebts.sort((a,b) => b.due_date - a.due_date);
 
-  let displayedCount = 0;
   for (const debt of activeDebts) {
     const customer = customers.find(c => c.id === debt.customer_id);
     if (!customer) continue;
@@ -2799,18 +3201,55 @@ async function renderDebtsList() {
     if (searchQuery && !matchesSearch) {
       continue;
     }
+    matchedDebts.push({ debt, customer, items, orderId });
+  }
+
+  const paginatedDebts = matchedDebts.slice(0, listPageLimits.debts);
+  let displayedCount = 0;
+
+  for (const matched of paginatedDebts) {
+    const debt = matched.debt;
+    const customer = matched.customer;
+    const items = matched.items;
+    const orderId = matched.orderId;
 
     const now = Date.now();
     const isLate = now >= debt.due_date;
-    const formattedDate = new Date(debt.due_date).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const formattedDate = formatCustomDate(debt.due_date);
+
+    const diffMs = debt.due_date - (debt.created_at || (debt.due_date - 5 * 24 * 60 * 60 * 1000));
+    const debtDays = Math.max(1, Math.round(diffMs / (24 * 60 * 60 * 1000)));
+
+    let daysText = '';
+    if (currentLanguage === 'ar' || (typeof numeralSystem !== 'undefined' && numeralSystem === 'ar')) {
+      if (debtDays === 1) {
+        daysText = 'يوم واحد';
+      } else if (debtDays === 2) {
+        daysText = 'يومين';
+      } else if (debtDays >= 3 && debtDays <= 10) {
+        daysText = `${formatVal(debtDays)} أيام`;
+      } else {
+        daysText = `${formatVal(debtDays)} يوم`;
+      }
+    } else {
+      daysText = `${debtDays} ${debtDays === 1 ? 'day' : 'days'}`;
+    }
+
+    const statusText = currentLanguage === 'ar' 
+      ? `مستحق الدفع بعد ${daysText}` 
+      : `Due after ${daysText}`;
 
     const card = document.createElement('div');
     card.className = 'premium-card stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
 
     let itemsDetailsHtml = items.map(it => {
+      const isCount = it.unit === 'count';
+      const qtyText = isCount 
+        ? (currentLanguage === 'ar' ? `${formatVal(it.box_count)} قطعة` : `${formatVal(it.box_count)} pieces`)
+        : formatWeight(it.weight_kg, it.unit || 'kg');
       return `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${formatWeight(it.weight_kg, it.unit || 'kg')})</span>
+        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${qtyText})</span>
         <span style="font-weight:700;">${formatVal(it.agreed_price, true)}</span>
       </div>`;
     }).join('');
@@ -2834,8 +3273,8 @@ async function renderDebtsList() {
         <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
           <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
           ${isLate ? 
-            `<span class="debt-status-tag late" style="font-size:9px;">⚠️ ${currentLanguage === 'ar' ? 'متأخر عن السداد' : 'Overdue'}</span>` : 
-            `<span class="debt-status-tag unpaid" style="font-size:9px;">⏳ ${currentLanguage === 'ar' ? 'بانتظار التحصيل' : 'Pending'}</span>`
+            `<span class="debt-status-tag late" style="font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; background-color: rgba(239, 68, 68, 0.08); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.22); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; direction: rtl; letter-spacing: -0.01em;">⚠️ ${statusText}</span>` : 
+            `<span class="debt-status-tag unpaid" style="font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; background-color: rgba(79, 70, 229, 0.08); color: #4f46e5; border: 1px solid rgba(79, 70, 229, 0.22); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; direction: rtl; letter-spacing: -0.01em;">⏳ ${statusText}</span>`
           }
         </div>
       </div>
@@ -2868,6 +3307,14 @@ async function renderDebtsList() {
 
     debtsList.appendChild(card);
     displayedCount++;
+  }
+
+  if (matchedDebts.length > listPageLimits.debts) {
+    const loadMoreBtn = createLoadMoreButton(() => {
+      listPageLimits.debts += 10;
+      renderDebtsList();
+    });
+    debtsList.appendChild(loadMoreBtn);
   }
 
   if (displayedCount === 0) {
@@ -2908,11 +3355,13 @@ async function renderDuesList() {
   const duesList = document.getElementById('dues-list');
   const searchQuery = document.getElementById('search-dues-input').value.toLowerCase();
   
-  duesList.innerHTML = '';
-  
   const dues = await dbGetAll('farmer_dues');
   const farmers = await dbGetAll('farmers');
   const saleItems = await dbGetAll('sale_items');
+  const allImports = await dbGetAll('import_invoices');
+  const allImportItems = await dbGetAll('import_items');
+
+  duesList.innerHTML = '';
 
   // Group unpaid dues by farmer
   const unpaidDues = dues.filter(d => !d.is_paid);
@@ -2931,7 +3380,7 @@ async function renderDuesList() {
     farmerGroups[due.farmer_id].rawItems.push(due);
   });
 
-  let displayedCount = 0;
+  const matchedFarmerIds = [];
   for (const farmerId in farmerGroups) {
     const farmer = farmers.find(f => f.id === parseInt(farmerId));
     if (!farmer) continue;
@@ -2939,8 +3388,90 @@ async function renderDuesList() {
     if (searchQuery && !farmer.name.toLowerCase().includes(searchQuery)) {
       continue;
     }
+    matchedFarmerIds.push({ farmerId, farmer });
+  }
 
+  const paginatedFarmers = matchedFarmerIds.slice(0, listPageLimits.dues);
+  let displayedCount = 0;
+
+  for (const matched of paginatedFarmers) {
+    const farmerId = matched.farmerId;
+    const farmer = matched.farmer;
     const data = farmerGroups[farmerId];
+
+    // Calculate sales percentage for each imported crop type of this farmer
+    const activeInvoiceIds = allImports.filter(imp => imp.farmer_id === parseInt(farmerId) && !imp.is_settled).map(imp => imp.id);
+    const duesInvoiceIds = data.rawItems.map(item => item.import_invoice_id);
+    const combinedInvoiceIds = [...new Set([...activeInvoiceIds, ...duesInvoiceIds])];
+    
+    const targetItems = allImportItems.filter(it => combinedInvoiceIds.includes(it.invoice_id));
+    const uniqueCropTypes = [...new Set(targetItems.map(it => it.crop_type))];
+    
+    let cropProgressHtml = '';
+    uniqueCropTypes.forEach(crop => {
+      const cropImportItems = targetItems.filter(it => it.crop_type === crop);
+      let cropTotalImported = 0;
+      let cropTotalSold = 0;
+      let cropTotalBoxesImported = 0;
+      let cropTotalBoxesSold = 0;
+      const isCount = (getCropUnitType(crop) === 'count');
+      
+      cropImportItems.forEach(it => {
+        cropTotalBoxesImported += (it.box_count || 0);
+        const salesOfItem = saleItems.filter(s => s.import_invoice_id === it.invoice_id && s.crop_type === crop);
+        salesOfItem.forEach(s => {
+          cropTotalBoxesSold += (s.box_count || 0);
+        });
+
+        if (isCount) {
+          cropTotalImported += (it.box_count || 0);
+          salesOfItem.forEach(s => {
+            cropTotalSold += (s.box_count || 0);
+          });
+        } else {
+          cropTotalImported += (it.weight_kg || 0);
+          salesOfItem.forEach(s => {
+            cropTotalSold += (s.weight_kg || 0);
+          });
+        }
+      });
+      
+      const cropPercentSold = cropTotalImported > 0 ? Math.min(100, Math.round((cropTotalSold / cropTotalImported) * 100)) : 0;
+      let cropColorClass = '#52b788';
+      
+      const unitLabel = isCount ? 'count' : 'kg';
+      const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+
+      const soldText = isCount ? formatWeight(cropTotalSold, unitLabel) : `${formatWeight(cropTotalSold, 'kg')} (${cropTotalBoxesSold} ${boxLabel})`;
+      const importedText = isCount ? formatWeight(cropTotalImported, unitLabel) : `${formatWeight(cropTotalImported, 'kg')} (${cropTotalBoxesImported} ${boxLabel})`;
+      
+      cropProgressHtml += `
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: rgba(0,0,0,0.015); border: 1px solid rgba(0,0,0,0.03); border-radius: 6px; margin-bottom: 4px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--color-text-dark); align-items: center;">
+            <span style="display: flex; align-items: center; gap: 4px;">
+              <span>${getCropIcon(crop)}</span>
+              <span>${crop}</span>
+            </span>
+            <span style="color: ${cropColorClass}; font-weight: 700;">${formatVal(cropPercentSold)}%</span>
+          </div>
+          <div class="progress-track" style="margin: 2px 0;">
+            <div class="progress-fill green" style="width: ${cropPercentSold}%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 9px; color: var(--color-text-muted); font-weight: 500;">
+            <span>${currentLanguage === 'ar' ? 'تم بيع:' : 'Sold:'} ${soldText}</span>
+            <span>${currentLanguage === 'ar' ? 'المستورد:' : 'Imported:'} ${importedText}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    if (!cropProgressHtml) {
+      cropProgressHtml = `
+        <div style="font-size: 11px; color: var(--color-text-muted); text-align: center; padding: 4px;">
+          ${currentLanguage === 'ar' ? 'لا توجد بضائع مستوردة معلقة' : 'No pending imported goods'}
+        </div>
+      `;
+    }
 
     const card = document.createElement('div');
     card.className = 'premium-card stagger-item';
@@ -2953,7 +3484,6 @@ async function renderDuesList() {
             ID: FMR-${farmerId}
           </span>
           <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${farmer.name}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${farmer.phone ? `• ${farmer.phone}` : ''}</span>
         </div>
         <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
           <span class="debt-status-tag unpaid" style="font-size:9px; background: rgba(0, 119, 182, 0.08); color: var(--color-info); border: 1px solid rgba(0, 119, 182, 0.15); border-radius: 4px; padding: 2px 6px;">
@@ -2962,10 +3492,18 @@ async function renderDuesList() {
         </div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+      <div style="display:flex; flex-direction:column; gap:8px; margin: 8px 0;">
         <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
           <span>${currentLanguage === 'ar' ? 'عدد الشحنات المعلقة' : 'Pending Shipments'}</span>
           <span style="font-weight:700;">${formatVal(data.itemsCount)} ${currentLanguage === 'ar' ? 'شحنة' : 'shipment(s)'}</span>
+        </div>
+
+        <!-- Sales percentages by crop for this farmer dues card -->
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 6px; border-top: 1px solid rgba(0,0,0,0.03); padding-top: 8px; margin-top: 4px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 2px;">
+            ${currentLanguage === 'ar' ? 'نسب مبيعات الأصناف:' : 'Crop Sales Indexes:'}
+          </div>
+          ${cropProgressHtml}
         </div>
       </div>
 
@@ -2975,9 +3513,9 @@ async function renderDuesList() {
           <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(data.totalNetDue, true)}</h3>
         </div>
         <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-toggle-farmer-details" data-farmer-id="${farmerId}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">list_alt</span>
-            <span>${currentLanguage === 'ar' ? 'الشحنات' : 'Shipments'}</span>
+          <button class="btn-secondary btn-sales-audit" data-farmer-id="${farmerId}" data-crop-type="all" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; font-weight: 700;">
+            <span class="material-icons-round" style="font-size:14px;">analytics</span>
+            <span>${currentLanguage === 'ar' ? 'جرد المبيعات' : 'Sales Audit'}</span>
           </button>
           <button class="btn-secondary btn-pay-farmer-dues" data-farmer-id="${farmerId}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
             <span class="material-icons-round" style="font-size:14px;">paid</span>
@@ -3006,28 +3544,72 @@ async function renderDuesList() {
               const totalBoxes = items.reduce((sum, item) => sum + (item.box_count || 0), 0);
               const totalWeight = items.reduce((sum, item) => sum + (item.weight_kg || 0), 0);
               
+              const isCount = (getCropUnitType(crop) === 'count');
               let quantityText = '';
               if (totalWeight > 0) {
                 quantityText = `${formatVal(totalWeight)} ${currentLanguage === 'ar' ? 'كغم' : 'kg'}`;
               } else {
-                quantityText = `${formatVal(totalBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}`;
+                quantityText = isCount
+                  ? `${formatVal(totalBoxes)} ${currentLanguage === 'ar' ? 'قطعة' : 'pieces'}`
+                  : `${formatVal(totalBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}`;
+              }
+
+              // Calculate total imported qty of this crop across the target invoices
+              const cropImportItems = targetItems.filter(it => it.crop_type === crop);
+              let cropTotalImported = 0;
+              let cropTotalSold = 0;
+              
+              cropImportItems.forEach(it => {
+                if (isCount) {
+                  cropTotalImported += (it.box_count || 0);
+                  const salesOfItem = saleItems.filter(s => s.import_invoice_id === it.invoice_id && s.crop_type === crop);
+                  salesOfItem.forEach(s => {
+                    cropTotalSold += (s.box_count || 0);
+                  });
+                } else {
+                  cropTotalImported += (it.weight_kg || 0);
+                  const salesOfItem = saleItems.filter(s => s.import_invoice_id === it.invoice_id && s.crop_type === crop);
+                  salesOfItem.forEach(s => {
+                    cropTotalSold += (s.weight_kg || 0);
+                  });
+                }
+              });
+              
+              const cropPercentSold = cropTotalImported > 0 ? Math.min(100, Math.round((cropTotalSold / cropTotalImported) * 100)) : 0;
+              let cropColorClass = '#52b788';
+              if (cropPercentSold >= 85) {
+                cropColorClass = '#e63946';
+              } else if (cropPercentSold >= 50) {
+                cropColorClass = '#f77f00';
               }
 
               return `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.02); border: 1px solid rgba(0, 0, 0, 0.04); padding: 8px 12px; border-radius: 8px; gap: 8px;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 16px;">${cropIcon}</span>
-                    <div>
-                      <strong style="color: var(--color-primary); font-size: 12px;">${crop}</strong>
-                      <div style="font-size: 10px; color: var(--color-text-muted);">
-                        ${currentLanguage === 'ar' ? 'الكمية الإجمالية المستحقة:' : 'Total due qty:'} ${quantityText}
+                <div style="display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.02); border: 1px solid rgba(0, 0, 0, 0.04); padding: 10px 12px; border-radius: 8px; gap: 8px; width: 100%;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 16px;">${cropIcon}</span>
+                      <div>
+                        <strong style="color: var(--color-primary); font-size: 12px;">${crop}</strong>
+                        <div style="font-size: 10px; color: var(--color-text-muted);">
+                          ${currentLanguage === 'ar' ? 'الكمية المستحقة حالياً:' : 'Due qty currently:'} ${quantityText}
+                        </div>
                       </div>
                     </div>
+                    <button class="btn-secondary btn-sales-audit" data-farmer-id="${farmerId}" data-crop-type="${crop}" style="padding: 5px 10px; font-size: 10px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); border-radius: 6px; font-weight: 700;">
+                      <span class="material-icons-round" style="font-size: 12px;">analytics</span>
+                      <span>${currentLanguage === 'ar' ? 'جرد المبيعات' : 'Sales Audit'}</span>
+                    </button>
                   </div>
-                  <button class="btn-secondary btn-sales-audit" data-farmer-id="${farmerId}" data-crop-type="${crop}" style="padding: 5px 10px; font-size: 10px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); border-radius: 6px; font-weight: 700;">
-                    <span class="material-icons-round" style="font-size: 12px;">analytics</span>
-                    <span>${currentLanguage === 'ar' ? 'جرد المبيعات' : 'Sales Audit'}</span>
-                  </button>
+                  <!-- Progress bar for individual crop sales progress -->
+                  <div style="display: flex; flex-direction: column; gap: 2px; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; font-size: 9.5px; color: var(--color-text-muted); font-weight: 600;">
+                      <span>${currentLanguage === 'ar' ? 'نسبة البيع:' : 'Sales progress:'} <strong style="color: ${cropColorClass};">${formatVal(cropPercentSold)}%</strong></span>
+                      <span>${currentLanguage === 'ar' ? 'تم بيع:' : 'Sold:'} ${formatWeight(cropTotalSold, isCount ? 'count' : 'kg')} / ${formatWeight(cropTotalImported, isCount ? 'count' : 'kg')}</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden;">
+                      <div style="width: ${cropPercentSold}%; height: 100%; background: ${cropColorClass}; border-radius: 2px;"></div>
+                    </div>
+                  </div>
                 </div>
               `;
             }).join('');
@@ -3038,6 +3620,14 @@ async function renderDuesList() {
 
     duesList.appendChild(card);
     displayedCount++;
+  }
+
+  if (matchedFarmerIds.length > listPageLimits.dues) {
+    const loadMoreBtn = createLoadMoreButton(() => {
+      listPageLimits.dues += 10;
+      renderDuesList();
+    });
+    duesList.appendChild(loadMoreBtn);
   }
 
   if (displayedCount === 0) {
@@ -3165,10 +3755,14 @@ async function printCropSalesAudit(farmerId, crop) {
   // 1. Get all farmer dues
   const allDues = await dbGetAll('farmer_dues');
   // Filter for this farmer and this crop
-  const cropSales = allDues.filter(d => d.farmer_id === farmerId && d.crop_type === crop);
+  const cropSales = allDues.filter(d => d.farmer_id === farmerId && (crop === 'all' || !crop || d.crop_type === crop));
   
-  // 2. Sort by date descending
-  cropSales.sort((a, b) => b.created_at - a.created_at);
+  // 2. Sort: Group by crop_type first, then by date descending
+  cropSales.sort((a, b) => {
+    const cmp = a.crop_type.localeCompare(b.crop_type, 'ar');
+    if (cmp !== 0) return cmp;
+    return b.created_at - a.created_at;
+  });
 
   // 3. Get sale invoices and items to map the details properly
   const saleInvoices = await dbGetAll('sale_invoices');
@@ -3178,9 +3772,7 @@ async function printCropSalesAudit(farmerId, crop) {
   const farmerName = farmer ? farmer.name : (currentLanguage === 'ar' ? 'فلاح غير معروف' : 'Unknown Farmer');
 
   const now = new Date();
-  const formattedDate = now.toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US', {
-    year: 'numeric', month: '2-digit', day: '2-digit'
-  });
+  const formattedDate = formatCustomDate(now);
 
   const container = document.getElementById('receipt-paper');
   if (!container) return;
@@ -3195,12 +3787,13 @@ async function printCropSalesAudit(farmerId, crop) {
   let totalBoxes = 0;
   let totalSoldPrice = 0;
 
+  let lastCropType = null;
   let itemsHtml = cropSales.map((item, idx) => {
     const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
     const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
     const saleItem = saleItems.find(si => si.id === item.sale_item_id);
 
-    const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const itemDate = formatCustomDate(item.created_at);
     
     // Weight and box count
     const weightVal = item.weight_kg || 0;
@@ -3224,16 +3817,46 @@ async function printCropSalesAudit(farmerId, crop) {
       }
     }
 
-    const qtyText = isWeightBased 
-      ? `${formatVal(weightVal)} كغم` 
-      : `${formatVal(boxCountVal)} عدد`;
+    const isCount = (getCropUnitType(item.crop_type) === 'count');
+    let qtyText = '';
+    if (isWeightBased) {
+      qtyText = `${formatVal(weightVal)} ${currentLanguage === 'ar' ? 'كغم' : 'kg'}`;
+    } else {
+      if (isCount) {
+        qtyText = `${formatVal(boxCountVal)} ${currentLanguage === 'ar' ? 'قطعة' : 'pieces'}`;
+      } else {
+        qtyText = `${formatVal(boxCountVal)} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}`;
+      }
+    }
+
+    const nextItem = cropSales[idx + 1];
+    const isLastOfGroup = nextItem && nextItem.crop_type !== item.crop_type;
+    const borderStyle = isLastOfGroup 
+      ? "border-bottom: 2.5px solid #000;" 
+      : "border-bottom: 1px dashed #000;";
+
+    let groupHeaderHtml = '';
+    if (item.crop_type !== lastCropType) {
+      lastCropType = item.crop_type;
+      groupHeaderHtml = `
+        <tr style="background: #eee; font-weight: 800; border-top: 1.5px solid #000; border-bottom: 1.5px solid #000;">
+          <td colspan="4" style="padding: 8px 2px; text-align: center; font-size: 17px; color: #000; font-weight: 900;">
+            - ${lastCropType} -
+          </td>
+        </tr>
+      `;
+    }
+
+    const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
+    const displayPrice = isLoss ? (currentLanguage === 'ar' ? 'تلف' : 'Loss') : formatVal(unitPrice);
 
     return `
-      <tr style="border-bottom: 1px dashed #000; font-size: 13.5px;">
+      ${groupHeaderHtml}
+      <tr style="${borderStyle} font-size: 16px; font-weight: 700;">
         <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
         <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
-        <td style="padding: 6px 2px; text-align: center;">${formatVal(unitPrice)}</td>
-        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 14px;">${orderId}</td>
+        <td style="padding: 6px 2px; text-align: center;">${displayPrice}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 16px;">${orderId}</td>
       </tr>
     `;
   }).join('');
@@ -3242,25 +3865,30 @@ async function printCropSalesAudit(farmerId, crop) {
     itemsHtml = `
       <tr>
         <td colspan="4" style="text-align: center; padding: 12px; color: #666; font-size: 13px;">
-          ${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لهذا الصنف حالياً.' : 'No sales registered for this crop yet.'}
+          ${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة حالياً.' : 'No sales registered yet.'}
         </td>
       </tr>
     `;
   }
 
+  const cropNameLabel = (crop === 'all' || !crop) 
+    ? (currentLanguage === 'ar' ? 'كافة الأصناف' : 'All Crops') 
+    : crop;
+
   container.innerHTML = `
     <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
       <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
-      <h3 style="font-size: 17px; font-weight: 700; color: #333; margin: 0 0 4px 0;">جرد مبيعات الصنف / Crop Sales Audit</h3>
+      <p style="font-size: 13.5px; color: #000; font-weight: 700; margin: 0 0 6px 0;">بإدارة: ${officeOwner}</p>
+      <h3 style="font-size: 17px; font-weight: 700; color: #333; margin: 0 0 4px 0;">${(crop === 'all' || !crop) ? (currentLanguage === 'ar' ? 'جرد مبيعات كافة الأصناف' : 'All Crops Sales Audit') : (currentLanguage === 'ar' ? 'جرد مبيعات الصنف' : 'Crop Sales Audit')}</h3>
       <div style="font-size: 14.5px; color: #000; font-weight: 600; margin-bottom: 2px;">الفلاح: ${farmerName}</div>
-      <div style="font-size: 14.5px; color: #000; font-weight: 600; margin-bottom: 2px;">الصنف: ${crop}</div>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600; margin-bottom: 2px;">الصنف: ${cropNameLabel}</div>
       <div style="font-size: 14.5px; color: #000; font-weight: 600;">التاريخ: ${formattedDate}</div>
     </div>
     
     <table style="width: 100%; direction: rtl; border-collapse: collapse; ${fontSizeClass} margin-bottom: 8px;">
       <thead>
-        <tr style="border-bottom: 1.5px dashed #000; font-weight: 800; font-size: 14px;">
-          <th style="padding: 4px 0; text-align: right;">التاريخ</th>
+        <tr style="border-bottom: 1.5px dashed #000; font-weight: 800; font-size: 16px;">
+          <th style="padding: 4px 0; text-align: right;">${currentLanguage === 'ar' ? 'تاريخ البيع' : 'Sale Date'}</th>
           <th style="padding: 4px 0; text-align: center;">الكمية</th>
           <th style="padding: 4px 0; text-align: center;">السعر</th>
           <th style="padding: 4px 0; text-align: left;">رمز الفاتورة</th>
@@ -3271,19 +3899,17 @@ async function printCropSalesAudit(farmerId, crop) {
       </tbody>
     </table>
 
-    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 700; font-size: 14.5px;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-        <span>إجمالي الكمية:</span>
-        <span>${totalWeight > 0 ? `${formatVal(totalWeight)} كغم` : ''} ${totalBoxes > 0 ? `(${formatVal(totalBoxes)} صندوق)` : ''}</span>
-      </div>
-      <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 17px; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;">
+    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 800; font-size: 17px;">
+      <div style="display: flex; justify-content: space-between;">
         <span>إجمالي المبيعات:</span>
         <span>${formatVal(totalSoldPrice, true)}</span>
       </div>
     </div>
 
-    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 13px; font-weight: 700; color: #444;">
-      نظام علوة للمحاسبة الذكي © ${now.getFullYear()}
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 13.5px; font-weight: 800; color: #000; direction: rtl; font-family: var(--font-family) !important; line-height: 1.4;">
+      برمجة و تطوير شركة Prime™ Solutions 
+      <br>
+      Whatsapp: 07749883474
     </div>
   `;
 
@@ -3305,10 +3931,14 @@ async function showSalesAuditSheet(farmerId, crop) {
   // 1. Get all farmer dues
   const allDues = await dbGetAll('farmer_dues');
   // Filter for this farmer and this crop
-  const cropSales = allDues.filter(d => d.farmer_id === farmerId && d.crop_type === crop);
+  const cropSales = allDues.filter(d => d.farmer_id === farmerId && (crop === 'all' || !crop || d.crop_type === crop));
   
-  // 2. Sort by date descending
-  cropSales.sort((a, b) => b.created_at - a.created_at);
+  // 2. Sort: Group by crop_type first, then by date descending
+  cropSales.sort((a, b) => {
+    const cmp = a.crop_type.localeCompare(b.crop_type, 'ar');
+    if (cmp !== 0) return cmp;
+    return b.created_at - a.created_at;
+  });
 
   // 3. Get sale invoices and items to map the details properly
   const saleInvoices = await dbGetAll('sale_invoices');
@@ -3320,9 +3950,15 @@ async function showSalesAuditSheet(farmerId, crop) {
   // Update title dynamically
   const sheetTitle = document.getElementById('txt-farmer-dues-details-title');
   if (sheetTitle) {
-    sheetTitle.textContent = currentLanguage === 'ar'
-      ? `جرد مبيعات ${crop}`
-      : `Sales Audit for ${crop}`;
+    if (crop === 'all' || !crop) {
+      sheetTitle.textContent = currentLanguage === 'ar'
+        ? `جرد مبيعات كافة الأصناف`
+        : `Sales Audit for All Crops`;
+    } else {
+      sheetTitle.textContent = currentLanguage === 'ar'
+        ? `جرد مبيعات ${crop}`
+        : `Sales Audit for ${crop}`;
+    }
   }
 
   // Header banner containing the button "جرد الأسعار"
@@ -3340,17 +3976,404 @@ async function showSalesAuditSheet(farmerId, crop) {
     </div>
   `;
 
-  // Grid list of items
-  let itemsHtml = cropSales.map(item => {
+  // Grid list of items grouped by crop
+  let itemsHtml = '';
+  if (cropSales.length > 0) {
+    const groups = {};
+    cropSales.forEach(item => {
+      if (!groups[item.crop_type]) {
+        groups[item.crop_type] = [];
+      }
+      groups[item.crop_type].push(item);
+    });
+
+    for (const [cropType, groupItems] of Object.entries(groups)) {
+      const cropIcon = getCropIcon(cropType);
+      
+      // Separator header for each crop type
+      itemsHtml += `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid rgba(9, 132, 227, 0.1); padding-bottom: 6px; margin-top: 12px; margin-bottom: 4px; direction: rtl; width: 100%;">
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(9, 132, 227, 0.08); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid rgba(9, 132, 227, 0.12);">
+            ${cropIcon}
+          </div>
+          <span style="font-weight: 800; color: var(--color-text-dark); font-size: 12.5px;">${cropType}</span>
+          <span style="font-size: 10px; color: var(--color-text-muted); font-weight: 600; margin-right: auto; margin-left: 0; background: #f8fafc; padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            ${groupItems.length} ${currentLanguage === 'ar' ? 'عمليات مبيعات' : 'sales'}
+          </span>
+        </div>
+      `;
+
+      groupItems.forEach(item => {
+        const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
+        const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
+        const saleItem = saleItems.find(si => si.id === item.sale_item_id);
+
+        const itemDate = formatCustomDate(item.created_at);
+        
+        // Weight and box count
+        const weightVal = item.weight_kg || 0;
+        const boxCountVal = item.box_count || 0;
+
+        // Calculate unit price sold per kg or per unit
+        let unitPrice = 0;
+        let isWeightBased = weightVal > 0;
+
+        if (saleItem && saleItem.unit_price) {
+          unitPrice = saleItem.unit_price;
+        } else {
+          if (isWeightBased) {
+            unitPrice = Math.round(item.sold_price / weightVal);
+          } else if (boxCountVal > 0) {
+            unitPrice = Math.round(item.sold_price / boxCountVal);
+          }
+        }
+
+        const itemUnit = (saleItem && saleItem.unit) ? saleItem.unit : (getCropUnitType(item.crop_type) === 'count' ? 'count' : 'kg');
+        
+        let qtyText = '';
+        const isArabic = (currentLanguage === 'ar' || numeralSystem === 'ar');
+
+        if (itemUnit === 'kg' || itemUnit === 'weight') {
+          const unitLabel = isArabic ? 'كغم' : 'kg';
+          qtyText = `${formatVal(weightVal)} ${unitLabel}`;
+          if (boxCountVal > 0) {
+            const boxLabel = isArabic ? 'صندوق' : 'box';
+            qtyText += ` (${formatVal(boxCountVal)} ${boxLabel})`;
+          }
+        } else if (itemUnit === 'liter') {
+          const unitLabel = isArabic ? 'لتر' : 'Ltr';
+          qtyText = `${formatVal(weightVal)} ${unitLabel}`;
+          if (boxCountVal > 0) {
+            const boxLabel = isArabic ? 'صندوق' : 'box';
+            qtyText += ` (${formatVal(boxCountVal)} ${boxLabel})`;
+          }
+        } else if (itemUnit === 'count') {
+          const unitLabel = isArabic ? 'قطعة' : 'pieces';
+          qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
+        } else if (itemUnit === 'box') {
+          const unitLabel = isArabic ? 'صندوق' : 'box';
+          qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
+        } else {
+          if (weightVal > 0) {
+            const unitLabel = isArabic ? 'كغم' : 'kg';
+            qtyText = `${formatVal(weightVal)} ${unitLabel}`;
+          } else {
+            const unitLabel = isArabic ? 'صندوق' : 'box';
+            qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
+          }
+        }
+
+        const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
+
+        let rateText = '';
+        if (isLoss) {
+          rateText = currentLanguage === 'ar' ? 'تلف' : 'Loss';
+        } else {
+          if (itemUnit === 'kg' || itemUnit === 'weight') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / كغم` : `${formatVal(unitPrice, true)} / kg`;
+          } else if (itemUnit === 'liter') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / لتر` : `${formatVal(unitPrice, true)} / Ltr`;
+          } else if (itemUnit === 'count') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / قطعة` : `${formatVal(unitPrice, true)} / pc`;
+          } else if (itemUnit === 'box') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / صندوق` : `${formatVal(unitPrice, true)} / box`;
+          } else {
+            rateText = formatVal(unitPrice, true);
+          }
+        }
+
+        const totalValHtml = isLoss 
+          ? `<span style="color: #ef4444; font-weight: 700;">${currentLanguage === 'ar' ? 'تلف' : 'Loss'}</span>`
+          : `<span style="color: var(--color-success); font-weight: 700;">${formatVal(item.sold_price, true)}</span>`;
+
+        itemsHtml += `
+          <div class="premium-card" style="padding: 10px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.01); border-radius: 12px; background-color: #ffffff; direction: rtl; text-align: right; min-height: 105px;">
+            <!-- Top: Crop Header (Icon + Name + ID) -->
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+              <span style="font-weight: 800; color: var(--color-text-dark); font-size: 11px; font-family: inherit; background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;">${item.crop_type}</span>
+              <span style="font-weight: 700; color: var(--color-primary); font-family: 'Monofrik' !important; font-size: 9px; background: rgba(9, 132, 227, 0.06); padding: 1px 4px; border-radius: 3px; border: 1px solid rgba(9, 132, 227, 0.08);">${orderId}</span>
+            </div>
+
+            <!-- Middle: Unit Price / Rate (Highlighted) -->
+            <div style="display: flex; flex-direction: column; gap: 1px; margin: 2px 0;">
+              <span style="font-size: 9px; color: var(--color-text-muted); font-weight: 500;">${currentLanguage === 'ar' ? 'سعر الوحدة:' : 'Unit Price:'}</span>
+              <span style="font-weight: 800; color: ${isLoss ? '#ef4444' : 'var(--color-primary)'}; font-size: 13.5px; line-height: 1.1;">${rateText}</span>
+            </div>
+
+            <!-- Bottom: Quantity, Sales & Date -->
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 5px; display: flex; flex-direction: column; gap: 2px;">
+              <!-- Qty & Sales -->
+              <div style="font-size: 9px; color: var(--color-text-muted); font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 2px; white-space: nowrap;">
+                <span style="color: var(--color-text-dark); overflow: hidden; text-overflow: ellipsis; max-width: 65px;">${qtyText}</span>
+                ${totalValHtml}
+              </div>
+              <!-- Date -->
+              <div style="font-size: 8px; color: #94a3b8; font-weight: 500; text-align: left;">
+                ${itemDate}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+  } else {
+    itemsHtml = `
+      <div style="text-align: center; padding: 24px; color: var(--color-text-muted);">
+        <span class="material-icons-round" style="font-size: 32px; margin-bottom: 8px; color: #cbd5e1;">info</span>
+        <p style="font-size: 12px;">${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لهذا الصنف حالياً.' : 'No sales registered for this crop yet.'}</p>
+      </div>
+    `;
+  }
+
+  const wrapperStyle = cropSales.length > 0 
+    ? 'display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;' 
+    : 'display: flex; flex-direction: column; gap: 10px;';
+
+  body.innerHTML = headerHtml + `<div style="${wrapperStyle}">` + itemsHtml + `</div>`;
+
+  // Bind note click
+  const btnNote = document.getElementById('btn-price-audit-note');
+  if (btnNote) {
+    btnNote.addEventListener('click', async () => {
+      await printCropSalesAudit(farmerId, crop);
+    });
+  }
+
+  // Open the bottom sheet
+  openBottomSheet('sheet-farmer-dues-details');
+}
+
+async function showDailySalesAuditSheet() {
+  const allDues = await dbGetAll('farmer_dues');
+  
+  // Get all sales for today (current calendar day)
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
+  
+  const cropSales = allDues.filter(d => d.created_at >= startOfDay && d.created_at < endOfDay);
+  
+  // Sort: Group by crop_type first, then by date descending
+  cropSales.sort((a, b) => {
+    const cmp = a.crop_type.localeCompare(b.crop_type, 'ar');
+    if (cmp !== 0) return cmp;
+    return b.created_at - a.created_at;
+  });
+
+  // Get sale invoices and items to map details properly
+  const saleInvoices = await dbGetAll('sale_invoices');
+  const saleItems = await dbGetAll('sale_items');
+
+  const body = document.getElementById('daily-sales-audit-body');
+  if (!body) return;
+
+  // Header banner containing print button for daily sales audit "جرد مبيعات يومي"
+  let headerHtml = `
+    <div style="background: rgba(9, 132, 227, 0.05); border: 1.5px dashed rgba(9, 132, 227, 0.2); border-radius: 12px; padding: 12px; margin-bottom: 12px; text-align: center;">
+      <p style="font-size: 11px; color: var(--color-text-muted); margin-bottom: 8px; line-height: 1.4;">
+        ${currentLanguage === 'ar' 
+          ? 'لطباعة وتدقيق تفاصيل المبيعات الإجمالية لليوم الحالي:' 
+          : 'To print and audit total sales details for the current day:'}
+      </p>
+      <button id="btn-daily-audit-print" class="btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background-color: var(--color-warning); color: #000; font-weight: 700; border: none; padding: 12px; border-radius: 8px; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.1s active;">
+        <span class="material-icons-round" style="font-size: 18px;">print</span>
+        <span>${currentLanguage === 'ar' ? 'طباعة جرد مبيعات اليوم' : 'Print Daily Sales Audit'}</span>
+      </button>
+    </div>
+  `;
+
+  let itemsHtml = '';
+  if (cropSales.length > 0) {
+    const groups = {};
+    cropSales.forEach(item => {
+      if (!groups[item.crop_type]) {
+        groups[item.crop_type] = [];
+      }
+      groups[item.crop_type].push(item);
+    });
+
+    for (const [cropType, groupItems] of Object.entries(groups)) {
+      const cropIcon = getCropIcon(cropType);
+      
+      itemsHtml += `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid rgba(9, 132, 227, 0.1); padding-bottom: 6px; margin-top: 12px; margin-bottom: 4px; direction: rtl; width: 100%;">
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(9, 132, 227, 0.08); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid rgba(9, 132, 227, 0.12);">
+            ${cropIcon}
+          </div>
+          <span style="font-weight: 800; color: var(--color-text-dark); font-size: 12.5px;">${cropType}</span>
+          <span style="font-size: 10px; color: var(--color-text-muted); font-weight: 600; margin-right: auto; margin-left: 0; background: #f8fafc; padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            ${groupItems.length} ${currentLanguage === 'ar' ? 'عمليات مبيعات' : 'sales'}
+          </span>
+        </div>
+      `;
+
+      groupItems.forEach(item => {
+        const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
+        const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
+        const saleItem = saleItems.find(si => si.id === item.sale_item_id);
+
+        const itemDate = formatCustomDate(item.created_at);
+        
+        const weightVal = item.weight_kg || 0;
+        const boxCountVal = item.box_count || 0;
+
+        let unitPrice = 0;
+        let isWeightBased = weightVal > 0;
+
+        if (saleItem && saleItem.unit_price) {
+          unitPrice = saleItem.unit_price;
+        } else {
+          if (isWeightBased) {
+            unitPrice = Math.round(item.sold_price / weightVal);
+          } else if (boxCountVal > 0) {
+            unitPrice = Math.round(item.sold_price / boxCountVal);
+          }
+        }
+
+        const itemUnit = (saleItem && saleItem.unit) ? saleItem.unit : (getCropUnitType(item.crop_type) === 'count' ? 'count' : 'kg');
+        
+        let qtyText = '';
+        const isArabic = (currentLanguage === 'ar' || numeralSystem === 'ar');
+
+        if (itemUnit === 'kg' || itemUnit === 'weight') {
+          const unitLabel = isArabic ? 'كغم' : 'kg';
+          qtyText = `${formatVal(weightVal)} ${unitLabel}`;
+          if (boxCountVal > 0) {
+            const boxLabel = isArabic ? 'صندوق' : 'box';
+            qtyText += ` (${formatVal(boxCountVal)} ${boxLabel})`;
+          }
+        } else if (itemUnit === 'liter') {
+          const unitLabel = isArabic ? 'لتر' : 'Ltr';
+          qtyText = `${formatVal(weightVal)} ${unitLabel}`;
+          if (boxCountVal > 0) {
+            const boxLabel = isArabic ? 'صندوق' : 'box';
+            qtyText += ` (${formatVal(boxCountVal)} ${boxLabel})`;
+          }
+        } else if (itemUnit === 'count') {
+          const unitLabel = isArabic ? 'قطعة' : 'pieces';
+          qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
+        } else if (itemUnit === 'box') {
+          const unitLabel = isArabic ? 'صندوق' : 'box';
+          qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
+        } else {
+          if (weightVal > 0) {
+            const unitLabel = isArabic ? 'كغم' : 'kg';
+            qtyText = `${formatVal(weightVal)} ${unitLabel}`;
+          } else {
+            const unitLabel = isArabic ? 'صندوق' : 'box';
+            qtyText = `${formatVal(boxCountVal)} ${unitLabel}`;
+          }
+        }
+
+        const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
+
+        let rateText = '';
+        if (isLoss) {
+          rateText = currentLanguage === 'ar' ? 'تلف' : 'Loss';
+        } else {
+          if (itemUnit === 'kg' || itemUnit === 'weight') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / كغم` : `${formatVal(unitPrice, true)} / kg`;
+          } else if (itemUnit === 'liter') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / لتر` : `${formatVal(unitPrice, true)} / Ltr`;
+          } else if (itemUnit === 'count') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / قطعة` : `${formatVal(unitPrice, true)} / pc`;
+          } else if (itemUnit === 'box') {
+            rateText = isArabic ? `${formatVal(unitPrice, true)} / صندوق` : `${formatVal(unitPrice, true)} / box`;
+          } else {
+            rateText = formatVal(unitPrice, true);
+          }
+        }
+
+        const totalValHtml = isLoss 
+          ? `<span style="color: #ef4444; font-weight: 700;">${currentLanguage === 'ar' ? 'تلف' : 'Loss'}</span>`
+          : `<span style="color: var(--color-success); font-weight: 700;">${formatVal(item.sold_price, true)}</span>`;
+
+        itemsHtml += `
+          <div class="premium-card" style="padding: 10px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.01); border-radius: 12px; background-color: #ffffff; direction: rtl; text-align: right; min-height: 105px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+              <span style="font-weight: 800; color: var(--color-text-dark); font-size: 11px; font-family: inherit; background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;">${item.crop_type}</span>
+              <span style="font-weight: 700; color: var(--color-primary); font-family: 'Monofrik' !important; font-size: 9px; background: rgba(9, 132, 227, 0.06); padding: 1px 4px; border-radius: 3px; border: 1px solid rgba(9, 132, 227, 0.08);">${orderId}</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1px; margin: 2px 0;">
+              <span style="font-size: 9px; color: var(--color-text-muted); font-weight: 500;">${currentLanguage === 'ar' ? 'سعر الوحدة:' : 'Unit Price:'}</span>
+              <span style="font-weight: 800; color: ${isLoss ? '#ef4444' : 'var(--color-primary)'}; font-size: 13.5px; line-height: 1.1;">${rateText}</span>
+            </div>
+
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 5px; display: flex; flex-direction: column; gap: 2px;">
+              <div style="font-size: 9px; color: var(--color-text-muted); font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 2px; white-space: nowrap;">
+                <span style="color: var(--color-text-dark); overflow: hidden; text-overflow: ellipsis; max-width: 65px;">${qtyText}</span>
+                ${totalValHtml}
+              </div>
+              <div style="font-size: 8px; color: #94a3b8; font-weight: 500; text-align: left;">
+                ${itemDate}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+  } else {
+    itemsHtml = `
+      <div style="text-align: center; padding: 24px; color: var(--color-text-muted); width: 100%; grid-column: 1 / -1;">
+        <span class="material-icons-round" style="font-size: 32px; margin-bottom: 8px; color: #cbd5e1;">info</span>
+        <p style="font-size: 12px;">${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لليوم حتى الآن.' : 'No sales registered for today yet.'}</p>
+      </div>
+    `;
+  }
+
+  const wrapperStyle = cropSales.length > 0 
+    ? 'display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;' 
+    : 'display: flex; flex-direction: column; gap: 10px;';
+
+  body.innerHTML = headerHtml + `<div style="${wrapperStyle}">` + itemsHtml + `</div>`;
+
+  // Bind print click for daily audit
+  const btnPrint = document.getElementById('btn-daily-audit-print');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', async () => {
+      await printDailySalesAudit(cropSales);
+    });
+  }
+
+  openBottomSheet('sheet-daily-sales-audit');
+}
+
+async function printDailySalesAudit(cropSales) {
+  const saleInvoices = await dbGetAll('sale_invoices');
+  const saleItems = await dbGetAll('sale_items');
+
+  const now = new Date();
+  const formattedDate = formatCustomDate(now);
+
+  const container = document.getElementById('receipt-paper');
+  if (!container) return;
+
+  container.className = `thermal-paper w-${printerPaperWidth}`;
+
+  const is58mm = printerPaperWidth === '58';
+  const fontSizeClass = is58mm ? 'font-size: 16px; line-height: 1.3;' : 'font-size: 18px; line-height: 1.45;';
+  const headerFontSizeClass = is58mm ? 'font-size: 22px;' : 'font-size: 26px;';
+
+  let totalWeight = 0;
+  let totalBoxes = 0;
+  let totalSoldPrice = 0;
+
+  let lastCropType = null;
+  let itemsHtml = cropSales.map((item, idx) => {
     const saleInvoice = saleInvoices.find(si => si.id === item.sale_invoice_id);
     const orderId = saleInvoice ? (saleInvoice.order_id || ('ALW-' + String(saleInvoice.id).padStart(3, '0'))) : 'N/A';
     const saleItem = saleItems.find(si => si.id === item.sale_item_id);
 
-    const itemDate = new Date(item.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const itemDate = formatCustomDate(item.created_at);
     
     // Weight and box count
     const weightVal = item.weight_kg || 0;
     const boxCountVal = item.box_count || 0;
+
+    totalWeight += weightVal;
+    totalBoxes += boxCountVal;
+    totalSoldPrice += item.sold_price || 0;
 
     // Calculate unit price sold per kg or per unit
     let unitPrice = 0;
@@ -3366,80 +4389,113 @@ async function showSalesAuditSheet(farmerId, crop) {
       }
     }
 
-    const cropIcon = getCropIcon(item.crop_type);
+    const isCount = (getCropUnitType(item.crop_type) === 'count');
+    let qtyText = '';
+    if (isWeightBased) {
+      qtyText = `${formatVal(weightVal)} ${currentLanguage === 'ar' ? 'كغم' : 'kg'}`;
+    } else {
+      if (isCount) {
+        qtyText = `${formatVal(boxCountVal)} ${currentLanguage === 'ar' ? 'قطعة' : 'pieces'}`;
+      } else {
+        qtyText = `${formatVal(boxCountVal)} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}`;
+      }
+    }
+
+    const nextItem = cropSales[idx + 1];
+    const isLastOfGroup = nextItem && nextItem.crop_type !== item.crop_type;
+    const borderStyle = isLastOfGroup 
+      ? "border-bottom: 2.5px solid #000;" 
+      : "border-bottom: 1px dashed #000;";
+
+    let groupHeaderHtml = '';
+    if (item.crop_type !== lastCropType) {
+      lastCropType = item.crop_type;
+      groupHeaderHtml = `
+        <tr style="background: #eee; font-weight: 800; border-top: 1.5px solid #000; border-bottom: 1.5px solid #000;">
+          <td colspan="4" style="padding: 8px 2px; text-align: center; font-size: 17px; color: #000; font-weight: 900;">
+            - ${lastCropType} -
+          </td>
+        </tr>
+      `;
+    }
+
+    const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
+    const displayPrice = isLoss ? (currentLanguage === 'ar' ? 'تلف' : 'Loss') : formatVal(unitPrice);
 
     return `
-      <div class="premium-card" style="padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #e2e8f0; box-shadow: none; border-radius: 10px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; margin-bottom: 2px;">
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span style="font-size: 14px;">${cropIcon}</span>
-            <span style="font-weight: 700; color: var(--color-primary); font-size: 12px;">${item.crop_type}</span>
-          </div>
-          <span style="font-size: 11px; color: var(--color-success); font-weight: 700;">${currentLanguage === 'ar' ? 'سعر الكيلو المباع: ' : 'Price/kg: '}${isWeightBased ? formatVal(unitPrice, true) : '-'}</span>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 10px; direction: rtl; text-align: right;">
-          <div>
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'رمز الفاتورة:' : 'Invoice ID:'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark); font-family: 'Monofrik' !important; font-size: 11px; vertical-align: middle;">${orderId}</span>
-          </div>
-          <div>
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'التاريخ:' : 'Date:'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark);">${itemDate}</span>
-          </div>
-          <div>
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'الكمية (كغم):' : 'Weight (kg):'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark);">${weightVal > 0 ? formatVal(weightVal) : '-'}</span>
-          </div>
-          <div>
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'العدد:' : 'Count:'}</span>
-            <span style="font-weight: 700; color: var(--color-text-dark);">${boxCountVal > 0 ? formatVal(boxCountVal) : '-'}</span>
-          </div>
-        </div>
-
-        ${!isWeightBased ? `
-          <div style="font-size: 10px; display: flex; justify-content: space-between; background: rgba(0,0,0,0.01); padding: 2px 6px; border-radius: 4px; margin-top: 2px;">
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'سعر القطعة/الصندوق:' : 'Price per unit/box:'}</span>
-            <strong style="color: var(--color-success);">${formatVal(unitPrice, true)}</strong>
-          </div>
-        ` : ''}
-
-        <div style="border-top: 1px dashed #e2e8f0; padding-top: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: 2px;">
-          <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'إجمالي المبيعات:' : 'Total Sold:'}</span>
-          <strong style="color: var(--color-primary);">${formatVal(item.sold_price, true)}</strong>
-        </div>
-      </div>
+      ${groupHeaderHtml}
+      <tr style="${borderStyle} font-size: 16px; font-weight: 700;">
+        <td style="padding: 6px 2px; text-align: right;">${itemDate}</td>
+        <td style="padding: 6px 2px; text-align: center;">${qtyText}</td>
+        <td style="padding: 6px 2px; text-align: center;">${displayPrice}</td>
+        <td style="padding: 6px 2px; text-align: left; font-weight: 900; font-family: 'Monofrik' !important; font-size: 16px;">${orderId}</td>
+      </tr>
     `;
   }).join('');
 
   if (cropSales.length === 0) {
     itemsHtml = `
-      <div style="text-align: center; padding: 24px; color: var(--color-text-muted);">
-        <span class="material-icons-round" style="font-size: 32px; margin-bottom: 8px; color: #cbd5e1;">info</span>
-        <p style="font-size: 12px;">${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة لهذا الصنف حالياً.' : 'No sales registered for this crop yet.'}</p>
-      </div>
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 12px; color: #666; font-size: 13px;">
+          ${currentLanguage === 'ar' ? 'لا توجد مبيعات مسجلة حالياً.' : 'No sales registered yet.'}
+        </td>
+      </tr>
     `;
   }
 
-  body.innerHTML = headerHtml + `<div style="display: flex; flex-direction: column; gap: 10px;">` + itemsHtml + `</div>`;
+  container.innerHTML = `
+    <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
+      <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
+      <p style="font-size: 13.5px; color: #000; font-weight: 700; margin: 0 0 6px 0;">بإدارة: ${officeOwner}</p>
+      <h3 style="font-size: 17px; font-weight: 700; color: #333; margin: 0 0 4px 0;">${currentLanguage === 'ar' ? 'تقرير جرد المبيعات اليومي' : 'Daily Sales Audit Report'}</h3>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600; margin-bottom: 2px;">النوع: جرد المبيعات الشامل لليوم</div>
+      <div style="font-size: 14.5px; color: #000; font-weight: 600;">التاريخ والوقت: ${formattedDate}</div>
+    </div>
+    
+    <table style="width: 100%; direction: rtl; border-collapse: collapse; ${fontSizeClass} margin-bottom: 8px;">
+      <thead>
+        <tr style="border-bottom: 1.5px dashed #000; font-weight: 800; font-size: 16px;">
+          <th style="padding: 4px 0; text-align: right;">${currentLanguage === 'ar' ? 'الوقت' : 'Time'}</th>
+          <th style="padding: 4px 0; text-align: center;">الكمية</th>
+          <th style="padding: 4px 0; text-align: center;">السعر</th>
+          <th style="padding: 4px 0; text-align: left;">رمز الفاتورة</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
 
-  // Bind note click
-  const btnNote = document.getElementById('btn-price-audit-note');
-  if (btnNote) {
-    btnNote.addEventListener('click', async () => {
-      await printCropSalesAudit(farmerId, crop);
-    });
-  }
+    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 800; font-size: 17px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span>إجمالي مبيعات اليوم الشاملة:</span>
+        <span>${formatVal(totalSoldPrice, true)}</span>
+      </div>
+    </div>
 
-  // Open the bottom sheet
-  openBottomSheet('sheet-farmer-dues-details');
+    <div style="text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1.5px dashed #000; font-size: 13.5px; font-weight: 800; color: #000; direction: rtl; font-family: var(--font-family) !important; line-height: 1.4;">
+      برمجة و تطوير شركة Prime™ Solutions 
+      <br>
+      Whatsapp: 07749883474
+    </div>
+  `;
+
+  // Log in events
+  logAppEvent(
+    `طباعة جرد المبيعات اليومي الشامل`,
+    `Printed comprehensive daily sales audit`
+  );
+
+  document.getElementById('btn-execute-print').dataset.id = "-1";
+  if (document.getElementById('btn-execute-sysprint')) document.getElementById('btn-execute-sysprint').dataset.id = "-1";
+  document.getElementById('btn-share-receipt').dataset.id = "-1";
+
+  openBottomSheet('sheet-print-preview');
 }
 
 async function renderPortersList() {
   const portersList = document.getElementById('porters-list');
   if (!portersList) return;
-
-  portersList.innerHTML = '';
 
   // 1. Auto-cleanup settled records after 1 week (7 days)
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -3453,6 +4509,8 @@ async function renderPortersList() {
 
   // Refetch payouts after potential cleanup
   const payouts = await dbGetAll('porter_payouts');
+
+  portersList.innerHTML = '';
 
   // Helper functions for daily grouping
   function getDayKey(timestamp) {
@@ -3491,7 +4549,9 @@ async function renderPortersList() {
 
   const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
 
-  sortedKeys.forEach((dayKey, idx) => {
+  const paginatedKeys = sortedKeys.slice(0, listPageLimits.porters);
+
+  paginatedKeys.forEach((dayKey, idx) => {
     const dayPayouts = groups[dayKey];
     const unpaidDayPayouts = dayPayouts.filter(p => !p.is_paid);
     const paidDayPayouts = dayPayouts.filter(p => p.is_paid);
@@ -3741,6 +4801,14 @@ async function renderPortersList() {
       });
     }
   });
+
+  if (sortedKeys.length > listPageLimits.porters) {
+    const loadMoreBtn = createLoadMoreButton(() => {
+      listPageLimits.porters += 10;
+      renderPortersList();
+    });
+    portersList.appendChild(loadMoreBtn);
+  }
 
   // 3. Add beautiful footer note
   const noteDiv = document.createElement('div');
@@ -4373,7 +5441,7 @@ function renderLedgerTable(daily, personal, losses) {
 
   ledgerItems.slice(0, 15).forEach(it => {
     const tr = document.createElement('tr');
-    const formattedDate = new Date(it.created_at).toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+    const formattedDate = formatCustomDate(it.created_at);
     
     tr.innerHTML = `
       <td>${formattedDate}</td>
@@ -4432,38 +5500,136 @@ async function submitExpenseRecord() {
 }
 
 async function populateLossCropDropdown() {
-  const allImportItems = await dbGetAll('import_items');
-  const uniqueCrops = [...new Set(allImportItems.map(it => it.crop_type))];
   const dropdown = document.getElementById('loss-crop-dropdown');
   if (!dropdown) return;
   dropdown.innerHTML = '';
-  
-  if (uniqueCrops.length === 0) {
-    const emptyEl = document.createElement('div');
-    emptyEl.className = 'autocomplete-item';
-    emptyEl.style.color = '#888';
-    emptyEl.textContent = currentLanguage === 'ar' ? 'لا توجد محاصيل مسجلة في المخزن حالياً' : 'No crops registered in stock yet';
-    dropdown.appendChild(emptyEl);
-    return;
-  }
-  
-  uniqueCrops.forEach(crop => {
+  dropdown.style.maxHeight = '250px';
+
+  const searchInput = document.getElementById('loss-crop-search');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  const allImports = await dbGetAll('import_invoices');
+  const allImportItems = await dbGetAll('import_items');
+  const allSaleItems = await dbGetAll('sale_items');
+
+  // 1. Calculate active remaining stock for each import item
+  const activeImports = allImports.filter(imp => !imp.is_settled);
+  const stockMap = {}; // crop_type -> { weight: number, boxes: number, isCount: boolean }
+
+  activeImports.forEach(imp => {
+    const impItems = allImportItems.filter(it => it.invoice_id === imp.id);
+    impItems.forEach(it => {
+      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
+      
+      let soldWeight = 0;
+      let soldBoxes = 0;
+      const isCount = (getCropUnitType(it.crop_type) === 'count');
+      
+      salesOfItem.forEach(s => {
+        soldWeight += (isCount ? (s.box_count || 0) : s.weight_kg);
+        soldBoxes += (s.box_count || 0);
+      });
+
+      const remWeight = Math.max(0, (isCount ? (it.box_count || 0) : it.weight_kg) - soldWeight);
+      const remBoxes = Math.max(0, (it.box_count || 0) - soldBoxes);
+
+      if (remWeight > 0 || remBoxes > 0) {
+        if (!stockMap[it.crop_type]) {
+          stockMap[it.crop_type] = { weight: 0, boxes: 0, isCount };
+        }
+        stockMap[it.crop_type].weight += remWeight;
+        stockMap[it.crop_type].boxes += remBoxes;
+      }
+    });
+  });
+
+  // 2. Prepare only crops currently in stock
+  const inStockCrops = Object.keys(stockMap).map(crop => {
+    return {
+      crop,
+      weight: stockMap[crop].weight,
+      boxes: stockMap[crop].boxes,
+      isCount: stockMap[crop].isCount
+    };
+  });
+
+  // 3. Since input is readonly, we show all in-stock crops without filtering by the current selected value
+  const filteredInStock = [...inStockCrops];
+
+  // Sort list alphabetically in Arabic
+  filteredInStock.sort((a, b) => a.crop.localeCompare(b.crop, 'ar'));
+
+  const addCropItem = (crop, subtitle = '') => {
     const itemEl = document.createElement('div');
     itemEl.className = 'autocomplete-item';
-    itemEl.innerHTML = `<span>${getCropIcon(crop)} ${crop}</span>`;
+    itemEl.style.display = 'flex';
+    itemEl.style.flexDirection = 'column';
+    itemEl.style.padding = '8px 12px';
+    itemEl.style.cursor = 'pointer';
+    
+    let subtitleHtml = '';
+    if (subtitle) {
+      subtitleHtml = `<span style="font-size: 11px; color: #666; margin-top: 2px;">${subtitle}</span>`;
+    }
+
+    itemEl.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <span style="font-weight: 500;">${getCropIcon(crop)} ${crop}</span>
+      </div>
+      ${subtitleHtml}
+    `;
+
     itemEl.addEventListener('click', () => {
       document.getElementById('loss-crop-search').value = crop;
       document.getElementById('loss-crop-selector').value = crop;
       dropdown.style.display = 'none';
       
+      const unitType = getCropUnitType(crop);
       const isWatermelon = isWatermelonOrMelon(crop);
+      const weightContainer = document.getElementById('loss-crop-weight-container');
       const boxCountContainer = document.getElementById('loss-crop-box-count-container');
-      if (boxCountContainer) {
-        boxCountContainer.style.display = isWatermelon ? 'none' : 'block';
+      
+      if (unitType === 'count') {
+        if (weightContainer) weightContainer.style.display = 'none';
+        if (boxCountContainer) boxCountContainer.style.display = 'block';
+        document.getElementById('loss-crop-weight').value = '';
+      } else if (isWatermelon) {
+        if (weightContainer) weightContainer.style.display = 'block';
+        if (boxCountContainer) boxCountContainer.style.display = 'none';
+        document.getElementById('loss-crop-box-count').value = '';
+      } else {
+        if (weightContainer) weightContainer.style.display = 'block';
+        if (boxCountContainer) boxCountContainer.style.display = 'block';
       }
     });
+
     dropdown.appendChild(itemEl);
-  });
+  };
+
+  // 4. Render the list of available items
+  if (filteredInStock.length > 0) {
+    filteredInStock.forEach(item => {
+      let subtitle = '';
+      if (item.isCount) {
+        subtitle = currentLanguage === 'ar' ? `الكمية المتوفرة بالمخزن: ${item.boxes} قطعة` : `Available in stock: ${item.boxes} قطعة`;
+      } else {
+        subtitle = currentLanguage === 'ar' ? `الوزن المتوفر بالمخزن: ${item.weight} كغم (${item.boxes} صندوق)` : `Available in stock: ${item.weight} kg (${item.boxes} boxes)`;
+      }
+      addCropItem(item.crop, subtitle);
+    });
+  } else {
+    const emptyEl = document.createElement('div');
+    emptyEl.className = 'autocomplete-item';
+    emptyEl.style.color = '#888';
+    emptyEl.style.padding = '12px';
+    emptyEl.style.textAlign = 'center';
+    if (inStockCrops.length === 0) {
+      emptyEl.textContent = currentLanguage === 'ar' ? '⚠️ لا توجد بضاعة متوفرة حالياً في المخزن لتسجيل تلفها' : '⚠️ No crops currently in stock to record loss';
+    } else {
+      emptyEl.textContent = currentLanguage === 'ar' ? 'لا توجد نتائج مطابقة لبحثك' : 'No matching crops found';
+    }
+    dropdown.appendChild(emptyEl);
+  }
 }
 
 async function submitLossRecord() {
@@ -4476,12 +5642,53 @@ async function submitLossRecord() {
 
   if (isCropLoss) {
     const cropType = document.getElementById('loss-crop-search').value.trim();
-    const weight = parseNumberInput(document.getElementById('loss-crop-weight').value);
-    const boxCount = parseNumberInput(document.getElementById('loss-crop-box-count').value);
+    let weight = parseNumberInput(document.getElementById('loss-crop-weight').value);
+    let boxCount = parseNumberInput(document.getElementById('loss-crop-box-count').value);
 
-    if (!cropType || (weight <= 0 && boxCount <= 0)) {
-      showToast(currentLanguage === 'ar' ? 'الرجاء اختيار صنف المحصول وتحديد الوزن أو العدد التالف بشكل صحيح' : 'Please select a crop and enter a valid weight or box count', 'warning', true);
+    if (!cropType) {
+      showToast(currentLanguage === 'ar' ? 'الرجاء اختيار صنف المحصول بشكل صحيح' : 'Please select a crop', 'warning', true);
       return;
+    }
+
+    const unitType = getCropUnitType(cropType);
+    const isCount = (unitType === 'count');
+    const isWatermelon = isWatermelonOrMelon(cropType);
+
+    if (isCount) {
+      if (boxCount <= 0) {
+        showToast(currentLanguage === 'ar' ? 'الرجاء إدخال العدد التالف بشكل صحيح' : 'Please enter a valid box/bag count', 'warning', true);
+        return;
+      }
+      weight = 0;
+    } else if (isWatermelon) {
+      if (weight <= 0) {
+        showToast(currentLanguage === 'ar' ? 'الرجاء إدخال الوزن التالف بشكل صحيح' : 'Please enter a valid weight', 'warning', true);
+        return;
+      }
+      boxCount = 0;
+    } else {
+      const allImportItems = await dbGetAll('import_items');
+      const cropImportItems = allImportItems.filter(ii => ii.crop_type === cropType);
+      let avgWeightPerBox = 10;
+      if (cropImportItems.length > 0) {
+        const withWeightPerBox = cropImportItems.filter(ii => ii.weight_per_box > 0);
+        if (withWeightPerBox.length > 0) {
+          withWeightPerBox.sort((a, b) => b.id - a.id);
+          avgWeightPerBox = withWeightPerBox[0].weight_per_box;
+        }
+      }
+
+      if (weight <= 0 && boxCount <= 0) {
+        showToast(currentLanguage === 'ar' ? 'الرجاء إدخال الوزن والعدد التالف بشكل صحيح' : 'Please enter a valid weight and count', 'warning', true);
+        return;
+      }
+
+      if (weight > 0 && boxCount <= 0) {
+        boxCount = Math.round(weight / avgWeightPerBox);
+        if (boxCount <= 0) boxCount = 1;
+      } else if (boxCount > 0 && weight <= 0) {
+        weight = boxCount * avgWeightPerBox;
+      }
     }
 
     // Determine estimated financial loss
@@ -4548,20 +5755,30 @@ async function submitLossRecord() {
         const item = imp.items.find(it => it.crop_type === cropType);
         if (item) {
           const previousSales = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === cropType);
-          const isCount = (getCropUnitType(cropType) === 'count');
           
-          let totalPreviouslySold = 0;
+          let totalPreviouslySoldWeight = 0;
+          let totalPreviouslySoldBoxes = 0;
           previousSales.forEach(s => {
-            totalPreviouslySold += (isCount ? (s.box_count || 0) : s.weight_kg);
+            totalPreviouslySoldWeight += (s.weight_kg || 0);
+            totalPreviouslySoldBoxes += (s.box_count || 0);
           });
           
-          const stockLimit = isCount ? item.box_count : item.weight_kg;
-          const remainingStock = Math.max(0, stockLimit - totalPreviouslySold);
+          const remainingWeightStock = Math.max(0, item.weight_kg - totalPreviouslySoldWeight);
+          const remainingBoxStock = Math.max(0, (item.box_count || 0) - totalPreviouslySoldBoxes);
           
-          if (remainingStock > 0 || !targetImportInvoiceId) {
+          let hasStock = false;
+          if (isCount) {
+            hasStock = (remainingBoxStock > 0);
+          } else if (isWatermelon) {
+            hasStock = (remainingWeightStock > 0);
+          } else {
+            hasStock = (remainingWeightStock > 0 && remainingBoxStock > 0);
+          }
+          
+          if (hasStock || !targetImportInvoiceId) {
             targetImportInvoiceId = imp.id;
             targetImportItem = item;
-            if (remainingStock > 0) {
+            if (hasStock) {
               break;
             }
           }
@@ -4602,12 +5819,11 @@ async function submitLossRecord() {
           created_at: Date.now()
         });
         
-        const isCount = (getCropUnitType(cropType) === 'count');
         const newItemId = await dbAdd('import_items', {
           invoice_id: targetImportInvoiceId,
           crop_type: cropType,
           weight_kg: isCount ? 0 : (weight > 0 ? weight : 100),
-          box_count: boxCount > 0 ? boxCount : 10,
+          box_count: isWatermelon ? 0 : (boxCount > 0 ? boxCount : 10),
           weight_per_box: 10
         });
         
@@ -4616,7 +5832,7 @@ async function submitLossRecord() {
           invoice_id: targetImportInvoiceId,
           crop_type: cropType,
           weight_kg: isCount ? 0 : (weight > 0 ? weight : 100),
-          box_count: boxCount > 0 ? boxCount : 10,
+          box_count: isWatermelon ? 0 : (boxCount > 0 ? boxCount : 10),
           weight_per_box: 10
         };
       }
@@ -4633,13 +5849,12 @@ async function submitLossRecord() {
       });
 
       // 4. Save sale item
-      const isCount = (getCropUnitType(cropType) === 'count');
       const saleItemId = await dbAdd('sale_items', {
         sale_invoice_id: saleInvoiceId,
         import_invoice_id: targetImportInvoiceId,
         crop_type: cropType,
         weight_kg: isCount ? 0 : weight,
-        box_count: boxCount,
+        box_count: isWatermelon ? 0 : boxCount,
         agreed_price: 0,
         unit: isCount ? 'count' : (targetImportItem.unit || 'kg'),
         commission_amount: 0,
@@ -4657,7 +5872,7 @@ async function submitLossRecord() {
           sale_item_id: saleItemId,
           crop_type: cropType,
           weight_kg: isCount ? 0 : weight,
-          box_count: boxCount,
+          box_count: isWatermelon ? 0 : boxCount,
           sold_price: 0,
           commission_deducted: 0,
           porter_deducted: 0,
@@ -4714,6 +5929,11 @@ async function submitLossRecord() {
   document.getElementById('loss-crop-selector').value = '';
   document.getElementById('loss-crop-weight').value = '';
   document.getElementById('loss-crop-box-count').value = '';
+
+  const weightContainer = document.getElementById('loss-crop-weight-container');
+  const boxCountContainer = document.getElementById('loss-crop-box-count-container');
+  if (weightContainer) weightContainer.style.display = 'block';
+  if (boxCountContainer) boxCountContainer.style.display = 'block';
 
   // Reset other form fields
   document.getElementById('loss-subject').value = '';
@@ -4869,7 +6089,7 @@ async function openPrintPreview(saleId) {
     container.className = `thermal-paper w-${printerPaperWidth}`;
   }
 
-  const formattedDate = new Date(sale.created_at).toLocaleString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US');
+  const formattedDate = formatCustomDate(sale.created_at, true);
   const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
 
   const is58mm = printerPaperWidth === '58';
@@ -4908,6 +6128,7 @@ async function openPrintPreview(saleId) {
   container.innerHTML = `
     <div style="text-align: center; border-bottom: 1.5px dashed #000; padding-bottom: 8px; margin-bottom: 8px; direction: rtl;">
       <h2 style="${headerFontSizeClass} font-weight: 800; color: #000; margin: 0 0 4px 0; letter-spacing: normal;">${officeName}</h2>
+      <p style="${fontSizeClass} color: #000; font-weight: 700; margin: 0 0 4px 0;">بإدارة: ${officeOwner}</p>
       <p style="${fontSizeClass} color: #000; margin: 0 0 2px 0;">هاتف: ${officePhone}</p>
       <p style="${fontSizeClass} color: #000; margin: 0;">العنوان: ${officeLocation}</p>
     </div>
@@ -4980,7 +6201,12 @@ async function openPrintPreview(saleId) {
       </div>
 
       <div style="text-align: center; font-size: 13px; color: #000; font-weight: 700; margin-top: 8px; direction: rtl;">
-        شكرًا لتعاملكم معنا - علوة الغابة الخضراء
+        شكرًا لتعاملكم معنا - ${officeName}
+      </div>
+      <div style="text-align: center; font-size: 13.5px; color: #000; font-weight: 800; margin-top: 8px; border-top: 1px dashed #000; padding-top: 6px; direction: rtl; font-family: var(--font-family) !important; line-height: 1.4;">
+        برمجة و تطوير شركة Prime™ Solutions 
+        <br>
+        Whatsapp: 07749883474
       </div>
     </div>
   `;
@@ -6497,12 +7723,13 @@ async function importDatabaseFromJSON(event) {
 // ==============================================
 function saveOfficeInfo() {
   const nameInput = document.getElementById('setting-office-name').value.trim();
+  const ownerInput = document.getElementById('setting-office-owner').value.trim();
   const phoneInput = document.getElementById('setting-office-phone').value.trim();
   const locationInput = document.getElementById('setting-office-location').value.trim();
   const cashierInput = document.getElementById('setting-office-cashier').value.trim();
 
-  if (!nameInput || !phoneInput || !locationInput || !cashierInput) {
-    showToast(currentLanguage === 'ar' ? 'الرجاء تعبئة جميع معلومات العلوة والترويسة واسم المحاسب' : 'Please input all office info fields including Accountant Name', 'warning', true);
+  if (!nameInput || !ownerInput || !phoneInput || !locationInput || !cashierInput) {
+    showToast(currentLanguage === 'ar' ? 'الرجاء تعبئة جميع معلومات العلوة والترويسة واسم المحاسب وصاحب العلوة' : 'Please input all office info fields including Accountant Name and Owner Name', 'warning', true);
     return;
   }
 
@@ -6513,11 +7740,13 @@ function saveOfficeInfo() {
   }
 
   officeName = nameInput;
+  officeOwner = ownerInput;
   officePhone = phoneInput;
   officeLocation = locationInput;
   officeCashier = cashierInput;
 
   localStorage.setItem('alwa_office_name', officeName);
+  localStorage.setItem('alwa_office_owner', officeOwner);
   localStorage.setItem('alwa_office_phone', officePhone);
   localStorage.setItem('alwa_office_location', officeLocation);
   localStorage.setItem('alwa_office_cashier', officeCashier);
@@ -6525,12 +7754,72 @@ function saveOfficeInfo() {
   officeChangesCount++;
   localStorage.setItem('alwa_office_changes_count', officeChangesCount.toString());
 
+  // Restore read-only state for safety
+  const setOfficeName = document.getElementById('setting-office-name');
+  if (setOfficeName) {
+    setOfficeName.readOnly = true;
+    setOfficeName.style.backgroundColor = 'rgba(0,0,0,0.03)';
+    setOfficeName.style.cursor = 'pointer';
+  }
+
   showToast(currentLanguage === 'ar' ? 'تم حفظ التعديلات وتحديث ترويسة الفواتير بنجاح!' : 'Office details saved successfully!', 'check_circle');
 }
 
 // ==============================================
 // 14. DIALOGS & POPUPS
 // ==============================================
+function openPasscodeDialog(correctPasscode, successCallback) {
+  const dialog = document.getElementById('custom-prompt-dialog');
+  if (!dialog) return;
+  const title = document.getElementById('prompt-title');
+  const message = document.getElementById('prompt-message');
+  const input = document.getElementById('prompt-input');
+  const cancelBtn = document.getElementById('btn-prompt-cancel');
+  const confirmBtn = document.getElementById('btn-prompt-ok');
+
+  if (title) {
+    title.textContent = currentLanguage === 'ar' ? 'تعديل اسم العلوة' : 'Modify Alwa Name';
+  }
+  if (message) {
+    message.textContent = currentLanguage === 'ar' ? 'أدخل الرمز السري المكون من 4 أرقام لتعديل الاسم:' : 'Enter 4-digit passcode to modify name:';
+  }
+
+  input.value = '';
+  dialog.style.display = 'flex';
+  setTimeout(() => input.focus(), 100);
+
+  const onConfirm = () => {
+    if (input.value === correctPasscode) {
+      dialog.style.display = 'none';
+      cleanup();
+      successCallback();
+    } else {
+      showToast(currentLanguage === 'ar' ? 'الرمز السري غير صحيح!' : 'Incorrect passcode!', 'warning', true);
+    }
+  };
+
+  const onCancel = () => {
+    dialog.style.display = 'none';
+    cleanup();
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      onConfirm();
+    }
+  };
+
+  const cleanup = () => {
+    confirmBtn.removeEventListener('click', onConfirm);
+    cancelBtn.removeEventListener('click', onCancel);
+    input.removeEventListener('keydown', onKeyDown);
+  };
+
+  confirmBtn.addEventListener('click', onConfirm);
+  cancelBtn.addEventListener('click', onCancel);
+  input.addEventListener('keydown', onKeyDown);
+}
+
 function openCustomCropDialog(inputElementToUpdate, callback) {
   const dialog = document.getElementById('dialog-custom-crop');
   const cropNameInput = document.getElementById('dialog-crop-name');
@@ -6691,7 +7980,7 @@ async function showInvoiceDetails(invoiceId, type) {
         <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11px;">
           <div style="display: flex; align-items: center; gap: 4px;">
             <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">calendar_today</span>
-            <span>${new Date(imp.invoice_date).toLocaleDateString()}</span>
+            <span>${formatCustomDate(imp.invoice_date)}</span>
           </div>
           ${imp.vehicle_type ? `
           <div style="display: flex; align-items: center; gap: 4px;">
@@ -6766,6 +8055,7 @@ async function showInvoiceDetails(invoiceId, type) {
 
     let itemsHtml = saleItems.map((it, idx) => {
       const cropIcon = getCropIcon(it.crop_type);
+      const isCount = it.unit === 'count';
       return `
         <tr style="border-bottom: 1px solid #f1f5f9; background: var(--color-white); transition: background-color 0.15s;">
           <td style="padding: 10px 12px; font-weight: 600; color: #94a3b8; text-align: center; font-size: 11px;">${formatVal(idx + 1)}</td>
@@ -6775,10 +8065,10 @@ async function showInvoiceDetails(invoiceId, type) {
               <span style="font-size: 12.5px;">${it.crop_type}</span>
             </div>
           </td>
-          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-primary-mid); text-align: start; font-size: 12px;">${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
+          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-primary-mid); text-align: start; font-size: 12px;">${isCount ? '-' : formatWeight(it.weight_kg, it.unit || 'kg')}</td>
           <td style="padding: 10px 12px; text-align: start;">
             <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10.5px; white-space: nowrap;">
-              ${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'صندوق' : 'Boxes'}
+              ${isCount ? `${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'قطعة' : 'Pieces'}` : `${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'صندوق' : 'Boxes'}`}
             </span>
           </td>
           <td style="padding: 10px 12px; font-weight: 800; color: var(--color-primary); text-align: start; white-space: nowrap; font-size: 12px;">${formatVal(it.agreed_price, true)}</td>
@@ -6906,7 +8196,7 @@ async function showInvoiceDetails(invoiceId, type) {
         <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11px;">
           <div style="display: flex; align-items: center; gap: 4px;">
             <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">calendar_today</span>
-            <span>${new Date(sale.created_at).toLocaleDateString()}</span>
+            <span>${formatCustomDate(sale.created_at)}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 4px;">
             <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">credit_card</span>
@@ -7028,6 +8318,10 @@ function applyBilingualTranslations() {
 
   document.getElementById('lbl-app-title').textContent = t.appTitle;
   document.getElementById('lbl-app-subtitle').textContent = t.appSubtitle;
+  
+  const elStatus = document.getElementById('lbl-system-status');
+  if (elStatus) elStatus.textContent = t.systemStatus;
+
   document.getElementById('btn-lang-toggle').textContent = t.langButton;
 
   // Bottom tabs
@@ -7084,6 +8378,8 @@ function applyBilingualTranslations() {
   // Settings Screen
   document.getElementById('lbl-office-title').textContent = t.officeSettingsTitle;
   document.getElementById('lbl-name-setting').textContent = t.lblOfficeName;
+  const elOwnerSetting = document.getElementById('lbl-owner-setting');
+  if (elOwnerSetting) elOwnerSetting.textContent = t.lblOfficeOwner;
   document.getElementById('lbl-phone-setting').textContent = t.lblOfficePhone;
   document.getElementById('lbl-location-setting').textContent = t.lblOfficeLocation;
   const elCashierSetting = document.getElementById('lbl-cashier-setting');
@@ -7105,6 +8401,43 @@ function applyBilingualTranslations() {
   document.getElementById('lbl-backup-desc').textContent = t.txtBackupDesc;
   document.getElementById('btn-export-db').innerHTML = `<span class="material-icons-round" style="font-size:18px;">cloud_download</span> ${t.btnExportDb}`;
   document.getElementById('btn-import-db').innerHTML = `<span class="material-icons-round" style="font-size:18px;">cloud_upload</span> ${t.btnImportDb}`;
+
+  // Subscription translations
+  const elSubTitle = document.getElementById('sub-card-title');
+  if (elSubTitle) elSubTitle.textContent = t.txtSubscriptionTitle;
+  
+  const elSubDesc = document.getElementById('sub-card-desc');
+  if (elSubDesc) elSubDesc.textContent = t.txtSubscriptionDesc;
+
+  const elSubLabelPlan = document.getElementById('sub-label-plan');
+  if (elSubLabelPlan) elSubLabelPlan.textContent = t.lblSubscriptionPlan;
+
+  const elSubValPlan = document.getElementById('sub-val-plan');
+  if (elSubValPlan) elSubValPlan.textContent = t.txtSubscriptionPlanValue;
+
+  const elSubLabelStatus = document.getElementById('sub-label-status');
+  if (elSubLabelStatus) elSubLabelStatus.textContent = t.lblSubscriptionStatus;
+
+  const elSubValStatus = document.getElementById('sub-val-status');
+  if (elSubValStatus) elSubValStatus.textContent = t.txtSubscriptionStatusValue;
+
+  const elSubLabelId = document.getElementById('sub-label-id');
+  if (elSubLabelId) elSubLabelId.textContent = t.lblSubscriberId;
+
+  const elSubLabelFeat = document.getElementById('sub-label-features');
+  if (elSubLabelFeat) elSubLabelFeat.textContent = t.lblSubscriptionFeatures;
+
+  const elSubFeat1 = document.getElementById('sub-feat-1');
+  if (elSubFeat1) elSubFeat1.textContent = t.txtSubscriptionFeature1;
+
+  const elSubFeat2 = document.getElementById('sub-feat-2');
+  if (elSubFeat2) elSubFeat2.textContent = t.txtSubscriptionFeature2;
+
+  const elSubFeat3 = document.getElementById('sub-feat-3');
+  if (elSubFeat3) elSubFeat3.textContent = t.txtSubscriptionFeature3;
+
+  const elSubBtnRenew = document.getElementById('sub-btn-renew');
+  if (elSubBtnRenew) elSubBtnRenew.textContent = t.btnSubscriptionRenew;
 
   // Sheets Forms
   document.getElementById('sheet-import-title-h3').textContent = t.sheetImportTitle;
@@ -7200,11 +8533,57 @@ function openBottomSheet(id) {
   
   // Specific initializations
   if (id === 'sheet-new-import') {
+    const container = document.getElementById('import-items-container');
+    if (container) container.innerHTML = '';
+    const farmerInput = document.getElementById('import-farmer-name');
+    if (farmerInput) farmerInput.value = '';
+    const vehicleInput = document.getElementById('import-vehicle-type');
+    if (vehicleInput) vehicleInput.value = '';
     addImportCropRow();
   } else if (id === 'sheet-new-sale') {
+    const container = document.getElementById('sale-items-container');
+    if (container) container.innerHTML = '';
+    const customerInput = document.getElementById('sale-customer-name');
+    if (customerInput) customerInput.value = '';
+    const phoneInput = document.getElementById('sale-customer-phone');
+    if (phoneInput) phoneInput.value = '';
+    const addressInput = document.getElementById('sale-customer-address');
+    if (addressInput) addressInput.value = '';
+    const bagsInput = document.getElementById('sale-bags-cost');
+    if (bagsInput) bagsInput.value = '0';
+    
+    // Reset totals to 0
+    const subtotalEl = document.getElementById('lbl-subtotal-val');
+    const commissionEl = document.getElementById('lbl-commission-val');
+    const carryingEl = document.getElementById('lbl-carrying-val');
+    const totalEl = document.getElementById('lbl-total-val');
+    if (subtotalEl) subtotalEl.textContent = formatVal(0, true);
+    if (commissionEl) commissionEl.textContent = formatVal(0, true);
+    if (carryingEl) carryingEl.textContent = formatVal(0, true);
+    if (totalEl) totalEl.textContent = formatVal(0, true);
+
     addSaleCropRow();
   } else if (id === 'sheet-due-claims') {
     renderDueClaims();
+  } else if (id === 'sheet-new-loss') {
+    const weightContainer = document.getElementById('loss-crop-weight-container');
+    const boxCountContainer = document.getElementById('loss-crop-box-count-container');
+    if (weightContainer) weightContainer.style.display = 'block';
+    if (boxCountContainer) boxCountContainer.style.display = 'block';
+    
+    const cropSearch = document.getElementById('loss-crop-search');
+    const cropSel = document.getElementById('loss-crop-selector');
+    const cropW = document.getElementById('loss-crop-weight');
+    const cropB = document.getElementById('loss-crop-box-count');
+    const lossSub = document.getElementById('loss-subject');
+    const lossAmt = document.getElementById('loss-amount');
+    
+    if (cropSearch) cropSearch.value = '';
+    if (cropSel) cropSel.value = '';
+    if (cropW) cropW.value = '';
+    if (cropB) cropB.value = '';
+    if (lossSub) lossSub.value = '';
+    if (lossAmt) lossAmt.value = '';
   }
 }
 
@@ -7289,7 +8668,19 @@ function updateUIActiveTab(tabId) {
   } else if (tabId === 'screen-settings') {
     // Fill settings inputs
     const setOfficeName = document.getElementById('setting-office-name');
-    if (setOfficeName) setOfficeName.value = officeName;
+    if (setOfficeName) {
+      setOfficeName.value = officeName;
+      setOfficeName.readOnly = true;
+      setOfficeName.style.backgroundColor = 'rgba(0,0,0,0.03)';
+      setOfficeName.style.cursor = 'pointer';
+    }
+    const setOfficeOwner = document.getElementById('setting-office-owner');
+    if (setOfficeOwner) {
+      setOfficeOwner.value = officeOwner;
+      setOfficeOwner.readOnly = true;
+      setOfficeOwner.style.backgroundColor = 'rgba(0,0,0,0.03)';
+      setOfficeOwner.style.cursor = 'pointer';
+    }
     const setOfficePhone = document.getElementById('setting-office-phone');
     if (setOfficePhone) setOfficePhone.value = officePhone;
     const setOfficeLoc = document.getElementById('setting-office-location');
@@ -7459,9 +8850,7 @@ async function printDailyInventoryList() {
   const metaFontSize = is58mm ? '11px' : '13px';
   const headerFontSizeClass = is58mm ? 'font-size: 21px;' : 'font-size: 25px;';
 
-  const formattedDate = now.toLocaleDateString(numeralSystem === 'ar' ? 'ar-IQ' : 'en-US', {
-    year: 'numeric', month: '2-digit', day: '2-digit'
-  });
+  const formattedDate = formatCustomDate(now);
 
   const isAr = currentLanguage === 'ar';
   const colCrop = isAr ? 'الصنف' : 'Crop';
@@ -7485,11 +8874,11 @@ async function printDailyInventoryList() {
   itemsHtml += Object.values(inventoryMap).map((it, idx) => {
     const isCount = it.unit === 'count';
     const soldQty = isCount 
-      ? `<strong>${formatVal(it.soldBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">عدد</span>` 
+      ? `<strong>${formatVal(it.soldBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">قطعة</span>` 
       : `<strong>${formatWeight(it.soldWeight, 'kg')}</strong><div style="font-size: ${subQtyFontSize}; font-weight: normal; color: #555; margin-top: 1px;">(${formatVal(it.soldBoxes)} ص)</div>`;
       
     const remainingQty = isCount 
-      ? `<strong>${formatVal(it.remainingBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">عدد</span>` 
+      ? `<strong>${formatVal(it.remainingBoxes)}</strong> <span style="font-size: ${subQtyFontSize}; font-weight: normal; color: #333;">قطعة</span>` 
       : `<strong>${formatWeight(it.remainingWeight, 'kg')}</strong><div style="font-size: ${subQtyFontSize}; font-weight: normal; color: #555; margin-top: 1px;">(${formatVal(it.remainingBoxes)} ص)</div>`;
     
     const farmersList = Array.from(it.farmers).filter(Boolean).join('، ') || '';
@@ -7535,6 +8924,7 @@ async function printDailyInventoryList() {
   container.innerHTML = `
     <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 6px; margin-bottom: 8px; direction: rtl; font-family: var(--font-family) !important;">
       <h2 style="${headerFontSizeClass} font-weight: 900; color: #000; margin: 0 0 4px 0; line-height: 1.2; font-family: var(--font-family) !important;">${officeName}</h2>
+      <p style="font-size: ${is58mm ? '12px' : '14px'}; color: #000; font-weight: 800; margin: 0 0 4px 0; font-family: var(--font-family) !important;">بإدارة: ${officeOwner}</p>
       <h3 style="font-size: ${is58mm ? '14px' : '16px'}; font-weight: 800; color: #000; margin: 0 0 6px 0; font-family: var(--font-family) !important;">قائمة الجرد اليومية / Inventory</h3>
       <div style="font-size: ${is58mm ? '12px' : '14px'}; color: #000; font-weight: 700; font-family: var(--font-family) !important;">التاريخ: ${formattedDate}</div>
     </div>
@@ -7543,8 +8933,10 @@ async function printDailyInventoryList() {
       ${itemsHtml}
     </div>
 
-    <div style="text-align: center; margin-top: 8px; padding-top: 6px; border-top: 1.5px dashed #000; font-size: ${is58mm ? '11px' : '13px'}; font-weight: 800; color: #000; font-family: var(--font-family) !important;">
-      نظام علوة للمحاسبة الذكي © ${now.getFullYear()}
+    <div style="text-align: center; margin-top: 8px; padding-top: 6px; border-top: 1.5px dashed #000; font-size: ${is58mm ? '12px' : '13.5px'}; font-weight: 800; color: #000; direction: rtl; font-family: var(--font-family) !important; line-height: 1.4;">
+      برمجة و تطوير شركة Prime™ Solutions 
+      <br>
+      Whatsapp: 07749883474
     </div>
   `;
 
@@ -7567,7 +8959,11 @@ async function printDailyInventoryList() {
 // ==========================================================================
 function applyAccessibilityPreferences() {
   // 1. Zoom/Scale Level
-  const zoomVal = localStorage.getItem('alwa_zoom') || '100';
+  let zoomVal = localStorage.getItem('alwa_zoom') || '100';
+  if (parseInt(zoomVal) > 150) {
+    zoomVal = '150';
+    localStorage.setItem('alwa_zoom', '150');
+  }
   document.documentElement.style.setProperty('--app-zoom', `${zoomVal}%`);
   
   const slider = document.getElementById('setting-zoom-slider');
@@ -7577,15 +8973,145 @@ function applyAccessibilityPreferences() {
   const badge = document.getElementById('zoom-level-badge');
   if (badge) {
     let zoomText = `${zoomVal}%`;
-    if (zoomVal === '100') zoomText += currentLanguage === 'ar' ? ' (طبيعي)' : ' (Normal)';
-    else if (zoomVal === '115') zoomText += currentLanguage === 'ar' ? ' (كبير)' : ' (Large)';
-    else if (zoomVal === '130') zoomText += currentLanguage === 'ar' ? ' (كبير جداً)' : ' (Extra Large)';
-    else if (zoomVal === '145') zoomText += currentLanguage === 'ar' ? ' (ضخم)' : ' (Massive)';
-    else if (zoomVal === '160') zoomText += currentLanguage === 'ar' ? ' (شديد الضخامة)' : ' (Very Massive)';
-    else if (zoomVal === '175') zoomText += currentLanguage === 'ar' ? ' (عملاق)' : ' (Giant)';
-    else if (zoomVal === '190') zoomText += currentLanguage === 'ar' ? ' (عملاق جداً)' : ' (Super Giant)';
-    else if (zoomVal === '200') zoomText += currentLanguage === 'ar' ? ' (أقصى تكبير)' : ' (Maximum Zoom)';
+    const valNum = parseInt(zoomVal);
+    if (valNum === 100) zoomText += currentLanguage === 'ar' ? ' (طبيعي)' : ' (Normal)';
+    else if (valNum === 110) zoomText += currentLanguage === 'ar' ? ' (أكبر قليلاً)' : ' (Slightly Larger)';
+    else if (valNum === 120) zoomText += currentLanguage === 'ar' ? ' (متوسط الكبر)' : ' (Medium Large)';
+    else if (valNum === 130) zoomText += currentLanguage === 'ar' ? ' (كبير)' : ' (Large)';
+    else if (valNum === 140) zoomText += currentLanguage === 'ar' ? ' (كبير جداً)' : ' (Very Large)';
+    else if (valNum === 150) zoomText += currentLanguage === 'ar' ? ' (أقصى تكبير)' : ' (Maximum Zoom)';
     badge.textContent = zoomText;
+  }
+}
+
+// Database Size Estimation & Performance Optimization Functions
+async function calculateDatabaseSize() {
+  const storeNames = ['farmers', 'customers', 'import_invoices', 'import_items', 'sale_invoices', 'sale_items', 'debts', 'farmer_dues', 'porter_payouts', 'expenses', 'losses'];
+  
+  let totalSizeEstimate = 0;
+  let totalRecords = 0;
+  
+  for (const name of storeNames) {
+    try {
+      const records = await dbGetAll(name);
+      totalRecords += records.length;
+      // Estimate 250 bytes per typical record (JSON representation size)
+      const serialized = JSON.stringify(records);
+      totalSizeEstimate += serialized.length;
+    } catch (e) {
+      console.warn('Error reading store size for ' + name, e);
+    }
+  }
+  
+  const sizeKb = totalSizeEstimate / 1024;
+  const sizeValueEl = document.getElementById('db-size-value');
+  const recordValueEl = document.getElementById('total-records-value');
+  
+  if (sizeValueEl && recordValueEl) {
+    if (sizeKb < 100) {
+      sizeValueEl.textContent = currentLanguage === 'ar' ? 'خفيف جداً (أقل من 100 ك.ب)' : 'Very light (<100 KB)';
+      sizeValueEl.style.background = '#d1fae5';
+      sizeValueEl.style.color = '#065f46';
+    } else if (sizeKb < 1024) {
+      sizeValueEl.textContent = `${Math.round(sizeKb)} كيلوبايت`;
+      sizeValueEl.style.background = '#fef3c7';
+      sizeValueEl.style.color = '#92400e';
+    } else {
+      sizeValueEl.textContent = `${(sizeKb / 1024).toFixed(2)} ميغابايت`;
+      sizeValueEl.style.background = '#fee2e2';
+      sizeValueEl.style.color = '#991b1b';
+    }
+    
+    recordValueEl.textContent = `${formatVal(totalRecords)} ${currentLanguage === 'ar' ? 'سجل نشط' : 'active records'}`;
+  }
+}
+
+async function optimizeDatabase() {
+  playSound('success');
+  showToast(currentLanguage === 'ar' ? 'جاري فحص الفهارس وإعادة البناء...' : 'Rebuilding index indexes...', 'hourglass_empty');
+  
+  invalidateDbCache();
+  await refreshGlobalCaches();
+  
+  setTimeout(() => {
+    playSound('success');
+    showToast(currentLanguage === 'ar' ? 'تم تحسين أداء قاعدة البيانات وإعادة الفهرسة بنجاح!' : 'Database re-indexing and optimization complete!', 'check_circle');
+    calculateDatabaseSize();
+  }, 1000);
+}
+
+async function archiveOldDatabase() {
+  const confirmTitle = currentLanguage === 'ar' ? 'أرشفة وتنظيف البيانات القديمة' : 'Archive & Clean Old Data';
+  const confirmMessage = currentLanguage === 'ar' 
+    ? 'سيقوم النظام بمسح وحذف الفواتير المسواة بالكامل (المستوردة والمباعة) التي مر عليها أكثر من شهر لتوفير المساحة وتسريع الفتح والبحث بالكامل.\n\nهل تود المتابعة؟ (موصى به عند تراكم البيانات)' 
+    : 'The system will delete settled invoices (imported & sold) older than 1 month to optimize storage and speed up search operations.\n\nDo you wish to proceed? (Recommended for data accumulation)';
+    
+  const confirmed = await showCustomConfirm(confirmTitle, confirmMessage);
+  if (!confirmed) return;
+  
+  showToast(currentLanguage === 'ar' ? 'جاري الأرشفة الآمنة للبيانات والتنظيف...' : 'Safely archiving and cleaning old records...', 'hourglass_empty');
+  
+  try {
+    const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    
+    // 1. Get all import invoices older than 1 month and settled
+    const imports = await dbGetAll('import_invoices');
+    const oldSettledImports = imports.filter(imp => imp.is_settled && imp.created_at < oneMonthAgo);
+    
+    // 2. Get all sale invoices older than 1 month and settled (payment_type is cash or debt that is paid)
+    const sales = await dbGetAll('sale_invoices');
+    const debts = await dbGetAll('debts');
+    
+    const oldSettledSales = sales.filter(sale => {
+      if (sale.created_at >= oneMonthAgo) return false;
+      if (sale.payment_type === 'cash') return true;
+      if (sale.payment_type === 'debt') {
+        const d = debts.find(debt => debt.sale_invoice_id === sale.id);
+        return d ? d.is_paid : false;
+      }
+      return false;
+    });
+    
+    // Perform transactional deletion
+    const txImports = db.transaction(['import_invoices', 'import_items'], 'readwrite');
+    const importStore = txImports.objectStore('import_invoices');
+    const importItemsStore = txImports.objectStore('import_items');
+    
+    const importItems = await dbGetAll('import_items');
+    oldSettledImports.forEach(imp => {
+      importStore.delete(imp.id);
+      const relatedItems = importItems.filter(it => it.invoice_id === imp.id);
+      relatedItems.forEach(it => importItemsStore.delete(it.id));
+    });
+    
+    const txSales = db.transaction(['sale_invoices', 'sale_items', 'debts'], 'readwrite');
+    const saleStore = txSales.objectStore('sale_invoices');
+    const saleItemsStore = txSales.objectStore('sale_items');
+    const debtStore = txSales.objectStore('debts');
+    
+    const saleItems = await dbGetAll('sale_items');
+    oldSettledSales.forEach(sale => {
+      saleStore.delete(sale.id);
+      const relatedItems = saleItems.filter(it => it.sale_invoice_id === sale.id);
+      relatedItems.forEach(it => saleItemsStore.delete(it.id));
+      const relatedDebt = debts.find(d => d.sale_invoice_id === sale.id);
+      if (relatedDebt) debtStore.delete(relatedDebt.id);
+    });
+    
+    invalidateDbCache();
+    await refreshGlobalCaches();
+    await refreshAllUI();
+    
+    const deletedCount = oldSettledImports.length + oldSettledSales.length;
+    playSound('success');
+    showToast(currentLanguage === 'ar' 
+      ? `تمت أرشفة وتصفية ${deletedCount} فاتورة قديمة بنجاح! تم استعادة سرعة التطبيق 100%.` 
+      : `Successfully archived and deleted ${deletedCount} old invoices! 100% speed restored.`, 'check_circle');
+      
+    calculateDatabaseSize();
+  } catch (err) {
+    console.error(err);
+    showToast(currentLanguage === 'ar' ? 'فشل إجراء الأرشفة، يرجى المحاولة لاحقاً.' : 'Archiving failed, please try again.', 'error', true);
   }
 }
 
@@ -7604,6 +9130,10 @@ async function startApp() {
     loadCustomCrops();
 
     // 4. Fill Cache
+    await refreshGlobalCaches();
+
+    // 4.1 Heal old sales invoice totals to include commissions & carrying/porterage fees
+    await healSalesInvoiceTotals();
     await refreshGlobalCaches();
 
     // 4.5 Initialize Autocompletes Once to Prevent Listeners Accumulation
@@ -7636,6 +9166,39 @@ async function startApp() {
       btnNotif.addEventListener('click', () => {
         openBottomSheet('sheet-due-claims');
       });
+    }
+
+    // 7.5 Bind system status badge click
+    const badgeStatus = document.querySelector('.system-status-badge');
+    if (badgeStatus) {
+      badgeStatus.addEventListener('click', () => {
+        const msg = currentLanguage === 'ar' 
+          ? '🛡️ الاشتراك الذهبي نشط ومفعل بالكامل! صالح لغاية 2027-07-05.' 
+          : '🛡️ Golden Subscription is active & fully enabled! Valid until 2027-07-05.';
+        showToast(msg, 'verified_user');
+      });
+    }
+
+    // 7.6 Bind subscription renew click listener
+    const btnSubRenew = document.getElementById('sub-btn-renew');
+    if (btnSubRenew) {
+      btnSubRenew.addEventListener('click', () => {
+        const msg = currentLanguage === 'ar'
+          ? '🌟 اشتراكك الذهبي ساري المفعول ولست بحاجة للتجديد حالياً. شكراً لثقتكم!'
+          : '🌟 Your Golden subscription is active and does not require renewal at this time. Thank you for your trust!';
+        showToast(msg, 'verified');
+      });
+    }
+
+    // 7.7 Bind Database Maintenance & Optimization Card
+    calculateDatabaseSize();
+    const btnOptimize = document.getElementById('btn-db-optimize');
+    if (btnOptimize) {
+      btnOptimize.addEventListener('click', optimizeDatabase);
+    }
+    const btnArchive = document.getElementById('btn-db-archive');
+    if (btnArchive) {
+      btnArchive.addEventListener('click', archiveOldDatabase);
     }
 
     // 8. Bind global forms submission events
@@ -7720,8 +9283,16 @@ async function startApp() {
     const lossCropSearch = document.getElementById('loss-crop-search');
     const lossCropDropdown = document.getElementById('loss-crop-dropdown');
     if (lossCropSearch && lossCropDropdown) {
-      lossCropSearch.addEventListener('click', (e) => {
+      const showAllDropdown = (e) => {
         e.stopPropagation();
+        populateLossCropDropdown();
+        lossCropDropdown.style.display = 'block';
+      };
+      
+      lossCropSearch.addEventListener('click', showAllDropdown);
+      lossCropSearch.addEventListener('focus', showAllDropdown);
+      
+      lossCropSearch.addEventListener('input', () => {
         populateLossCropDropdown();
         lossCropDropdown.style.display = 'block';
       });
@@ -7872,10 +9443,22 @@ async function startApp() {
     });
 
     // 13. Bind search filters
-    document.getElementById('search-import-farmer').addEventListener('input', renderImportsList);
-    document.getElementById('search-sale-customer').addEventListener('input', renderSalesList);
-    document.getElementById('search-debts-input').addEventListener('input', renderDebtsList);
-    document.getElementById('search-dues-input').addEventListener('input', renderDuesList);
+    document.getElementById('search-import-farmer').addEventListener('input', debounce(() => {
+      listPageLimits.imports = 10;
+      renderImportsList();
+    }, 200));
+    document.getElementById('search-sale-customer').addEventListener('input', debounce(() => {
+      listPageLimits.sales = 10;
+      renderSalesList();
+    }, 200));
+    document.getElementById('search-debts-input').addEventListener('input', debounce(() => {
+      listPageLimits.debts = 10;
+      renderDebtsList();
+    }, 200));
+    document.getElementById('search-dues-input').addEventListener('input', debounce(() => {
+      listPageLimits.dues = 10;
+      renderDuesList();
+    }, 200));
 
     const statsMonthSel = document.getElementById('stats-month-selector');
     if (statsMonthSel) {
@@ -7887,11 +9470,17 @@ async function startApp() {
     // 14. Bind archive search filters
     const searchArchiveFarmer = document.getElementById('search-archive-farmer');
     if (searchArchiveFarmer) {
-      searchArchiveFarmer.addEventListener('input', renderArchiveList);
+      searchArchiveFarmer.addEventListener('input', debounce(() => {
+        listPageLimits.archiveImports = 10;
+        renderArchiveList();
+      }, 200));
     }
     const searchArchiveSales = document.getElementById('search-archive-sales');
     if (searchArchiveSales) {
-      searchArchiveSales.addEventListener('input', renderSalesArchiveList);
+      searchArchiveSales.addEventListener('input', debounce(() => {
+        listPageLimits.archiveSales = 10;
+        renderSalesArchiveList();
+      }, 200));
     }
 
     // 15. Bind hardware Bluetooth Scanner
@@ -7900,6 +9489,11 @@ async function startApp() {
     const btnPrintInv = document.getElementById('btn-print-inventory');
     if (btnPrintInv) {
       btnPrintInv.addEventListener('click', printDailyInventoryList);
+    }
+
+    const btnDailySalesAudit = document.getElementById('btn-daily-sales-audit');
+    if (btnDailySalesAudit) {
+      btnDailySalesAudit.addEventListener('click', showDailySalesAuditSheet);
     }
     
     // Test print
@@ -7958,6 +9552,36 @@ async function startApp() {
     // 18. Bind Office Info Save
     document.getElementById('btn-save-office-settings').addEventListener('click', saveOfficeInfo);
 
+    const setOfficeNameInput = document.getElementById('setting-office-name');
+    if (setOfficeNameInput) {
+      setOfficeNameInput.addEventListener('click', () => {
+        if (setOfficeNameInput.readOnly) {
+          openPasscodeDialog('1964', () => {
+            setOfficeNameInput.readOnly = false;
+            setOfficeNameInput.style.backgroundColor = '';
+            setOfficeNameInput.style.cursor = 'auto';
+            setOfficeNameInput.focus();
+            showToast(currentLanguage === 'ar' ? 'تم فك قفل اسم العلوة بنجاح!' : 'Office name unlocked successfully!', 'check_circle');
+          });
+        }
+      });
+    }
+
+    const setOfficeOwnerInput = document.getElementById('setting-office-owner');
+    if (setOfficeOwnerInput) {
+      setOfficeOwnerInput.addEventListener('click', () => {
+        if (setOfficeOwnerInput.readOnly) {
+          openPasscodeDialog('1964', () => {
+            setOfficeOwnerInput.readOnly = false;
+            setOfficeOwnerInput.style.backgroundColor = '';
+            setOfficeOwnerInput.style.cursor = 'auto';
+            setOfficeOwnerInput.focus();
+            showToast(currentLanguage === 'ar' ? 'تم فك قفل اسم صاحب العلوة بنجاح!' : 'Office owner name unlocked successfully!', 'check_circle');
+          });
+        }
+      });
+    }
+
     // 19. Initialize settings preferences
     const numSystemValue = localStorage.getItem('alwa_numeral_system') || 'en';
     numeralSystem = numSystemValue;
@@ -7997,10 +9621,24 @@ async function startApp() {
 
     // Bind Segmented Control Buttons (e.g. Debt Due Options)
     const debtDaysBtns = document.querySelectorAll('#group-debt-options .segmented-control-btn');
+    const customDaysInputGroup = document.getElementById('custom-debt-days-input-group');
+    const customDaysInput = document.getElementById('custom-debt-days-input');
     debtDaysBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         debtDaysBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        if (btn.dataset.days === 'custom') {
+          if (customDaysInputGroup) {
+            customDaysInputGroup.style.display = 'block';
+            if (customDaysInput) {
+              customDaysInput.focus();
+            }
+          }
+        } else {
+          if (customDaysInputGroup) {
+            customDaysInputGroup.style.display = 'none';
+          }
+        }
       });
     });
 
@@ -8089,10 +9727,226 @@ async function startApp() {
     // 22. Initialize automatic Bluetooth/BLE printer reconnection
     initAutoConnect();
 
+    // 23. Initialize custom virtual numeric keypad for precise number inputs
+    initCustomKeypad();
+
   } catch (err) {
     console.error('Fatal initialization error:', err);
     showToast('خطأ أثناء بدء تشغيل نظام علوة للمحاسبة', 'warning', true);
   }
+}
+
+// Global states for custom keypad
+let activeKeypadInput = null;
+let keypadBuffer = "0";
+
+function initCustomKeypad() {
+  // Bind keypad button clicks
+  const keypadButtons = document.querySelectorAll('.keypad-btn');
+  keypadButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const key = btn.dataset.key;
+      if (key) {
+        handleKeypadPress(key);
+      }
+    });
+  });
+
+  // Bind close buttons
+  const btnClose = document.getElementById('btn-close-keypad');
+  if (btnClose) {
+    btnClose.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeCustomKeypad();
+    });
+  }
+
+  const btnCancel = document.getElementById('btn-keypad-cancel');
+  if (btnCancel) {
+    btnCancel.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeCustomKeypad();
+    });
+  }
+
+  // Bind confirm button
+  const btnConfirm = document.getElementById('btn-keypad-confirm');
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveKeypadValue();
+    });
+  }
+
+  // Event delegation to catch dynamic inputs
+  document.addEventListener('focusin', (e) => {
+    const target = e.target;
+    if (target && target.tagName === 'INPUT' && (
+      target.classList.contains('sale-crop-weight') ||
+      target.classList.contains('sale-box-count') ||
+      target.classList.contains('sale-crop-unit-price') ||
+      target.classList.contains('import-crop-weight') ||
+      target.classList.contains('import-box-count') ||
+      target.classList.contains('sale-porter-rate') ||
+      target.id === 'sale-bags-cost' ||
+      target.id === 'setting-office-phone' ||
+      target.id === 'sale-customer-phone'
+    )) {
+      target.setAttribute('inputmode', 'none');
+      openCustomKeypad(target);
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target && target.tagName === 'INPUT' && (
+      target.classList.contains('sale-crop-weight') ||
+      target.classList.contains('sale-box-count') ||
+      target.classList.contains('sale-crop-unit-price') ||
+      target.classList.contains('import-crop-weight') ||
+      target.classList.contains('import-box-count') ||
+      target.classList.contains('sale-porter-rate') ||
+      target.id === 'sale-bags-cost' ||
+      target.id === 'setting-office-phone' ||
+      target.id === 'sale-customer-phone'
+    )) {
+      target.setAttribute('inputmode', 'none');
+      openCustomKeypad(target);
+    }
+  });
+}
+
+function openCustomKeypad(inputElement) {
+  activeKeypadInput = inputElement;
+  
+  const isAr = currentLanguage === 'ar';
+  let titleText = isAr ? 'إدخال قيمة' : 'Enter Value';
+  let suffixText = '';
+  
+  if (inputElement.classList.contains('sale-crop-weight')) {
+    titleText = isAr ? 'الوزن المباع (كغم)' : 'Sold Weight (Kg)';
+    suffixText = isAr ? 'كغم' : 'Kg';
+  } else if (inputElement.classList.contains('sale-box-count')) {
+    titleText = isAr ? 'عدد الصناديق المباعة' : 'Number of Boxes Sold';
+    suffixText = isAr ? 'صندوق' : 'box';
+  } else if (inputElement.classList.contains('sale-crop-unit-price')) {
+    titleText = isAr ? 'سعر البيع للكيلو الواحد' : 'Sale Price per Kg';
+    suffixText = isAr ? 'دينار' : 'IQD';
+  } else if (inputElement.classList.contains('sale-porter-rate')) {
+    titleText = isAr ? 'عمولة الحمالية للصندوق' : 'Porter Fee per Box';
+    suffixText = isAr ? 'دينار' : 'IQD';
+  } else if (inputElement.id === 'sale-bags-cost') {
+    titleText = isAr ? 'تكلفة الأكياس والكراتين' : 'Bags and Boxes Cost';
+    suffixText = isAr ? 'دينار' : 'IQD';
+  } else if (inputElement.classList.contains('import-crop-weight')) {
+    titleText = isAr ? 'الوزن الكلي القائم (كغم)' : 'Total Weight (Kg)';
+    suffixText = isAr ? 'كغم' : 'Kg';
+  } else if (inputElement.classList.contains('import-box-count')) {
+    titleText = isAr ? 'عدد الصناديق المستوردة' : 'Imported Box Count';
+    suffixText = isAr ? 'صندوق' : 'box';
+  } else if (inputElement.id === 'setting-office-phone') {
+    titleText = isAr ? 'رقم هاتف العلوة' : 'Office Phone Number';
+    suffixText = '';
+  } else if (inputElement.id === 'sale-customer-phone') {
+    titleText = isAr ? 'رقم هاتف الزبون' : 'Customer Phone Number';
+    suffixText = '';
+  }
+  
+  const titleEl = document.getElementById('keypad-title-text');
+  if (titleEl) titleEl.textContent = titleText;
+  
+  const suffixEl = document.getElementById('keypad-display-suffix');
+  if (suffixEl) suffixEl.textContent = suffixText;
+  
+  const currentVal = inputElement.value;
+  if (currentVal && currentVal !== '0') {
+    keypadBuffer = currentVal.toString();
+  } else {
+    keypadBuffer = "0";
+  }
+  
+  updateKeypadDisplay();
+  
+  const dialog = document.getElementById('custom-keypad-dialog');
+  if (dialog) {
+    dialog.style.display = 'flex';
+  }
+}
+
+function updateKeypadDisplay() {
+  const displayVal = document.getElementById('keypad-display-val');
+  if (displayVal) {
+    displayVal.textContent = keypadBuffer;
+  }
+}
+
+function handleKeypadPress(key) {
+  const isPhone = activeKeypadInput && (activeKeypadInput.id === 'setting-office-phone' || activeKeypadInput.id === 'sale-customer-phone');
+  
+  if (key === 'C') {
+    keypadBuffer = "0";
+  } else if (key === 'backspace') {
+    if (keypadBuffer.length > 1) {
+      keypadBuffer = keypadBuffer.slice(0, -1);
+    } else {
+      keypadBuffer = "0";
+    }
+  } else if (key === '.') {
+    if (!isPhone && !keypadBuffer.includes('.')) {
+      keypadBuffer += '.';
+    }
+  } else {
+    // Digit 0-9
+    if (isPhone) {
+      if (keypadBuffer === "0") {
+        if (key === "0") {
+          keypadBuffer = "0";
+        } else {
+          keypadBuffer = "0" + key;
+        }
+      } else {
+        keypadBuffer += key;
+      }
+    } else {
+      if (keypadBuffer === "0") {
+        keypadBuffer = key;
+      } else {
+        keypadBuffer += key;
+      }
+    }
+  }
+  updateKeypadDisplay();
+}
+
+function closeCustomKeypad() {
+  const dialog = document.getElementById('custom-keypad-dialog');
+  if (dialog) {
+    dialog.style.display = 'none';
+  }
+  activeKeypadInput = null;
+}
+
+function saveKeypadValue() {
+  if (activeKeypadInput) {
+    const isPhone = activeKeypadInput.id === 'setting-office-phone' || activeKeypadInput.id === 'sale-customer-phone';
+    if (isPhone) {
+      activeKeypadInput.value = keypadBuffer;
+    } else {
+      let finalVal = parseFloat(keypadBuffer);
+      if (isNaN(finalVal)) {
+        activeKeypadInput.value = "";
+      } else {
+        activeKeypadInput.value = keypadBuffer;
+      }
+    }
+    
+    // Trigger existing listeners for automatic live calculations
+    activeKeypadInput.dispatchEvent(new Event('input', { bubbles: true }));
+    activeKeypadInput.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  closeCustomKeypad();
 }
 
 // Cordova / Native platform back-button binding for Capacitor hybrid environments

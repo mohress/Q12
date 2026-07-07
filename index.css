@@ -724,6 +724,10 @@ body.sheet-open {
   min-height: 0;
 }
 
+.bottom-sheet-body > * {
+  flex-shrink: 0 !important;
+}
+
 /* Form Styles & Inputs */
 .form-group {
   display: flex;
@@ -3046,5 +3050,143 @@ div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3)
 /* Focus Mode CSS for Invoice Code and Cashier spans */
 div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3) > div:nth-of-type(2) > div#receipt-paper:nth-of-type(1) > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > span:nth-of-type(1) {
   font-family: 'Monofrik' !important;
+  font-weight: normal !important;
 }
+
+div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3) > div:nth-of-type(2) > div#receipt-paper:nth-of-type(1) > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > span:nth-of-type(1) {
+  font-family: 'Monofrik' !important;
+  font-weight: normal !important;
+}
+
+/* Responsive Grid for Import & Sale cards when space is available (e.g. tablet/desktop) */
+.cards-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .cards-grid-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Ensure archive lists are always 1 card per horizontal row regardless of screen size */
+#archive-sales-list, #archive-imports-list {
+  grid-template-columns: 1fr !important;
+}
+
+/* ==========================================================================
+   💎 PREMIUM SYSTEM STATUS BADGE & PULSING GLOW ANIMATION
+   ========================================================================== */
+.system-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(45, 106, 79, 0.08);
+  border: 1.5px solid rgba(45, 106, 79, 0.25);
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-primary);
+  box-shadow: 0 4px 10px rgba(45, 106, 79, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.system-status-badge:hover {
+  background: rgba(45, 106, 79, 0.12);
+  border-color: rgba(45, 106, 79, 0.4);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 15px rgba(45, 106, 79, 0.12);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-primary-mid);
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+}
+
+.status-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 2.5px solid var(--color-primary-mid);
+  opacity: 0.8;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  80%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Custom Numeric Keypad styles */
+.keypad-btn {
+  background: #f1f3f2;
+  border: 1.5px solid rgba(0, 0, 0, 0.02);
+  border-radius: 14px;
+  height: 60px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.keypad-btn:active {
+  background: var(--color-primary-light);
+  color: white;
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(82, 183, 136, 0.2);
+}
+
+.keypad-btn.text-danger {
+  color: var(--color-danger);
+  font-family: var(--font-sans);
+}
+
+.keypad-btn.text-danger:active {
+  background: var(--color-danger);
+  color: white;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
 

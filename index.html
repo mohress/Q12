@@ -138,7 +138,13 @@
           </svg>
         </div>
         <div class="app-title-group">
-          <h1 id="txt-app-title">محاسب العلوة</h1>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 id="txt-app-title">محاسب العلوة</h1>
+            <div class="system-status-badge">
+              <span class="status-dot"></span>
+              <span id="lbl-system-status">نشط ومؤمن</span>
+            </div>
+          </div>
           <p id="txt-app-subtitle">نظام ادارة العلوة الذكي</p>
         </div>
       </div>
@@ -183,7 +189,7 @@
       </div>
 
       <!-- Active Imports List -->
-      <div style="display: flex; flex-direction: column; gap: 12px;" id="imports-list">
+      <div class="cards-grid-layout" id="imports-list">
         <!-- Dynamic content will be injected by app.js -->
       </div>
     </main>
@@ -210,7 +216,7 @@
       </div>
 
       <!-- Sales List -->
-      <div style="display: flex; flex-direction: column; gap: 12px;" id="sales-list">
+      <div class="cards-grid-layout" id="sales-list">
         <!-- Dynamic content will be injected by app.js -->
       </div>
     </main>
@@ -231,7 +237,7 @@
         <div class="search-filter-bar">
           <input type="text" class="search-filter-input" id="search-debts" placeholder="🔍 ابحث باسم الزبون المدين...">
         </div>
-        <div id="debts-list" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="cards-grid-layout" id="debts-list">
           <!-- Dynamic Debts will be injected here -->
         </div>
       </div>
@@ -241,14 +247,14 @@
         <div class="search-filter-bar">
           <input type="text" class="search-filter-input" id="search-dues" placeholder="🔍 ابحث باسم الفلاح...">
         </div>
-        <div id="dues-list" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="cards-grid-layout" id="dues-list">
           <!-- Dynamic Dues will be injected here -->
         </div>
       </div>
 
       <!-- 3. Porters Dues Section -->
       <div id="section-porters-list" style="display: none; flex-direction: column; gap: 16px;">
-        <div id="porters-list" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="cards-grid-layout" id="porters-list">
           <!-- Dynamic Porters list/card will be injected here -->
         </div>
       </div>
@@ -266,10 +272,16 @@
             <!-- Dynamic select populated by app.js -->
           </select>
         </div>
-        <button id="btn-print-inventory" class="btn-print-inventory-pro">
-          <span class="material-icons-round" style="font-size: 16px;">print</span>
-          <span id="txt-print-inventory-lbl">طباعة قائمة جرد يومية</span>
-        </button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button id="btn-daily-sales-audit" class="btn-print-inventory-pro" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid)) !important;">
+            <span class="material-icons-round" style="font-size: 16px;">analytics</span>
+            <span>جرد مبيعات يومي</span>
+          </button>
+          <button id="btn-print-inventory" class="btn-print-inventory-pro">
+            <span class="material-icons-round" style="font-size: 16px;">print</span>
+            <span id="txt-print-inventory-lbl">طباعة قائمة جرد يومية</span>
+          </button>
+        </div>
       </div>
       <!-- Grid for Safe Box & Profits -->
       <div class="stats-top-grid">
@@ -508,21 +520,27 @@
         <!-- Office Info Form -->
         <div class="premium-card" style="gap: 14px;">
           <h3 id="txt-office-settings-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary); border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">معلومات العلوة</h3>
-          <div class="form-group">
-            <label id="lbl-office-name">اسم العلوة (يظهر بالفاتورة)</label>
-            <input type="text" class="form-input" id="setting-office-name" value="علوة الغابة الخضراء">
-          </div>
-          <div class="form-group">
-            <label id="lbl-office-phone">رقم الهاتف</label>
-            <input type="text" class="form-input" id="setting-office-phone" value="07701234567">
-          </div>
-          <div class="form-group">
-            <label id="lbl-office-location">موقع العلوة (العنوان)</label>
-            <input type="text" class="form-input" id="setting-office-location" value="جمهورية العراق">
-          </div>
-          <div class="form-group">
-            <label id="lbl-office-cashier">اسم المحاسب (بالإنجليزي حصراً)</label>
-            <input type="text" class="form-input" id="setting-office-cashier" value="Cashier One" placeholder="e.g. Accountant Name">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; width: 100%;">
+            <div class="form-group">
+              <label id="lbl-office-name">اسم العلوة (يظهر بالفاتورة)</label>
+              <input type="text" class="form-input" id="setting-office-name" value="علوة الغابة الخضراء" readonly style="cursor: pointer; background-color: rgba(0,0,0,0.03);">
+            </div>
+            <div class="form-group">
+              <label id="lbl-owner-setting">اسم صاحب العلوة</label>
+              <input type="text" class="form-input" id="setting-office-owner" value="أبو أحمد" placeholder="اسم صاحب العلوة" readonly style="cursor: pointer; background-color: rgba(0,0,0,0.03);">
+            </div>
+            <div class="form-group">
+              <label id="lbl-office-phone">رقم الهاتف</label>
+              <input type="text" class="form-input" id="setting-office-phone" value="07701234567" inputmode="none" readonly>
+            </div>
+            <div class="form-group">
+              <label id="lbl-office-location">موقع العلوة (العنوان)</label>
+              <input type="text" class="form-input" id="setting-office-location" value="جمهورية العراق">
+            </div>
+            <div class="form-group">
+              <label id="lbl-office-cashier">اسم المحاسب (بالإنجليزي حصراً)</label>
+              <input type="text" class="form-input" id="setting-office-cashier" value="Cashier One" placeholder="e.g. Accountant Name">
+            </div>
           </div>
           <button class="btn-primary" id="btn-save-office-settings" style="padding: 10px; font-size: 12px;">حفظ المعلومات</button>
         </div>
@@ -547,17 +565,15 @@
               <span id="zoom-level-badge" style="background: #0284c7; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800;">100% (طبيعي)</span>
             </div>
             
-            <input type="range" id="setting-zoom-slider" min="100" max="200" step="15" value="100" style="width: 100%; accent-color: #0284c7; height: 6px; background: #e0f2fe; border-radius: 4px; outline: none; cursor: pointer;">
+            <input type="range" id="setting-zoom-slider" min="100" max="150" step="5" value="100" style="width: 100%; accent-color: #0284c7; height: 6px; background: #e0f2fe; border-radius: 4px; outline: none; cursor: pointer;">
             
             <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; font-weight: 700; padding: 0 2px;">
               <span>100%</span>
-              <span>115%</span>
+              <span>110%</span>
+              <span>120%</span>
               <span>130%</span>
-              <span>145%</span>
-              <span>160%</span>
-              <span>175%</span>
-              <span>190%</span>
-              <span>200%</span>
+              <span>140%</span>
+              <span>150%</span>
             </div>
           </div>
         </div>
@@ -597,6 +613,131 @@
               <span>استيراد ملف backup</span>
               <input type="file" id="btn-backup-import" accept=".json" style="display: none;">
             </label>
+          </div>
+        </div>
+
+        <!-- System Subscription Status Card -->
+        <div class="premium-card subscription-panel-card" style="gap: 14px; position: relative; overflow: hidden; border: 1.5px solid #FFB703; background: linear-gradient(135deg, #fffbeb 0%, #fffbeb 100%);">
+          <!-- Small golden premium batch absolute on top -->
+          <div style="position: absolute; top: -8px; left: -8px; width: 44px; height: 44px; background: rgba(255, 183, 3, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 20px; color: #D4A373; transform: translate(3px, 3px);">workspace_premium</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: #FFB703; font-size: 22px;">stars</span>
+            <h3 id="sub-card-title" style="font-size: 14px; font-weight: 800; color: #B58410;">اشتراك النظام</h3>
+          </div>
+          
+          <p id="sub-card-desc" style="font-size: 11px; color: #A0720F; margin-top: -6px; font-weight: 600;">تتبع حالة ونوع اشتراكك في نظام محاسب العلوة واستعرض الميزات المفعّلة لحسابك.</p>
+
+          <!-- Subscription Details Box -->
+          <div class="subscription-details-box" style="display: flex; flex-direction: column; gap: 8px; background: #ffffff; border-radius: 12px; border: 1px solid #fef3c7; padding: 12px;">
+            <!-- Plan Name -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px dashed #fef3c7; padding-bottom: 6px;">
+              <span id="sub-label-plan" style="font-weight: 700; color: #78350f;">باقة الاشتراك الحالي:</span>
+              <span id="sub-val-plan" style="font-weight: 800; color: #b45309;">الاشتراك الذهبي المميز السنوي 💎</span>
+            </div>
+
+            <!-- Plan Status -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px dashed #fef3c7; padding-bottom: 6px;">
+              <span id="sub-label-status" style="font-weight: 700; color: #78350f;">حالة الاشتراك:</span>
+              <span id="sub-val-status" class="subscription-status-badge-inline" style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800;">نشط ومفعل بالكامل (صالح لغاية 2027-07-05)</span>
+            </div>
+
+            <!-- Subscriber ID -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b;">
+              <span id="sub-label-id" style="font-weight: 700;">رقم المشترك (المعرف الفريد):</span>
+              <span id="sub-val-id" style="font-family: monospace; font-weight: 700; color: #334155; letter-spacing: 0.5px;">SUB-84091-IQ</span>
+            </div>
+          </div>
+
+          <!-- Enabled Features list -->
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 2px;">
+            <span id="sub-label-features" style="font-size: 11px; font-weight: 800; color: #78350f;">الميزات والخصائص المفعّلة:</span>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+              <div id="sub-feat-1" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ طباعة حرارية (Bluetooth BLE) لجميع فواتير البيع والاستيراد والتقارير.</div>
+              <div id="sub-feat-2" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ حسابات دقيقة وتلقائية لعمولات المكاتب وأجور التحميل والأكياس.</div>
+              <div id="sub-feat-3" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ تصدير واستيراد قواعد بيانات المبيعات والاستيراد (Room/IndexedDB) بلمسة واحدة.</div>
+            </div>
+          </div>
+
+          <!-- Renewal / Manage Subscription Plan Button -->
+          <button id="sub-btn-renew" class="btn-primary" style="padding: 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #FFB703 0%, #D4A373 100%); color: #451a03; border: none; box-shadow: 0 4px 12px rgba(212, 163, 115, 0.25); border-radius: 10px;">تجديد أو ترقية باقة الاشتراك</button>
+        </div>
+
+        <!-- Database Maintenance & Performance Optimization Card (أداة صيانة وأرشفة البيانات) -->
+        <div class="premium-card" style="gap: 12px; border: 1.5px solid #10b981; background: #ecfdf5; position: relative; overflow: hidden; margin-top: 12px;">
+          <div style="position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; background: rgba(16, 185, 129, 0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 24px; color: #10b981; transform: translate(4px, 4px);">speed</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: #10b981; font-size: 20px;">memory</span>
+            <h3 style="font-size: 14px; font-weight: 800; color: #047857;" id="txt-db-maintenance-title">صيانة قاعدة البيانات وحفظ السرعة</h3>
+          </div>
+          
+          <p style="font-size: 11px; color: #047857; margin-top: -6px; font-weight: 600;" id="txt-db-maintenance-desc">حافظ على سرعة التطبيق الفائقة حتى مع تكدس آلاف البيانات من خلال أدوات الصيانة والأرشفة.</p>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; background: #ffffff; border-radius: 12px; border: 1px solid #a7f3d0; padding: 12px;">
+            <!-- Database Size Estimation -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+              <span style="font-weight: 700; color: #065f46;" id="lbl-db-size">حجم قاعدة البيانات التقريبي:</span>
+              <span id="db-size-value" style="font-weight: 800; color: #047857; background: #d1fae5; padding: 2px 8px; border-radius: 20px;">جاري الحساب...</span>
+            </div>
+            
+            <!-- Record Count stats -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; border-top: 1px dashed #a7f3d0; padding-top: 6px;">
+              <span style="font-weight: 700;" id="lbl-total-records">إجمالي عدد السجلات:</span>
+              <span id="total-records-value" style="font-weight: 800; color: #334155;">- سجل</span>
+            </div>
+          </div>
+
+          <div class="summary-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+            <button class="btn-primary" id="btn-db-optimize" style="padding: 10px; font-size: 11px; background: #10b981; border: none; font-weight: 700;">تحسين وفحص الفهارس</button>
+            <button class="btn-primary" id="btn-db-archive" style="padding: 10px; font-size: 11px; background: #059669; border: none; font-weight: 700;">تنظيف الأرشيف والبيانات القديمة</button>
+          </div>
+        </div>
+
+        <!-- Professional Digital Rights & Developer Signature -->
+        <div class="developer-rights-card" style="margin-top: 24px; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 16px; text-align: center; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02); position: relative; overflow: hidden;">
+          <!-- Left-top background seal/badge pattern -->
+          <div style="position: absolute; top: -12px; right: -12px; width: 60px; height: 60px; background: rgba(14, 165, 233, 0.04); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 28px; color: rgba(14, 165, 233, 0.1);">security</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2); margin-bottom: 6px;">
+              <span class="material-icons-round" style="color: white; font-size: 20px;">verified_user</span>
+            </div>
+            <span style="font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: 0.2px;">جميع الحقوق محفوظة لصالح شركة برايم™ للحلول البرمجية © 2026</span>
+            <span style="font-size: 11px; color: #64748b; font-weight: 600;">PRIME™ Software Solutions - All Rights Reserved</span>
+          </div>
+
+          <div style="height: 1px; background: radial-gradient(circle, #cbd5e1 0%, rgba(255,255,255,0) 100%); margin: 4px 0;"></div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <span class="material-icons-round" style="color: #0ea5e9; font-size: 16px;">contact_support</span>
+              <span style="font-size: 12px; font-weight: 800; color: #334155;">قسم الدعم الفني والاستفسارات المباشرة</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+              <!-- Baghdad Office -->
+              <div style="background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <span style="font-size: 10px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                  <span style="width: 5px; height: 5px; background: #0ea5e9; border-radius: 50%;"></span>بغداد
+                </span>
+                <a href="tel:07749883474" style="font-family: monospace; font-size: 12px; font-weight: 800; color: #0284c7; text-decoration: none; letter-spacing: 0.5px;">07749883474</a>
+              </div>
+
+              <!-- Mosul Office -->
+              <div style="background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <span style="font-size: 10px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                  <span style="width: 5px; height: 5px; background: #0ea5e9; border-radius: 50%;"></span>الموصل
+                </span>
+                <a href="tel:07883885156" style="font-family: monospace; font-size: 12px; font-weight: 800; color: #0284c7; text-decoration: none; letter-spacing: 0.5px;">07883885156</a>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -659,14 +800,18 @@
         <div class="form-group">
           <label id="lbl-farmer-name">اسم الفلاح</label>
           <div style="position: relative;">
-            <input type="text" class="form-input" id="import-farmer-name" placeholder="أدخل اسم الفلاح..." autocomplete="off">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
+            <input type="text" class="form-input" id="import-farmer-name" placeholder="أدخل اسم الفلاح..." autocomplete="off" style="padding-right: 42px;">
             <div class="autocomplete-dropdown" id="farmer-autocomplete"></div>
           </div>
         </div>
 
         <div class="form-group">
           <label id="lbl-vehicle-type">نوع السيارة</label>
-          <input type="text" class="form-input" id="import-vehicle-type" placeholder="مثال: كيا حمل 4 طن...">
+          <div style="position: relative;">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">local_shipping</span>
+            <input type="text" class="form-input" id="import-vehicle-type" placeholder="مثال: كيا حمل 4 طن..." style="padding-right: 42px;">
+          </div>
         </div>
 
         <!-- Crop Items section inside Import -->
@@ -693,21 +838,37 @@
       <div class="bottom-sheet-body">
         
         <div class="form-group">
-          <label id="lbl-customer-name">اسم الزبون (صاحب المحل)</label>
+          <label id="lbl-customer-name" style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
+            <span>اسم الزبون (صاحب المحل)</span>
+          </label>
           <div style="position: relative;">
-            <input type="text" class="form-input" id="sale-customer-name" placeholder="أدخل اسم الزبون..." autocomplete="off">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
+            <input type="text" class="form-input" id="sale-customer-name" placeholder="أدخل اسم الزبون..." autocomplete="off" style="padding-right: 42px;">
             <div class="autocomplete-dropdown" id="customer-autocomplete"></div>
           </div>
         </div>
 
         <div class="summary-grid">
           <div class="form-group">
-            <label id="lbl-customer-phone">رقم الهاتف (تلقائي)</label>
-            <input type="text" class="form-input" id="sale-customer-phone" placeholder="رقم الهاتف...">
+            <label id="lbl-customer-phone" style="display: flex; align-items: center; gap: 6px;">
+              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">phone</span>
+              <span>رقم الهاتف (اختياري)</span>
+            </label>
+            <div style="position: relative;">
+              <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">phone</span>
+              <input type="text" class="form-input" id="sale-customer-phone" placeholder="رقم الهاتف..." style="padding-right: 42px;" inputmode="none" readonly>
+            </div>
           </div>
           <div class="form-group">
-            <label id="lbl-customer-address">العنوان (تلقائي)</label>
-            <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون...">
+            <label id="lbl-customer-address" style="display: flex; align-items: center; gap: 6px;">
+              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">location_on</span>
+              <span>العنوان (اختياري)</span>
+            </label>
+            <div style="position: relative;">
+              <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">location_on</span>
+              <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون..." style="padding-right: 42px;">
+            </div>
           </div>
         </div>
 
@@ -723,8 +884,14 @@
 
         <!-- General invoice options -->
         <div class="form-group">
-          <label id="lbl-bags-cost">تكلفة الأكياس والكراتين (إجمالي اختياري)</label>
-          <input type="number" class="form-input" id="sale-bags-cost" placeholder="أدخل التكلفة الكلية للدواخل..." value="0">
+          <label id="lbl-bags-cost" style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">shopping_bag</span>
+            <span>تكلفة الأكياس والكراتين (إجمالي اختياري)</span>
+          </label>
+          <div style="position: relative;">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">shopping_bag</span>
+            <input type="number" class="form-input" id="sale-bags-cost" placeholder="أدخل التكلفة الكلية للدواخل..." value="0" style="padding-right: 42px;" inputmode="none" readonly>
+          </div>
         </div>
 
         <!-- Payment Method -->
@@ -743,26 +910,30 @@
             <button class="segmented-control-btn active" data-days="5">5 أيام</button>
             <button class="segmented-control-btn" data-days="10">10 أيام</button>
             <button class="segmented-control-btn" data-days="15">15 يوم</button>
+            <button class="segmented-control-btn" data-days="custom" id="btn-custom-debt-days">مخصص</button>
+          </div>
+          <div id="custom-debt-days-input-group" style="display: none; margin-top: 8px;">
+            <input type="number" class="form-input" id="custom-debt-days-input" placeholder="أدخل عدد الأيام..." min="1" step="1">
           </div>
         </div>
 
         <!-- Real-time Balance calculation details -->
-        <div class="premium-card" style="background-color: rgba(27,67,50,0.05); border: 1px solid rgba(27,67,50,0.1); padding: 12px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; flex-wrap: wrap;">
-            <span id="lbl-subtotal" style="white-space: nowrap;">مجموع أسعار البضاعة:</span>
-            <span id="val-subtotal" style="font-weight: 700; white-space: nowrap;">0 دينار</span>
+        <div class="premium-card" style="background-color: rgba(27,67,50,0.05); border: 1px solid rgba(27,67,50,0.1); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+            <span id="lbl-subtotal" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع أسعار البضاعة:</span>
+            <span id="val-subtotal" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; flex-wrap: wrap;">
-            <span id="lbl-commission-7" style="white-space: nowrap;">مجموع العمولات (7%):</span>
-            <span id="val-commission-7" style="font-weight: 700; color: var(--color-primary-light); white-space: nowrap;">0 دينار</span>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+            <span id="lbl-commission-7" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع العمولات (7%):</span>
+            <span id="val-commission-7" style="font-weight: 700; color: var(--color-primary-light); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; flex-wrap: wrap;">
-            <span id="lbl-carrying-total" style="white-space: nowrap;">مجموع الحمالية:</span>
-            <span id="val-carrying-total" style="font-weight: 700; white-space: nowrap;">0 دينار</span>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+            <span id="lbl-carrying-total" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع الحمالية:</span>
+            <span id="val-carrying-total" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
           </div>
-          <div style="border-top: 1px dashed rgba(27,67,50,0.15); margin: 6px 0; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; flex-wrap: wrap;">
-            <span id="lbl-total-calc" style="white-space: nowrap;">المبلغ الإجمالي المستحق:</span>
-            <span id="val-total-calc" style="color: var(--color-primary); white-space: nowrap;">0 دينار</span>
+          <div style="border-top: 1px dashed rgba(27,67,50,0.15); margin-top: 4px; padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 14px; font-weight: 700;">
+            <span id="lbl-total-calc" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">المبلغ الإجمالي المستحق:</span>
+            <span id="val-total-calc" style="color: var(--color-primary); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
           </div>
         </div>
 
@@ -828,7 +999,7 @@
             <div class="autocomplete-dropdown" id="loss-crop-dropdown"></div>
           </div>
           <div class="summary-grid">
-            <div class="form-group">
+            <div class="form-group" id="loss-crop-weight-container">
               <label>الوزن التالف (كغم)</label>
               <input type="number" class="form-input" id="loss-crop-weight" placeholder="الوزن التالف كغم...">
             </div>
@@ -959,6 +1130,18 @@
       </div>
     </div>
 
+    <!-- Daily Sales Audit Sheet -->
+    <div id="sheet-daily-sales-audit" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-daily-sales-audit-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary);">جرد مبيعات يومي</h3>
+        <button class="icon-btn" id="btn-close-daily-sales-audit-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" id="daily-sales-audit-body" style="gap: 16px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
     <!-- Due Claims Sheet -->
     <div id="sheet-due-claims" class="bottom-sheet">
       <div class="bottom-sheet-drag-handle"></div>
@@ -982,7 +1165,7 @@
         <div class="search-filter-bar" style="margin-bottom: 4px;">
           <input type="text" class="search-filter-input" id="search-archive-farmer" placeholder="🔍 ابحث باسم الفلاح أو رمز الفاتورة في الأرشيف...">
         </div>
-        <div style="display: flex; flex-direction: column; gap: 12px;" id="archive-imports-list">
+        <div class="cards-grid-layout" id="archive-imports-list">
           <!-- Settled imports list -->
         </div>
       </div>
@@ -999,7 +1182,7 @@
         <div class="search-filter-bar" style="margin-bottom: 4px;">
           <input type="text" class="search-filter-input" id="search-archive-sales" placeholder="🔍 ابحث باسم الزبون أو رمز الفاتورة في الأرشيف...">
         </div>
-        <div style="display: flex; flex-direction: column; gap: 12px;" id="archive-sales-list">
+        <div class="cards-grid-layout" id="archive-sales-list">
           <!-- Settled sales list -->
         </div>
       </div>
@@ -1169,6 +1352,67 @@
             نسخ الرابط
           </button>
           <button class="btn-primary" id="btn-iframe-ok" style="flex: 1; font-size: 11px; background: var(--color-primary); padding: 10px;">حسناً، فهمت</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Custom Numeric Keypad Dialog -->
+    <div id="custom-keypad-dialog" class="dialog-overlay" style="display: none; align-items: flex-end; padding: 0;">
+      <div class="dialog-card animate-slide-up" style="max-width: 480px; width: 100%; border-radius: 24px 24px 0 0; background: #ffffff; padding: 24px; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; gap: 16px; margin: 0; box-sizing: border-box;">
+        <div style="width: 40px; height: 4px; background: rgba(0,0,0,0.08); border-radius: 9999px; margin: -12px auto 8px auto;"></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(0,0,0,0.04); padding-bottom: 12px; width: 100%; box-sizing: border-box;">
+          <h3 id="keypad-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary-dark); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: var(--color-primary); font-size: 20px;">dialpad</span>
+            <span id="keypad-title-text">إدخال قيمة</span>
+          </h3>
+          <button class="icon-btn" id="btn-close-keypad" style="background: rgba(0,0,0,0.04); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: background 0.2s;">
+            <span class="material-icons-round" style="font-size: 18px; color: var(--color-text-muted);">close</span>
+          </button>
+        </div>
+
+        <!-- Display Area -->
+        <div style="background: #f4f7f5; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; border: 1.5px solid rgba(82, 183, 136, 0.12); width: 100%; box-sizing: border-box;">
+          <span id="keypad-subtitle" style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">القيمة المدخلة</span>
+          <div style="display: flex; align-items: baseline; gap: 6px; direction: ltr; width: 100%; justify-content: flex-end;">
+            <span id="keypad-display-suffix" style="font-size: 15px; font-weight: 700; color: var(--color-primary-mid);"></span>
+            <span id="keypad-display-val" style="font-size: 32px; font-weight: 800; color: var(--color-primary-dark); font-family: var(--font-mono); letter-spacing: 1px;">0</span>
+          </div>
+        </div>
+
+        <!-- Keypad Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; box-sizing: border-box;">
+          <button type="button" class="keypad-btn" data-key="3">3</button>
+          <button type="button" class="keypad-btn" data-key="2">2</button>
+          <button type="button" class="keypad-btn" data-key="1">1</button>
+          <button type="button" class="keypad-btn" data-key="6">6</button>
+          <button type="button" class="keypad-btn" data-key="5">5</button>
+          <button type="button" class="keypad-btn" data-key="4">4</button>
+          <button type="button" class="keypad-btn" data-key="9">9</button>
+          <button type="button" class="keypad-btn" data-key="8">8</button>
+          <button type="button" class="keypad-btn" data-key="7">7</button>
+          <button type="button" class="keypad-btn" data-key=".">.</button>
+          <button type="button" class="keypad-btn" data-key="0">0</button>
+          <button type="button" class="keypad-btn text-danger" data-key="C">C</button>
+        </div>
+
+        <!-- Additional Action buttons for single-click backspace and clear -->
+        <div style="display: flex; gap: 12px; width: 100%; box-sizing: border-box;">
+          <button type="button" class="keypad-btn" data-key="backspace" style="flex: 1; height: 56px; background: #fbebe9; border: 1px solid rgba(239, 68, 68, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <span class="material-icons-round" style="pointer-events: none; font-size: 24px;">backspace</span>
+            <span style="font-size: 14px; font-weight: 700; font-family: var(--font-sans);">مسح</span>
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 12px; margin-top: 4px; width: 100%; box-sizing: border-box;">
+          <button type="button" class="btn-primary" id="btn-keypad-confirm" style="flex: 2; height: 50px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(82, 183, 136, 0.15); border: none; color: white;">
+            <span class="material-icons-round" style="font-size: 20px;">check_circle</span>
+            <span>تأكيد وحفظ</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-keypad-cancel" style="flex: 1; height: 50px; border-radius: 12px; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid rgba(0,0,0,0.08); background: #fdfdfd; color: var(--color-text-muted);">
+            <span>إلغاء</span>
+          </button>
         </div>
       </div>
     </div>
