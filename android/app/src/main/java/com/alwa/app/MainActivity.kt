@@ -1,7 +1,7 @@
 package com.alwa.app
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
@@ -21,7 +21,7 @@ import com.alwa.app.ui.theme.AlwaTheme
 import com.alwa.app.ui.viewmodels.MainViewModel
 import com.alwa.app.ui.viewmodels.Screen
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 

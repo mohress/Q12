@@ -70,8 +70,8 @@ fun DashboardScreen(viewModel: MainViewModel) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (isAr) "النظام يعمل دون اتصال بالإنترنت بالكامل (IndexedDB/Room) مع ميزات الطباعة والذكاء الاصطناعي."
-                               else "Offline-first database system with thermal printing & AI helper active.",
+                        text = if (isAr) "النظام يعمل دون اتصال بالإنترنت بالكامل (IndexedDB/Room) مع ميزات الطباعة والاقتران بالطابعات الحرارية."
+                               else "Offline-first database system with thermal printing capabilities.",
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
