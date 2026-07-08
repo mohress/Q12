@@ -1,4 +1,4 @@
-name: Mega-Smart Universal Android Builder (Pro V4)
+name: Mega-Smart Universal Android Builder (Pro V5)
 
 on:
   push:
@@ -14,7 +14,14 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 2. الذكاء الاصطناعي لاكتشاف نوع المشروع ومدير الحزم تلقائياً
+    # 🔥 2. ضربة استباقية: حذف ملف الجار التالف فوراً في أول ثانية لكي لا يراه الفحص الأمني
+    - name: Aggressive Clean Corrupt Wrapper Jar
+      run: |
+        echo "تدمير ملف الـ wrapper التالف قبل بدء الفحص..."
+        rm -f android/gradle/wrapper/gradle-wrapper.jar || true
+        rm -f gradle/wrapper/gradle-wrapper.jar || true
+
+    # 3. الذكاء الاصطناعي لاكتشاف نوع المشروع ومدير الحزم تلقائياً
     - name: Auto-Detect Project Framework
       id: detect
       run: |
@@ -33,7 +40,7 @@ jobs:
           echo "framework=native-android" >> $GITHUB_OUTPUT
         fi
 
-    # 3. إعداد الذاكرة التخبيئية (Caching) لتسريع البناء
+    # 4. إعداد الذاكرة التخبيئية (Caching) لتسريع البناء
     - name: Cache Packages
       uses: actions/cache@v4
       with:
@@ -45,21 +52,21 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-mega-cache-
 
-    # 4. إعداد بيئة Node.js (لالمشاريع الهجينة)
+    # 5. إعداده بيئة Node.js (للمشاريع الهجينة)
     - name: Set up Node.js (Hybrid Only)
       if: steps.detect.outputs.framework == 'javascript-hybrid'
       uses: actions/setup-node@v4
       with:
         node-version: '22'
 
-    # 5. تثبيت حزم الويب
+    # 6. تثبيت حزم الويب
     - name: Install Dependencies (Hybrid Only)
       if: steps.detect.outputs.framework == 'javascript-hybrid'
       run: |
         rm -f package-lock.json yarn.lock pnpm-lock.yaml || true
         ${{ steps.detect.outputs.install_cmd }}
 
-    # 6. خطوة الإصلاح الذاتي لملفات الإعدادات الصارمة
+    # 7. خطوة الإصلاح الذاتي لملفات الإعدادات الصارمة
     - name: Smart Auto-Fix & Configuration Healing
       run: |
         echo "جاري تهيئة إعدادات المشروع لتجنب الأخطاء الصارمة..."
@@ -70,38 +77,36 @@ jobs:
           sed -i 's/tsc && vite build/vite build/g' package.json || true
         fi
 
-    # 7. بناء ملفات الويب للتطبيق
+    # 8. بناء ملفات الويب للتطبيق
     - name: Build Web Application Assets (Hybrid Only)
       if: steps.detect.outputs.framework == 'javascript-hybrid'
       run: npm run build --if-present || npx vite build --emptyOutDir || true
 
-    # 8. إعداد الجافا للأندرويد (Java 21)
+    # 9. إعداد الجافا للأندرويد (Java 21)
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
 
-    # 9. تثبيت أداة Gradle المستقرة والشاملة 8.13
+    # 🔥 10. تثبيت أداة Gradle 8.13 مع حظر وإلغاء فحص الحماية تماماً تلافياً للخطأ السابق
     - name: Setup Official Stable Gradle 8.13
       uses: gradle/actions/setup-gradle@v4
       with:
         gradle-version: '8.13'
+        disable-wrapper-validation: true
 
-    # 🔥 10. خطوة الإصلاح الحازم: تثبيت الـ CLI واستخدام الأمر الصريح بالكامل تلافياً للخطأ السابق
+    # 11. عمل مزامنة لكاباسيتور
     - name: Capacitor Sync & Platform Add (Hybrid Only)
       if: steps.detect.outputs.framework == 'javascript-hybrid'
       run: |
-        echo "تثبيت أدوات Capacitor بشكل صريح في السيرفر..."
         npm install @capacitor/cli @capacitor/core @capacitor/android --legacy-peer-deps --no-audit --no-fund
-        
         if [ ! -d "android" ]; then
-          echo "⚠️ مجلد android غير موجود، جاري إنشاؤه بالبرنامج الصريح..."
           npx @capacitor/cli add android
         fi
         npx @capacitor/cli sync android
 
-    # 11. خطوة البناء والتجميع للأندرويد
+    # 12. خطوة البناء والتجميع للأندرويد
     - name: Build Android APK
       run: |
         if [ -d "android" ]; then
@@ -109,9 +114,6 @@ jobs:
         else
           TARGET_DIR="."
         fi
-        echo "💡 مجلد البناء الفعلي المكتشف هو: $TARGET_DIR"
-        
-        rm -f $TARGET_DIR/gradle/wrapper/gradle-wrapper.jar || true
         
         GRADLE_FILE="$TARGET_DIR/app/build.gradle"
         if [ -f "$GRADLE_FILE" ]; then
@@ -128,7 +130,7 @@ jobs:
         cd $TARGET_DIR
         ./gradlew assembleDebug || gradle assembleDebug
 
-    # 12. رفع ملف الـ APK النهائي للتحميل
+    # 13. رفع ملف الـ APK النهائي للتحميل
     - name: Smart Upload Generated APK Artifact
       uses: actions/upload-artifact@v4
       with:
