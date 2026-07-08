@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>محاسب العلوة | Alwa Accountant</title>
+  <!-- Google Fonts: Cairo for high-quality Arabic typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Handjet:wght@100..900&display=swap" rel="stylesheet">
+  <!-- Material Icons for Premium look -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <!-- Stylesheets -->
+  <!-- Cordova / Capacitor hybrid mobile bridge for native Bluetooth & BLE plugin initialization -->
+  <script src="cordova.js"></script>
+  <!-- Visual JavaScript error diagnostic tracker -->
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      var div = document.getElementById('runtime-error-overlay');
+      if (!div) {
+        div = document.createElement('div');
+        div.id = 'runtime-error-overlay';
+        div.style.position = 'fixed';
+        div.style.top = '0';
+        div.style.left = '0';
+        div.style.right = '0';
+        div.style.background = '#E63946';
+        div.style.color = 'white';
+        div.style.padding = '16px';
+        div.style.zIndex = '999999';
+        div.style.fontWeight = 'bold';
+        div.style.fontFamily = 'sans-serif';
+        div.style.fontSize = '13px';
+        div.style.wordBreak = 'break-all';
+        div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        document.body.appendChild(div);
+      }
+      div.innerText = 'Runtime Error: ' + message + ' (' + source + ':' + lineno + ')';
+      return false;
+    };
+    window.onunhandledrejection = function(event) {
+      var div = document.getElementById('promise-rejection-overlay');
+      if (!div) {
+        div = document.createElement('div');
+        div.id = 'promise-rejection-overlay';
+        div.style.position = 'fixed';
+        div.style.top = '60px';
+        div.style.left = '0';
+        div.style.right = '0';
+        div.style.background = '#FF9F1C';
+        div.style.color = 'white';
+        div.style.padding = '16px';
+        div.style.zIndex = '999999';
+        div.style.fontWeight = 'bold';
+        div.style.fontFamily = 'sans-serif';
+        div.style.fontSize = '13px';
+        div.style.wordBreak = 'break-all';
+        div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        document.body.appendChild(div);
+      }
+      div.innerText = 'Promise Rejection: ' + (event.reason ? (event.reason.message || event.reason) : 'Unknown');
+    };
+  </script>
+  <script type="module" crossorigin src="/assets/index-CWxAI3-r.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CO-hzaV-.css">
+</head>
+<body>
+
+  <!-- Welcome Splash Screen -->
+  <div id="welcome-splash" class="welcome-splash-overlay">
+    <div class="splash-content">
+      <div class="splash-logo-container" style="background: white; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 15px; display: flex; align-items: center; justify-content: center; width: 150px; height: 150px; margin: 0 auto 20px auto; position: relative; overflow: visible;">
+        <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="42" stroke="#2D6A4F" stroke-width="6" stroke-dasharray="6 3"/>
+          <path d="M50 85 V25" stroke="#2D6A4F" stroke-width="4" stroke-linecap="round"/>
+          <path d="M50 65 Q35 55 30 40 Q45 45 50 65" fill="#40916C"/>
+          <path d="M50 55 Q65 45 70 30 Q55 35 50 55" fill="#74C69D"/>
+          <rect x="32" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
+          <rect x="53" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
+          <circle cx="50" cy="22" r="7" fill="#FFB703"/>
+        </svg>
+        <div class="splash-logo-glow"></div>
+      </div>
+      <h2 id="splash-welcome-title" class="splash-title">أهلاً بك</h2>
+      <h1 id="splash-office-name" class="splash-office">علوة الغابة الخضراء</h1>
+      <p id="splash-loading-text" class="splash-loading">جاري تهيئة الحسابات والمحاصيل...</p>
+      <div class="splash-loader">
+        <div class="splash-loader-bar"></div>
+      </div>
+      
+      <!-- Passcode Section (initially hidden) -->
+      <div id="splash-passcode-section" style="display: none; flex-direction: column; align-items: center; gap: 16px; margin-top: 16px; width: 100%; max-width: 280px; z-index: 10001;">
+        <p style="font-size: 14px; color: var(--color-white); font-weight: 600; margin: 0;" id="txt-enter-passcode">الرجاء إدخال رمز المرور للدخول</p>
+        <div class="passcode-dots">
+          <span class="passcode-dot"></span>
+          <span class="passcode-dot"></span>
+          <span class="passcode-dot"></span>
+          <span class="passcode-dot"></span>
+        </div>
+        <div class="passcode-keypad">
+          <button class="keypad-btn" data-val="1">1</button>
+          <button class="keypad-btn" data-val="2">2</button>
+          <button class="keypad-btn" data-val="3">3</button>
+          <button class="keypad-btn" data-val="4">4</button>
+          <button class="keypad-btn" data-val="5">5</button>
+          <button class="keypad-btn" data-val="6">6</button>
+          <button class="keypad-btn" data-val="7">7</button>
+          <button class="keypad-btn" data-val="8">8</button>
+          <button class="keypad-btn" data-val="9">9</button>
+          <button class="keypad-btn icon-btn" id="btn-keypad-clear"><span class="material-icons-round" style="color: var(--color-white)">backspace</span></button>
+          <button class="keypad-btn" data-val="0">0</button>
+          <button class="keypad-btn icon-btn" style="visibility: hidden;"></button>
+        </div>
+        <p id="splash-passcode-error" style="color: #FF8A8A; font-size: 12px; height: 16px; margin: 0;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Wrapper -->
+  <div class="app-container">
+
+    <!-- In-App Notification Toast -->
+    <div id="app-toast" class="in-app-toast">
+      <span class="material-icons-round in-app-toast-icon" id="toast-icon">info</span>
+      <div class="in-app-toast-content" id="toast-text">رسالة النظام التنبيهية...</div>
+    </div>
+
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="app-logo-section">
+        <div class="app-logo-circle" style="background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); padding: 4px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="42" stroke="#2D6A4F" stroke-width="6" stroke-dasharray="6 3"/>
+            <path d="M50 85 V25" stroke="#2D6A4F" stroke-width="4" stroke-linecap="round"/>
+            <path d="M50 65 Q35 55 30 40 Q45 45 50 65" fill="#40916C"/>
+            <path d="M50 55 Q65 45 70 30 Q55 35 50 55" fill="#74C69D"/>
+            <rect x="32" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
+            <rect x="53" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
+            <circle cx="50" cy="22" r="7" fill="#FFB703"/>
+          </svg>
+        </div>
+        <div class="app-title-group">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 id="txt-app-title">محاسب العلوة</h1>
+            <div class="system-status-badge">
+              <span class="status-dot"></span>
+              <span id="lbl-system-status">نشط ومؤمن</span>
+            </div>
+          </div>
+          <p id="txt-app-subtitle">نظام ادارة العلوة الذكي</p>
+        </div>
+      </div>
+      <div class="app-header-actions" style="display: flex; align-items: center; gap: 12px;">
+        <!-- Notification Bell Icon Button with Badge -->
+        <button id="btn-notifications" class="notification-bell-btn" title="مطالبات الديون">
+          <span class="material-icons-round">notifications</span>
+          <span id="notifications-badge" class="notification-badge" style="display: none;">0</span>
+        </button>
+        <!-- Redesigned premium date badge -->
+        <div class="premium-date-badge">
+          <div class="date-icon-wrapper">
+            <span class="material-icons-round">today</span>
+          </div>
+          <div class="date-content">
+            <span id="header-day-name" class="date-day-label">...</span>
+            <span id="header-date-text" class="date-text-label">...</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================== -->
+    <!-- 📦 SCREEN 1: IMPORT (الاستيراد من الفلاح) -->
+    <!-- ============================================== -->
+    <main id="screen-import" class="screen-content active animate">
+      <!-- Summary card of Active Imports -->
+      <div class="accent-card">
+        <div>
+          <h2 id="txt-import-title">إدارة فواتير الاستيراد</h2>
+          <p id="txt-import-desc">سجل البضائع المستلمة من الفلاحين وتتبع تقدم بيعها في السوق دقيقة بدقيقة.</p>
+        </div>
+        <button class="btn-primary" id="btn-new-import" style="align-self: flex-start; background: var(--color-white); color: var(--color-primary); box-shadow: none;">
+          <span class="material-icons-round">add_circle</span>
+          <span id="btn-txt-new-import">فاتورة استيراد جديدة</span>
+        </button>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="search-filter-bar">
+        <input type="text" class="search-filter-input" id="search-import-farmer" placeholder="🔍 ابحث باسم الفلاح أو رمز الفاتورة...">
+      </div>
+
+      <!-- Active Imports List -->
+      <div class="cards-grid-layout" id="imports-list">
+        <!-- Dynamic content will be injected by app.js -->
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- 🛒 SCREEN 2: SALES (المبيعات لأصحاب المحلات) -->
+    <!-- ============================================== -->
+    <main id="screen-sales" class="screen-content animate">
+      <!-- Summary card of Sales -->
+      <div class="accent-card" style="background: linear-gradient(135deg, var(--color-primary-mid), var(--color-primary-light))">
+        <div>
+          <h2 id="txt-sales-title">المبيعات اليومية</h2>
+          <p id="txt-sales-desc">أنشئ فواتير البيع للزبائن واخصم العمولات للشركة والفلاح بشكل فوري وتلقائي.</p>
+        </div>
+        <button class="btn-primary" id="btn-new-sale" style="align-self: flex-start; background: var(--color-white); color: var(--color-primary); box-shadow: none;">
+          <span class="material-icons-round">shopping_cart</span>
+          <span id="btn-txt-new-sale">فاتورة بيع جديدة</span>
+        </button>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="search-filter-bar">
+        <input type="text" class="search-filter-input" id="search-sale-customer" placeholder="🔍 ابحث بالزبون، المحصول، أو رمز الفاتورة...">
+      </div>
+
+      <!-- Sales List -->
+      <div class="cards-grid-layout" id="sales-list">
+        <!-- Dynamic content will be injected by app.js -->
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- 📊 SCREEN 3: ACCOUNTS (الديون ومستحقات الفلاحين) -->
+    <!-- ============================================== -->
+    <main id="screen-accounts" class="screen-content animate">
+      <!-- Segmented Control for Subtabs -->
+      <div class="segmented-control">
+        <button class="segmented-control-btn active" id="subtab-debts">ديون الزبائن</button>
+        <button class="segmented-control-btn" id="subtab-dues">مستحقات الفلاحين</button>
+        <button class="segmented-control-btn" id="subtab-porters">مستحقات الحمالين</button>
+      </div>
+
+      <!-- 1. Customer Debts Section -->
+      <div id="section-debts-list" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="search-filter-bar">
+          <input type="text" class="search-filter-input" id="search-debts" placeholder="🔍 ابحث باسم الزبون المدين...">
+        </div>
+        <div class="cards-grid-layout" id="debts-list">
+          <!-- Dynamic Debts will be injected here -->
+        </div>
+      </div>
+
+      <!-- 2. Farmer Dues Section -->
+      <div id="section-dues-list" style="display: none; flex-direction: column; gap: 12px;">
+        <div class="search-filter-bar">
+          <input type="text" class="search-filter-input" id="search-dues" placeholder="🔍 ابحث باسم الفلاح...">
+        </div>
+        <div class="cards-grid-layout" id="dues-list">
+          <!-- Dynamic Dues will be injected here -->
+        </div>
+      </div>
+
+      <!-- 3. Porters Dues Section -->
+      <div id="section-porters-list" style="display: none; flex-direction: column; gap: 16px;">
+        <div class="cards-grid-layout" id="porters-list">
+          <!-- Dynamic Porters list/card will be injected here -->
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- 📈 SCREEN 4: STATISTICS (الأرباح والمصاريف والخزنة) -->
+    <!-- ============================================== -->
+    <main id="screen-stats" class="screen-content animate">
+      <!-- Month Filter & Inventory Print for Statistics -->
+      <div style="margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 700; font-size: 13px; color: var(--color-primary-light);" id="txt-stats-period-lbl">فترة الإحصائيات:</span>
+          <select id="stats-month-selector" class="form-input" style="width: auto; margin: 0; padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: var(--color-bg);">
+            <!-- Dynamic select populated by app.js -->
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button id="btn-daily-sales-audit" class="btn-print-inventory-pro" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-mid)) !important;">
+            <span class="material-icons-round" style="font-size: 16px;">print</span>
+            <span>جرد مبيعات يومي</span>
+          </button>
+          <button id="btn-print-inventory" class="btn-print-inventory-pro">
+            <span class="material-icons-round" style="font-size: 16px;">print</span>
+            <span id="txt-print-inventory-lbl">طباعة قائمة جرد يومية</span>
+          </button>
+        </div>
+      </div>
+      <!-- Grid for Safe Box & Profits -->
+      <div class="stats-top-grid">
+        <!-- Card 1: Smart Cash Box -->
+        <div class="stats-summary-card safe-card">
+          <div class="stats-card-header">
+            <div class="icon-badge-round">
+              <span class="material-icons-round">account_balance_wallet</span>
+            </div>
+            <span class="safe-balance-label" id="txt-safe-box-label">رصيد الخزنة الحالي</span>
+          </div>
+          <div class="safe-balance-value" id="val-safe-box">0 دينار</div>
+        </div>
+        
+        <!-- Card 2: Net Office Profits -->
+        <div class="stats-summary-card profit-card">
+          <div class="stats-card-header">
+            <div class="icon-badge-round">
+              <span class="material-icons-round">trending_up</span>
+            </div>
+            <span class="safe-balance-label" id="txt-profit-label">صافي أرباح المكتب</span>
+          </div>
+          <div class="safe-balance-value" id="val-net-profit">0 دينار</div>
+        </div>
+      </div>
+
+      <!-- Financial Inflows & Outflows Redesigned Split Dashboard -->
+      <div class="financial-split-container">
+        <!-- Inflows Panel -->
+        <div class="financial-glass-panel inflows-panel">
+          <h3 class="financial-panel-title">
+            <span class="material-icons-round" style="color: var(--color-success); font-size:18px;">arrow_circle_down</span>
+            <span>المقبوضات والتدفقات الداخلة</span>
+          </h3>
+          <div class="financial-list">
+            <div class="financial-item inflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">💵</span>
+                <span class="financial-label">مبيعات نقدية</span>
+              </div>
+              <span class="financial-value" id="val-total-cash-sales">0 د.ع</span>
+            </div>
+            <div class="financial-item inflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">🧮</span>
+                <span class="financial-label">ديون محصلة</span>
+              </div>
+              <span class="financial-value" id="val-total-collected-debts">0 د.ع</span>
+            </div>
+            <div class="financial-item inflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">📈</span>
+                <span class="financial-label">عمولة المكتب 5%</span>
+              </div>
+              <span class="financial-value" id="val-total-commission-5">0 د.ع</span>
+            </div>
+            <div class="financial-item inflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">📥</span>
+                <span class="financial-label">إضافات يدوية للخزنة</span>
+              </div>
+              <span class="financial-value" id="val-total-adjustments">0 د.ع</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outflows Panel -->
+        <div class="financial-glass-panel outflows-panel">
+          <h3 class="financial-panel-title">
+            <span class="material-icons-round" style="color: var(--color-danger); font-size:18px;">arrow_circle_up</span>
+            <span>المدفوعات والمصاريف الخارجة</span>
+          </h3>
+          <div class="financial-list">
+            <div class="financial-item outflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">🧑‍🌾</span>
+                <span class="financial-label">مستحقات مدفوعة</span>
+              </div>
+              <span class="financial-value" id="val-total-paid-dues">0 د.ع</span>
+            </div>
+            <div class="financial-item outflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">📉</span>
+                <span class="financial-label">مصاريف يومية</span>
+              </div>
+              <span class="financial-value" id="val-total-daily-expenses">0 د.ع</span>
+            </div>
+            <div class="financial-item outflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">💼</span>
+                <span class="financial-label">رواتب الموظفين</span>
+              </div>
+              <span class="financial-value" id="val-total-salaries">0 د.ع</span>
+            </div>
+            <div class="financial-item outflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">👤</span>
+                <span class="financial-label">مصاريف شخصية</span>
+              </div>
+              <span class="financial-value" id="val-total-personal-expenses">0 د.ع</span>
+            </div>
+            <div class="financial-item outflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">🚨</span>
+                <span class="financial-label">خسائر وتلفيات</span>
+              </div>
+              <span class="financial-value" id="val-total-losses">0 د.ع</span>
+            </div>
+            <div class="financial-item outflow">
+              <div class="financial-label-group">
+                <span class="financial-label-icon">👷</span>
+                <span class="financial-label" id="lbl-total-porter-payouts">مستحقات الحمالين</span>
+              </div>
+              <span class="financial-value" id="val-total-porter-payouts">0 د.ع</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons for Expenses/Losses -->
+      <div class="summary-grid">
+        <button class="btn-primary" id="btn-add-expense" style="padding: 12px; font-size: 12px; background: var(--color-primary-mid);">
+          <span class="material-icons-round" style="font-size: 16px;">receipt_long</span>
+          <span id="txt-add-expense">تسجيل مصاريف</span>
+        </button>
+        <button class="btn-primary" id="btn-add-loss" style="padding: 12px; font-size: 12px; background: var(--color-danger);">
+          <span class="material-icons-round" style="font-size: 16px;">trending_down</span>
+          <span id="txt-add-loss">تسجيل خسائر</span>
+        </button>
+      </div>
+
+      <!-- Redesigned High-End Unconventional Liquidity Management Card -->
+      <div class="liquidity-panel-container">
+        <div class="liquidity-panel-content">
+          <div class="liquidity-panel-icon-wrap">
+            <span class="material-icons-round liquidity-pulse-icon">account_balance</span>
+            <span class="material-icons-round liquidity-add-badge">add</span>
+          </div>
+          <div class="liquidity-panel-text">
+            <h4 id="txt-add-liquidity-title">إيداع سيولة نقدية جديدة</h4>
+            <p id="txt-add-liquidity-desc">حقن أموال إضافية مباشرة إلى رصيد الخزنة لتسوية الحسابات</p>
+          </div>
+          <button id="btn-add-safe-liquidity" class="btn-premium-liquidity">
+            <span id="txt-add-liquidity-btn-lbl">إيداع سيولة</span>
+            <span class="material-icons-round">bolt</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Expense Statistics SVG Chart -->
+      <div class="premium-card chart-card">
+        <h3 id="txt-chart-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary);">توزيع المصاريف والأرباح لشهر الجاري</h3>
+        <div class="chart-svg-container" id="svg-chart-container">
+          <!-- Animated Chart will be drawn here -->
+        </div>
+      </div>
+
+      <!-- List of Expenses and Losses -->
+      <div class="premium-card">
+        <h3 id="txt-ledger-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary);">سجل المصروفات والخسائر الأخيرة</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;" id="expenses-ledger">
+          <!-- Dynamic Ledger Entries -->
+        </div>
+      </div>
+
+      <!-- List of Daily Application Operations Logs -->
+      <div class="premium-card" style="margin-top: 16px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--color-primary); display: flex; align-items: center; gap: 6px;">
+          <span class="material-icons-round" style="font-size: 18px; color: var(--color-primary-mid);">history_edu</span>
+          <span id="txt-logs-title-lbl">سجل عمليات التطبيق اليومي</span>
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto; padding-right: 4px;" id="app-logs-container">
+          <!-- Dynamic App Logs will be rendered here -->
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- ⚙️ SCREEN 5: SETTINGS (الإعدادات والطباعة) -->
+    <!-- ============================================== -->
+    <main id="screen-settings" class="screen-content animate">
+      <div class="settings-list">
+        
+        <!-- Bluetooth Printer Config (Professional & Elegant Light-Theme Design) -->
+        <div class="premium-card printer-setup-card-pro">
+          <div class="printer-card-header-pro">
+            <span class="material-icons-round printer-header-icon-pro">print</span>
+            <div class="printer-header-text-pro">
+              <h3 id="txt-printer-title" class="printer-title-pro">إعدادات طابعة الفواتير (Bluetooth BLE)</h3>
+              <p class="printer-subtitle-pro">ربط وضبط طابعات البلوتوث لطباعة الفواتير فورياً</p>
+            </div>
+          </div>
+          
+          <!-- Connection Status Info -->
+          <div class="printer-status-bar-pro">
+            <div class="status-indicator-pro">
+              <div class="status-dot-pro" id="printer-status-dot"></div>
+              <span class="status-label-pro">حالة الاتصال:</span>
+              <span id="printer-status-text" class="status-text-pro">الطابعة غير متصلة</span>
+            </div>
+          </div>
+
+          <!-- Paper Width Setup -->
+          <div class="form-group-pro" style="display: none !important;">
+            <label id="lbl-paper-width" class="form-label-pro">عرض ورق الطباعة</label>
+            <div class="segmented-control-pro">
+              <button class="segmented-control-btn-pro active" id="paper-width-58">58mm</button>
+              <button class="segmented-control-btn-pro" id="paper-width-80">80mm</button>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="printer-actions-pro">
+            <button class="btn-scan-pro" id="btn-scan-printer">
+              <span class="material-icons-round btn-icon-pro">bluetooth_searching</span>
+              <span>اقتران وفحص</span>
+            </button>
+            <button class="btn-test-pro" id="btn-test-print" disabled>
+              <span class="material-icons-round btn-icon-pro">receipt_long</span>
+              <span>طباعة فحص</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Devices Discovery List -->
+          <div id="printer-device-list-container" class="devices-discovery-panel-pro" style="display: none;">
+            <div class="discovery-header-pro">
+              <span id="lbl-discovered-devices" class="discovery-title-pro">الأجهزة المكتشفة:</span>
+              <span id="printer-device-count" class="discovery-badge-pro">0</span>
+            </div>
+            <div id="printer-devices-list" class="discovery-list-pro">
+              <!-- Discovered paired and unpaired bluetooth devices will be populated here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Office Info Form -->
+        <div class="premium-card" style="gap: 14px;">
+          <h3 id="txt-office-settings-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary); border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">معلومات العلوة</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; width: 100%;">
+            <div class="form-group">
+              <label id="lbl-office-name">اسم العلوة (يظهر بالفاتورة)</label>
+              <input type="text" class="form-input" id="setting-office-name" value="علوة الغابة الخضراء" readonly style="cursor: pointer; background-color: rgba(0,0,0,0.03);">
+            </div>
+            <div class="form-group">
+              <label id="lbl-owner-setting">اسم صاحب العلوة</label>
+              <input type="text" class="form-input" id="setting-office-owner" value="أبو أحمد" placeholder="اسم صاحب العلوة" readonly style="cursor: pointer; background-color: rgba(0,0,0,0.03);">
+            </div>
+            <div class="form-group">
+              <label id="lbl-office-phone">رقم الهاتف</label>
+              <input type="text" class="form-input" id="setting-office-phone" value="07701234567" inputmode="none" readonly>
+            </div>
+            <div class="form-group">
+              <label id="lbl-office-location">موقع العلوة (العنوان)</label>
+              <input type="text" class="form-input" id="setting-office-location" value="جمهورية العراق">
+            </div>
+            <div class="form-group">
+              <label id="lbl-office-cashier">اسم المحاسب (بالإنجليزي حصراً)</label>
+              <input type="text" class="form-input" id="setting-office-cashier" value="Cashier One" placeholder="e.g. Accountant Name">
+            </div>
+          </div>
+          <button class="btn-primary" id="btn-save-office-settings" style="padding: 10px; font-size: 12px;">حفظ المعلومات</button>
+        </div>
+
+        <!-- Accessibility / Visually Impaired Settings -->
+        <div class="premium-card" id="accessibility-panel" style="gap: 14px; border: 1.5px solid #0284c7; background: #f0f9ff; position: relative; overflow: hidden; margin-top: 12px; margin-bottom: 12px;">
+          <div style="position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; background: rgba(2, 132, 199, 0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 24px; color: #0284c7; transform: translate(4px, 4px);">accessibility_new</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: #0284c7; font-size: 20px;">accessibility</span>
+            <h3 id="txt-accessibility-title" style="font-size: 14px; font-weight: 800; color: #0369a1;">تسهيل الاستخدام وضعاف البصر</h3>
+          </div>
+          
+          <p id="txt-accessibility-desc" style="font-size: 11px; color: #0369a1; margin-top: -6px; font-weight: 600;">إعدادات متقدمة مخصصة لضعاف البصر وكبار السن لتسهيل القراءة وتكبير عناصر التطبيق بالكامل.</p>
+
+          <!-- App Zoom Level Slider -->
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 12px; background: #ffffff; border-radius: 12px; border: 1px solid #bae6fd;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: #0369a1; font-size: 12px;" id="lbl-zoom-level">حجم نصوص وعناصر التطبيق:</span>
+              <span id="zoom-level-badge" style="background: #0284c7; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 800;">100% (طبيعي)</span>
+            </div>
+            
+            <input type="range" id="setting-zoom-slider" min="100" max="150" step="5" value="100" style="width: 100%; accent-color: #0284c7; height: 6px; background: #e0f2fe; border-radius: 4px; outline: none; cursor: pointer;">
+            
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; font-weight: 700; padding: 0 2px;">
+              <span>100%</span>
+              <span>110%</span>
+              <span>120%</span>
+              <span>130%</span>
+              <span>140%</span>
+              <span>150%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Passcode System Settings -->
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <span class="settings-item-title" id="txt-passcode-title">رمز مرور قفل التطبيق</span>
+            <span class="settings-item-desc" id="txt-passcode-desc">يتطلب رمز مرور مكون من 4 أرقام عند دخول التطبيق لحماية الحسابات.</span>
+          </div>
+          <button id="btn-toggle-passcode" class="btn-primary" style="padding: 6px 12px; font-size: 11px; border: 1px solid var(--color-primary-light); background: transparent; color: var(--color-primary); box-shadow: none;">
+            تفعيل رمز المرور
+          </button>
+        </div>
+
+        <!-- System Notifications Switch -->
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <span class="settings-item-title" id="txt-notif-title">الإشعارات والنظام</span>
+            <span class="settings-item-desc" id="txt-notif-desc">تفعيل التنبيهات الصوتية المباشرة عند اكتمال بيع محصول أو استلام سداد.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-notif-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+
+
+        <!-- Database Backups -->
+        <div class="premium-card" style="gap: 12px;">
+          <h3 id="txt-backup-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary);">النسخة الاحتياطية أوفلاين</h3>
+          <p id="txt-backup-desc" style="font-size: 11px; color: var(--color-text-muted);">قم بتصدير كامل قاعدة بيانات Room/IndexedDB في ملف JSON وتنزيله لحماية حساباتك ومحاصيلك من الضياع.</p>
+          <div class="summary-grid">
+            <button class="btn-primary" id="btn-backup-export" style="padding: 10px; font-size: 12px; background: var(--color-primary-light);">تصدير قاعدة البيانات</button>
+            <label class="btn-secondary" style="padding: 10px; font-size: 12px; cursor: pointer; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+              <span>استيراد ملف backup</span>
+              <input type="file" id="btn-backup-import" accept=".json" style="display: none;">
+            </label>
+          </div>
+        </div>
+
+        <!-- System Subscription Status Card -->
+        <div class="premium-card subscription-panel-card" style="gap: 14px; position: relative; overflow: hidden; border: 1.5px solid #FFB703; background: linear-gradient(135deg, #fffbeb 0%, #fffbeb 100%);">
+          <!-- Small golden premium batch absolute on top -->
+          <div style="position: absolute; top: -8px; left: -8px; width: 44px; height: 44px; background: rgba(255, 183, 3, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 20px; color: #D4A373; transform: translate(3px, 3px);">workspace_premium</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: #FFB703; font-size: 22px;">stars</span>
+            <h3 id="sub-card-title" style="font-size: 14px; font-weight: 800; color: #B58410;">اشتراك النظام</h3>
+          </div>
+          
+          <p id="sub-card-desc" style="font-size: 11px; color: #A0720F; margin-top: -6px; font-weight: 600;">تتبع حالة ونوع اشتراكك في نظام محاسب العلوة واستعرض الميزات المفعّلة لحسابك.</p>
+
+          <!-- Subscription Details Box -->
+          <div class="subscription-details-box" style="display: flex; flex-direction: column; gap: 8px; background: #ffffff; border-radius: 12px; border: 1px solid #fef3c7; padding: 12px;">
+            <!-- Plan Name -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px dashed #fef3c7; padding-bottom: 6px;">
+              <span id="sub-label-plan" style="font-weight: 700; color: #78350f;">باقة الاشتراك الحالي:</span>
+              <span id="sub-val-plan" style="font-weight: 800; color: #b45309;">الاشتراك الذهبي المميز السنوي 💎</span>
+            </div>
+
+            <!-- Plan Status -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px dashed #fef3c7; padding-bottom: 6px;">
+              <span id="sub-label-status" style="font-weight: 700; color: #78350f;">حالة الاشتراك:</span>
+              <span id="sub-val-status" class="subscription-status-badge-inline" style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800;">نشط ومفعل بالكامل (صالح لغاية 2027-07-05)</span>
+            </div>
+
+            <!-- Subscriber ID -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b;">
+              <span id="sub-label-id" style="font-weight: 700;">رقم المشترك (المعرف الفريد):</span>
+              <span id="sub-val-id" style="font-family: monospace; font-weight: 700; color: #334155; letter-spacing: 0.5px;">SUB-84091-IQ</span>
+            </div>
+          </div>
+
+          <!-- Enabled Features list -->
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 2px;">
+            <span id="sub-label-features" style="font-size: 11px; font-weight: 800; color: #78350f;">الميزات والخصائص المفعّلة:</span>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+              <div id="sub-feat-1" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ طباعة حرارية (Bluetooth BLE) لجميع فواتير البيع والاستيراد والتقارير.</div>
+              <div id="sub-feat-2" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ حسابات دقيقة وتلقائية لعمولات المكاتب وأجور التحميل والأكياس.</div>
+              <div id="sub-feat-3" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ تصدير واستيراد قواعد بيانات المبيعات والاستيراد (Room/IndexedDB) بلمسة واحدة.</div>
+            </div>
+          </div>
+
+          <!-- Renewal / Manage Subscription Plan Button -->
+          <button id="sub-btn-renew" class="btn-primary" style="padding: 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #FFB703 0%, #D4A373 100%); color: #451a03; border: none; box-shadow: 0 4px 12px rgba(212, 163, 115, 0.25); border-radius: 10px;">تجديد أو ترقية باقة الاشتراك</button>
+        </div>
+
+        <!-- Database Maintenance & Performance Optimization Card (أداة صيانة وأرشفة البيانات) -->
+        <div class="premium-card" style="gap: 12px; border: 1.5px solid #10b981; background: #ecfdf5; position: relative; overflow: hidden; margin-top: 12px;">
+          <div style="position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; background: rgba(16, 185, 129, 0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 24px; color: #10b981; transform: translate(4px, 4px);">speed</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: #10b981; font-size: 20px;">memory</span>
+            <h3 style="font-size: 14px; font-weight: 800; color: #047857;" id="txt-db-maintenance-title">صيانة قاعدة البيانات وحفظ السرعة</h3>
+          </div>
+          
+          <p style="font-size: 11px; color: #047857; margin-top: -6px; font-weight: 600;" id="txt-db-maintenance-desc">حافظ على سرعة التطبيق الفائقة حتى مع تكدس آلاف البيانات من خلال أدوات الصيانة والأرشفة.</p>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; background: #ffffff; border-radius: 12px; border: 1px solid #a7f3d0; padding: 12px;">
+            <!-- Database Size Estimation -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+              <span style="font-weight: 700; color: #065f46;" id="lbl-db-size">حجم قاعدة البيانات التقريبي:</span>
+              <span id="db-size-value" style="font-weight: 800; color: #047857; background: #d1fae5; padding: 2px 8px; border-radius: 20px;">جاري الحساب...</span>
+            </div>
+            
+            <!-- Record Count stats -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; border-top: 1px dashed #a7f3d0; padding-top: 6px;">
+              <span style="font-weight: 700;" id="lbl-total-records">إجمالي عدد السجلات:</span>
+              <span id="total-records-value" style="font-weight: 800; color: #334155;">- سجل</span>
+            </div>
+          </div>
+
+          <div class="summary-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+            <button class="btn-primary" id="btn-db-optimize" style="padding: 10px; font-size: 11px; background: #10b981; border: none; font-weight: 700;">تحسين وفحص الفهارس</button>
+            <button class="btn-primary" id="btn-db-archive" style="padding: 10px; font-size: 11px; background: #059669; border: none; font-weight: 700;">تنظيف الأرشيف والبيانات القديمة</button>
+          </div>
+        </div>
+
+        <!-- Professional Digital Rights & Developer Signature -->
+        <div class="developer-rights-card" style="margin-top: 24px; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 16px; text-align: center; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02); position: relative; overflow: hidden;">
+          <!-- Left-top background seal/badge pattern -->
+          <div style="position: absolute; top: -12px; right: -12px; width: 60px; height: 60px; background: rgba(14, 165, 233, 0.04); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span class="material-icons-round" style="font-size: 28px; color: rgba(14, 165, 233, 0.1);">security</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2); margin-bottom: 6px;">
+              <span class="material-icons-round" style="color: white; font-size: 20px;">verified_user</span>
+            </div>
+            <span style="font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: 0.2px;">جميع الحقوق محفوظة لصالح شركة برايم™ للحلول البرمجية © 2026</span>
+            <span style="font-size: 11px; color: #64748b; font-weight: 600;">PRIME™ Software Solutions - All Rights Reserved</span>
+          </div>
+
+          <div style="height: 1px; background: radial-gradient(circle, #cbd5e1 0%, rgba(255,255,255,0) 100%); margin: 4px 0;"></div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <span class="material-icons-round" style="color: #0ea5e9; font-size: 16px;">contact_support</span>
+              <span style="font-size: 12px; font-weight: 800; color: #334155;">قسم الدعم الفني والاستفسارات المباشرة</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+              <!-- Baghdad Office -->
+              <div style="background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <span style="font-size: 10px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                  <span style="width: 5px; height: 5px; background: #0ea5e9; border-radius: 50%;"></span>بغداد
+                </span>
+                <a href="tel:07749883474" style="font-family: monospace; font-size: 12px; font-weight: 800; color: #0284c7; text-decoration: none; letter-spacing: 0.5px;">07749883474</a>
+              </div>
+
+              <!-- Mosul Office -->
+              <div style="background: #ffffff; padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <span style="font-size: 10px; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                  <span style="width: 5px; height: 5px; background: #0ea5e9; border-radius: 50%;"></span>الموصل
+                </span>
+                <a href="tel:07883885156" style="font-family: monospace; font-size: 12px; font-weight: 800; color: #0284c7; text-decoration: none; letter-spacing: 0.5px;">07883885156</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- 📱 BOTTOM NAVIGATION BAR -->
+    <!-- ============================================== -->
+    <nav class="bottom-nav">
+      <div class="nav-indicator" id="nav-indicator"></div>
+      <a href="#" class="nav-item active" data-target="screen-import">
+        <div class="nav-icon-container">
+          <span class="material-icons-round">receipt</span>
+        </div>
+        <span id="nav-txt-import">الاستيراد</span>
+      </a>
+      <a href="#" class="nav-item" data-target="screen-sales">
+        <div class="nav-icon-container">
+          <span class="material-icons-round">shopping_bag</span>
+        </div>
+        <span id="nav-txt-sales">المبيعات</span>
+      </a>
+      <a href="#" class="nav-item" data-target="screen-accounts">
+        <div class="nav-icon-container">
+          <span class="material-icons-round">payments</span>
+        </div>
+        <span id="nav-txt-accounts">الحسابات</span>
+      </a>
+      <a href="#" class="nav-item" data-target="screen-stats">
+        <div class="nav-icon-container">
+          <span class="material-icons-round">analytics</span>
+        </div>
+        <span id="nav-txt-stats">الإحصائيات</span>
+      </a>
+      <a href="#" class="nav-item" data-target="screen-settings">
+        <div class="nav-icon-container">
+          <span class="material-icons-round">settings</span>
+        </div>
+        <span id="nav-txt-settings">الإعدادات</span>
+      </a>
+    </nav>
+
+    <!-- ============================================== -->
+    <!-- 📋 MODALS / BOTTOM SHEETS -->
+    <!-- ============================================== -->
+
+    <!-- Backdrop for Bottom Sheets -->
+    <div id="sheet-backdrop" class="bottom-sheet-backdrop"></div>
+
+    <!-- 1. Add New Import Sheet -->
+    <div id="sheet-new-import" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-sheet-import-title">إنشاء فاتورة استيراد جديدة</h3>
+        <button class="icon-btn" id="btn-close-import-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body">
+        
+        <div class="form-group">
+          <label id="lbl-farmer-name">اسم الفلاح</label>
+          <div style="position: relative;">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
+            <input type="text" class="form-input" id="import-farmer-name" placeholder="أدخل اسم الفلاح..." autocomplete="off" style="padding-right: 42px;">
+            <div class="autocomplete-dropdown" id="farmer-autocomplete"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-vehicle-type">نوع السيارة</label>
+          <div style="position: relative;">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">local_shipping</span>
+            <input type="text" class="form-input" id="import-vehicle-type" placeholder="مثال: كيا حمل 4 طن..." style="padding-right: 42px;">
+          </div>
+        </div>
+
+        <!-- Crop Items section inside Import -->
+        <div style="display: flex; flex-direction: column; gap: 10px;" id="import-items-container">
+          <!-- Dynamic Items added here -->
+        </div>
+
+        <button class="btn-secondary" id="btn-import-add-item" style="border-style: dashed; padding: 10px; font-size: 12px;">
+          <span class="material-icons-round">add</span>
+          <span id="txt-add-crop">إضافة صنف آخر</span>
+        </button>
+
+        <button class="btn-primary" id="btn-submit-import">حفظ الفاتورة والبدء في العرض</button>
+      </div>
+    </div>
+
+    <!-- 2. Add New Sale Sheet -->
+    <div id="sheet-new-sale" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-sheet-sale-title">إنشاء فاتورة بيع جديدة</h3>
+        <button class="icon-btn" id="btn-close-sale-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body">
+        
+        <div class="form-group">
+          <label id="lbl-customer-name" style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
+            <span>اسم الزبون (صاحب المحل)</span>
+          </label>
+          <div style="position: relative;">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
+            <input type="text" class="form-input" id="sale-customer-name" placeholder="أدخل اسم الزبون..." autocomplete="off" style="padding-right: 42px;">
+            <div class="autocomplete-dropdown" id="customer-autocomplete"></div>
+          </div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="form-group">
+            <label id="lbl-customer-phone" style="display: flex; align-items: center; gap: 6px;">
+              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">phone</span>
+              <span>رقم الهاتف (اختياري)</span>
+            </label>
+            <div style="position: relative;">
+              <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">phone</span>
+              <input type="text" class="form-input" id="sale-customer-phone" placeholder="رقم الهاتف..." style="padding-right: 42px;" inputmode="none" readonly>
+            </div>
+          </div>
+          <div class="form-group">
+            <label id="lbl-customer-address" style="display: flex; align-items: center; gap: 6px;">
+              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">location_on</span>
+              <span>العنوان (اختياري)</span>
+            </label>
+            <div style="position: relative;">
+              <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">location_on</span>
+              <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون..." style="padding-right: 42px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Crops for Sale -->
+        <div style="display: flex; flex-direction: column; gap: 10px;" id="sale-items-container">
+          <!-- Dynamic Items added here -->
+        </div>
+
+        <button class="btn-secondary" id="btn-sale-add-item" style="border-style: dashed; padding: 10px; font-size: 12px;">
+          <span class="material-icons-round">add</span>
+          <span id="txt-add-sale-crop">إضافة صنف آخر في الفاتورة</span>
+        </button>
+
+        <!-- General invoice options -->
+        <div class="form-group">
+          <label id="lbl-bags-cost" style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">shopping_bag</span>
+            <span>تكلفة الأكياس والكراتين (إجمالي اختياري)</span>
+          </label>
+          <div style="position: relative;">
+            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">shopping_bag</span>
+            <input type="number" class="form-input" id="sale-bags-cost" placeholder="أدخل التكلفة الكلية للدواخل..." value="0" style="padding-right: 42px;" inputmode="none" readonly>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="form-group">
+          <label id="lbl-payment-method">طريقة الدفع</label>
+          <div class="toggle-switch-group">
+            <button class="toggle-switch-btn active" id="btn-pay-cash" data-method="cash">💵 نقد</button>
+            <button class="toggle-switch-btn" id="btn-pay-debt" data-method="debt">📋 دين بالأجل</button>
+          </div>
+        </div>
+
+        <!-- Debt Due Options -->
+        <div class="form-group" id="group-debt-options" style="display: none;">
+          <label id="lbl-debt-due">موعد المطالبة بالدين</label>
+          <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);">
+            <button class="segmented-control-btn active" data-days="5">5 أيام</button>
+            <button class="segmented-control-btn" data-days="10">10 أيام</button>
+            <button class="segmented-control-btn" data-days="15">15 يوم</button>
+            <button class="segmented-control-btn" data-days="custom" id="btn-custom-debt-days">مخصص</button>
+          </div>
+          <div id="custom-debt-days-input-group" style="display: none; margin-top: 8px;">
+            <input type="number" class="form-input" id="custom-debt-days-input" placeholder="أدخل عدد الأيام..." min="1" step="1">
+          </div>
+        </div>
+
+        <!-- Real-time Balance calculation details -->
+        <div class="premium-card" style="background-color: rgba(27,67,50,0.05); border: 1px solid rgba(27,67,50,0.1); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+            <span id="lbl-subtotal" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع أسعار البضاعة:</span>
+            <span id="val-subtotal" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+            <span id="lbl-commission-7" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع العمولات (7%):</span>
+            <span id="val-commission-7" style="font-weight: 700; color: var(--color-primary-light); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+            <span id="lbl-carrying-total" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع الحمالية:</span>
+            <span id="val-carrying-total" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+          </div>
+          <div style="border-top: 1px dashed rgba(27,67,50,0.15); margin-top: 4px; padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 14px; font-weight: 700;">
+            <span id="lbl-total-calc" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">المبلغ الإجمالي المستحق:</span>
+            <span id="val-total-calc" style="color: var(--color-primary); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-submit-sale">إصدار الفاتورة وحساب الأرباح</button>
+      </div>
+    </div>
+
+    <!-- 3. Add Expense Sheet -->
+    <div id="sheet-new-expense" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-expense-sheet-title">تسجيل مصروفات جديدة</h3>
+        <button class="icon-btn" id="btn-close-expense-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body">
+        
+        <div class="form-group">
+          <label id="lbl-expense-type">نوع المصروفات</label>
+          <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);" id="expense-type-switch">
+            <button class="segmented-control-btn active" id="expense-type-daily">مصاريف يومية</button>
+            <button class="segmented-control-btn" id="expense-type-salary">رواتب</button>
+            <button class="segmented-control-btn" id="expense-type-personal">مصاريف شخصية</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-expense-subject">الموضوع / الوصف</label>
+          <input type="text" class="form-input" id="expense-subject" placeholder="مثال: أجور عمال، بنزين، غداء...">
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-expense-amount">المبلغ المستقطع</label>
+          <input type="number" class="form-input" id="expense-amount" placeholder="المبلغ بالدينار...">
+        </div>
+
+        <button class="btn-primary" id="btn-submit-expense">حفظ المصروف وتحديث الخزنة</button>
+      </div>
+    </div>
+
+    <!-- 4. Add Loss Sheet -->
+    <div id="sheet-new-loss" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-loss-sheet-title">تسجيل الخسائر والتلفيات</h3>
+        <button class="icon-btn" id="btn-close-loss-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body">
+        <!-- Loss Type Toggle -->
+        <div class="form-group">
+          <label>نوع الخسارة</label>
+          <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);" id="loss-type-switch">
+            <button class="segmented-control-btn active" id="loss-type-crop">تلف محصول</button>
+            <button class="segmented-control-btn" id="loss-type-other">خسائر أخرى</button>
+          </div>
+        </div>
+
+        <!-- 1. Crop Damage Fields -->
+        <div id="loss-crop-section" style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="form-group" style="position: relative;">
+            <label>المحصول التالف المتاح بالمخزن</label>
+            <input type="text" class="form-input" id="loss-crop-search" placeholder="🔍 اضغط لاختيار المحصول التالف..." readonly style="cursor: pointer; caret-color: transparent;" autocomplete="off">
+            <input type="hidden" id="loss-crop-selector">
+            <div class="autocomplete-dropdown" id="loss-crop-dropdown"></div>
+          </div>
+          <div class="summary-grid">
+            <div class="form-group" id="loss-crop-weight-container">
+              <label>الوزن التالف (كغم)</label>
+              <input type="number" class="form-input" id="loss-crop-weight" placeholder="الوزن التالف كغم...">
+            </div>
+            <div class="form-group" id="loss-crop-box-count-container">
+              <label>العدد التالف</label>
+              <input type="number" class="form-input" id="loss-crop-box-count" placeholder="العدد التالف...">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Other Losses Fields -->
+        <div id="loss-other-section" style="display: none; flex-direction: column; gap: 12px;">
+          <div class="form-group">
+            <label id="lbl-loss-subject">سبب أو موضوع الخسارة</label>
+            <input type="text" class="form-input" id="loss-subject" placeholder="مثال: نقصان بيع، كسر صندوق، إلخ...">
+          </div>
+          <div class="form-group">
+            <label id="lbl-loss-amount">قيمة الخسارة المالية (بالدينار)</label>
+            <input type="number" class="form-input" id="loss-amount" placeholder="القيمة بالدينار...">
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-submit-loss" style="background: var(--color-danger); margin-top: 12px;">تسجيل الخسارة وتحديث الحسابات</button>
+      </div>
+    </div>
+
+    <!-- 5. Thermal Invoice Print & Preview Sheet -->
+    <div id="sheet-print-preview" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-print-preview-title">معاينة الفاتورة الحرارية</h3>
+        <button class="icon-btn" id="btn-close-print-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body">
+        
+        <!-- Live print roll simulator for feedback -->
+        <div id="print-simulator" style="display: none; margin-bottom: 12px;">
+          <div class="printer-roll-animation">
+            🥦 <span id="txt-printing-indicator" style="font-weight: 700; color: #333; margin-left: 8px;">جاري الطباعة...</span>
+            <div class="printer-paper-strip" id="printer-paper-strip"></div>
+          </div>
+        </div>
+
+        <div class="receipt-preview-container">
+          <div id="receipt-paper" class="thermal-paper w-58">
+            <!-- Simulated Print Receipt Text -->
+          </div>
+        </div>
+
+        <div class="summary-grid" style="grid-template-columns: repeat(3, 1fr) !important; gap: 6px;">
+          <button class="btn-primary" id="btn-execute-print" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span class="material-icons-round" style="font-size: 16px;">bluetooth</span>
+            <span id="txt-print-execute">طباعة بلوتوث</span>
+          </button>
+          <button class="btn-secondary" id="btn-execute-system-print" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--color-info); color: var(--color-info); background-color: rgba(0, 119, 182, 0.05);">
+            <span class="material-icons-round" style="font-size: 16px;">print</span>
+            <span id="txt-print-system">طباعة النظام</span>
+          </button>
+          <button class="btn-secondary" id="btn-share-receipt-png" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--color-primary-light);">
+            <span class="material-icons-round" style="font-size: 16px;">share</span>
+            <span id="txt-share-receipt">حفظ كصورة</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Partial Payment Sheet -->
+    <div id="sheet-payment" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-pay-title">تسجيل تسديد الديون</h3>
+        <button class="icon-btn" id="btn-close-payment-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body">
+        
+        <div class="premium-card" style="background-color: rgba(0,119,182,0.05); border: 1px solid rgba(0,119,182,0.1); padding: 12px;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-info);" id="pay-customer-name">الزبون: ...</div>
+          <div style="font-size: 12px; margin-top: 4px;" id="pay-total-debt">إجمالي الدين المستحق: 0 دينار</div>
+        </div>
+
+        <div class="form-group">
+          <label id="lbl-pay-amount">مبلغ السداد</label>
+          <input type="number" class="form-input" id="pay-amount" placeholder="أدخل المبلغ المسدد...">
+        </div>
+
+        <button class="btn-primary" id="btn-submit-payment" style="background: var(--color-info); box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);">تسجيل الدفعة وتصفية الدين</button>
+      </div>
+    </div>
+
+    <!-- 7. Farmer Payout Manual Sheet -->
+    <div id="sheet-farmer-payout" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-farmer-payout-title">تسجيل دفع مستحقات الفلاح</h3>
+        <button class="icon-btn" id="btn-close-farmer-payout-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body">
+        <div class="premium-card" style="background-color: rgba(45,106,79,0.05); border: 1px solid rgba(45,106,79,0.1); padding: 12px;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-primary);" id="payout-farmer-name">الفلاح: ...</div>
+          <div style="font-size: 12px; margin-top: 4px;" id="payout-crop-sales">إجمالي مبيعات محاصيله: 0 دينار</div>
+          <div style="font-size: 11px; margin-top: 2px; color: var(--color-primary-light);" id="payout-commission-2">مجموع عمولته 2%: 0 دينار</div>
+        </div>
+        <div class="form-group">
+          <label id="lbl-payout-amount">المبلغ المدفوع يدوياً للفلاح</label>
+          <input type="number" class="form-input" id="payout-amount" placeholder="أدخل المبلغ المدفوع بالدينار...">
+        </div>
+        <button class="btn-primary" id="btn-submit-payout" style="background: var(--color-primary-mid);">تسجيل الدفع وخصم الخزنة</button>
+      </div>
+    </div>
+
+    <!-- 8. Details Modal (Invoice Details Sheet) -->
+    <div id="sheet-invoice-details" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-details-sheet-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary);">تفاصيل الفاتورة</h3>
+        <button class="icon-btn" id="btn-close-details-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" id="invoice-details-body" style="gap: 16px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <!-- Filled dynamically by showInvoiceDetails() -->
+      </div>
+    </div>
+
+    <!-- 9. Farmer Dues Details Sheet -->
+    <div id="sheet-farmer-dues-details" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-farmer-dues-details-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary);">تفاصيل مستحقات الفلاح</h3>
+        <button class="icon-btn" id="btn-close-farmer-dues-details-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" id="farmer-dues-details-body" style="gap: 16px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
+    <!-- Daily Sales Audit Sheet -->
+    <div id="sheet-daily-sales-audit" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-daily-sales-audit-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary);">جرد مبيعات يومي</h3>
+        <button class="icon-btn" id="btn-close-daily-sales-audit-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" id="daily-sales-audit-body" style="gap: 16px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
+    <!-- Due Claims Sheet -->
+    <div id="sheet-due-claims" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-due-claims-title" style="font-size: 16px; font-weight: 700; color: var(--color-danger);">مطالبات الديون المستحقة</h3>
+        <button class="icon-btn" id="btn-close-claims-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" id="due-claims-body" style="gap: 12px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
+    <!-- Imports Archive Sheet -->
+    <div id="sheet-imports-archive" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-archive-sheet-title" style="font-size: 16px; font-weight: 700; color: var(--color-text-dark);">أرشيف الفواتير المسواة</h3>
+        <button class="icon-btn" id="btn-close-archive-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" style="gap: 12px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <div class="search-filter-bar" style="margin-bottom: 4px;">
+          <input type="text" class="search-filter-input" id="search-archive-farmer" placeholder="🔍 ابحث باسم الفلاح أو رمز الفاتورة في الأرشيف...">
+        </div>
+        <div class="cards-grid-layout" id="archive-imports-list">
+          <!-- Settled imports list -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Sales Archive Sheet -->
+    <div id="sheet-sales-archive" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--color-text-dark);">أرشيف المبيعات المسواة</h3>
+        <button class="icon-btn" id="btn-close-sales-archive-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" style="gap: 12px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <div class="search-filter-bar" style="margin-bottom: 4px;">
+          <input type="text" class="search-filter-input" id="search-archive-sales" placeholder="🔍 ابحث باسم الزبون أو رمز الفاتورة في الأرشيف...">
+        </div>
+        <div class="cards-grid-layout" id="archive-sales-list">
+          <!-- Settled sales list -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Porters Dues Payout Sheet -->
+    <div id="sheet-porter-payout" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-porter-payout-title">توزيع وصرف مستحقات الحمالين</h3>
+        <button class="icon-btn" id="btn-close-porter-payout-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" style="gap: 12px; display: flex; flex-direction: column;">
+        <div class="premium-card" style="background-color: rgba(0, 150, 199, 0.05); border: 1px solid rgba(0, 150, 199, 0.1); padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--color-primary);" id="txt-porter-payout-today-lbl">تسوية مستحقات اليوم</div>
+          <div style="font-size: 16px; font-weight: 800; color: var(--color-primary-mid); display: flex; justify-content: space-between;">
+            <span id="txt-porter-payout-amount-lbl">المبلغ الإجمالي للتوزيع:</span>
+            <span id="porter-payout-total-amount">0 دينار</span>
+          </div>
+        </div>
+        
+        <div class="form-group" style="margin-top: 16px;">
+          <label style="font-weight: 700; font-size: 12px; margin-bottom: 6px; display: block;" id="lbl-porter-payout-count">عدد الحمالين المتواجدين اليوم</label>
+          <input type="number" class="form-input" id="porter-payout-count" placeholder="لا شيء" min="1" value="" style="font-size: 14px;">
+        </div>
+        
+        <div class="premium-card" style="background-color: rgba(82, 183, 136, 0.08); border: 1px dashed rgba(82, 183, 136, 0.3); padding: 16px; margin-top: 12px; display: flex; flex-direction: column; gap: 4px; text-align: center;">
+          <div style="font-size: 12px; color: var(--color-text-dark); font-weight: 600;" id="txt-porter-payout-share-lbl">المبلغ المستحق لكل حمال:</div>
+          <div style="font-size: 20px; font-weight: 900; color: var(--color-success);" id="porter-payout-share">0 دينار</div>
+        </div>
+        
+        <button class="btn-primary" id="btn-submit-porter-payout" style="background: var(--color-success); margin-top: 20px; width: 100%; font-size: 13px; font-weight: 700;">تأكيد الصرف وخصم الخزنة فوراً</button>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Dialog -->
+    <div id="custom-confirm-dialog" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop">
+        <div class="dialog-icon-container">
+          <span class="material-icons-round dialog-icon">help_outline</span>
+        </div>
+        <h3 id="confirm-title" class="dialog-title">تأكيد العملية</h3>
+        <p id="confirm-message" class="dialog-message">هل أنت متأكد من الاستمرار؟</p>
+        <div class="dialog-actions">
+          <button class="btn-secondary" id="btn-confirm-cancel">إلغاء</button>
+          <button class="btn-primary" id="btn-confirm-ok">تأكيد</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Alert Dialog -->
+    <div id="custom-alert-dialog" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop">
+        <div class="dialog-icon-container" style="background-color: rgba(9, 132, 227, 0.1); color: var(--color-primary);">
+          <span class="material-icons-round dialog-icon">info</span>
+        </div>
+        <h3 id="alert-title" class="dialog-title">تنبيه</h3>
+        <p id="alert-message" class="dialog-message" style="line-height: 1.6; text-align: center; max-width: 320px; font-size: 13px;"></p>
+        <div class="dialog-actions" style="width: 100%;">
+          <button class="btn-primary" id="btn-alert-ok" style="width: 100%; font-weight: 700;">موافق</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Farmer Payout Choice Dialog -->
+    <div id="custom-choice-dialog" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop">
+        <div class="dialog-icon-container" style="background-color: rgba(9, 132, 227, 0.1); color: var(--color-primary);">
+          <span class="material-icons-round dialog-icon">payments</span>
+        </div>
+        <h3 id="choice-title" class="dialog-title">دفع مستحقات الفلاح</h3>
+        <p id="choice-message" class="dialog-message">اختر نوع الدفع للمتابعة:</p>
+        <div class="dialog-actions" style="flex-direction: column; gap: 8px; width: 100%;">
+          <button class="btn-primary" id="btn-choice-partial" style="width: 100%; padding: 12px; font-weight: 700; background-color: var(--color-primary);">دفع جزئي (دفعة مقدماً)</button>
+          <button class="btn-primary" id="btn-choice-full" style="width: 100%; padding: 12px; font-weight: 700; background-color: var(--color-success);">دفع كامل (تصفية نهائية)</button>
+          <button class="btn-secondary" id="btn-choice-cancel" style="width: 100%; padding: 12px; font-weight: 700; margin-left: 0;">إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Passcode Dialog -->
+    <div id="custom-prompt-dialog" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop">
+        <div class="dialog-icon-container" style="background-color: rgba(230,57,70,0.1); color: var(--color-danger);">
+          <span class="material-icons-round dialog-icon">lock</span>
+        </div>
+        <h3 id="prompt-title" class="dialog-title">إدخال رمز التأكيد</h3>
+        <p id="prompt-message" class="dialog-message">الرجاء إدخال الرمز السري للمتابعة:</p>
+        <div class="form-group" style="width: 100%; margin: 8px 0;">
+          <input type="password" class="form-input" id="prompt-input" placeholder="الرمز السري..." style="text-align: center; letter-spacing: 4px; font-weight: 700;">
+        </div>
+        <div class="dialog-actions">
+          <button class="btn-secondary" id="btn-prompt-cancel">إلغاء</button>
+          <button class="btn-primary" id="btn-prompt-ok" style="background-color: var(--color-danger);">تأكيد</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Safe Box Adjustment Dialog -->
+    <div id="custom-safe-adjust-dialog" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop">
+        <div class="dialog-icon-container" style="background-color: rgba(82, 183, 136, 0.1); color: var(--color-success);">
+          <span class="material-icons-round dialog-icon">add_card</span>
+        </div>
+        <h3 class="dialog-title">إضافة مبلغ للخزنة يدوياً</h3>
+        <p class="dialog-message">الرجاء إدخال المبلغ وتفاصيل الإيداع:</p>
+        <div class="form-group" style="width: 100%; margin-bottom: 12px;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--color-primary-mid);">المبلغ (دينار)</label>
+          <input type="number" class="form-input" id="safe-adj-amount" placeholder="أدخل المبلغ..." style="text-align: center; font-weight: 700; font-size: 16px;">
+        </div>
+        <div class="form-group" style="width: 100%; margin-bottom: 16px;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--color-primary-mid);">البيان / ملاحظة</label>
+          <input type="text" class="form-input" id="safe-adj-note" placeholder="مثال: إضافة رأس مال يدوياً...">
+        </div>
+        <div class="dialog-actions">
+          <button class="btn-secondary" id="btn-safe-adj-cancel">إلغاء</button>
+          <button class="btn-primary" id="btn-safe-adj-ok" style="background: var(--color-primary);">تأكيد الإضافة</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Add Crop Dialog -->
+    <div id="custom-add-crop-dialog" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop">
+        <div class="dialog-icon-container" style="background-color: rgba(9, 132, 227, 0.1); color: var(--color-primary);">
+          <span class="material-icons-round dialog-icon">add_circle_outline</span>
+        </div>
+        <h3 class="dialog-title">إضافة صنف جديد</h3>
+        <p class="dialog-message">الرجاء إدخال اسم الصنف الجديد وطريقة القياس:</p>
+        <div class="form-group" style="width: 100%; margin-bottom: 12px;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--color-primary-mid);">اسم الصنف</label>
+          <input type="text" class="form-input" id="custom-crop-name" placeholder="مثال: باشن فروت..." style="text-align: center; font-weight: 700; font-size: 16px;">
+        </div>
+        <div class="form-group" style="width: 100%; margin-bottom: 16px;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--color-primary-mid);">طريقة القياس</label>
+          <select class="form-input" id="custom-crop-measure" style="font-weight: 700;">
+            <option value="count">عدد فقط</option>
+            <option value="weight">وزن فقط</option>
+            <option value="both">كلاهما (وزن وعدد)</option>
+          </select>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn-secondary" id="btn-custom-crop-cancel">إلغاء</button>
+          <button class="btn-primary" id="btn-custom-crop-ok" style="background: var(--color-primary);">إضافة الصنف</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Iframe Bluetooth Warning Dialog -->
+    <div id="dialog-iframe-bluetooth" class="dialog-overlay" style="display: none;">
+      <div class="dialog-card animate-pop" style="max-width: 380px; text-align: center;">
+        <div class="dialog-icon-container" style="background-color: rgba(255, 186, 8, 0.1); color: #ffba08;">
+          <span class="material-icons-round dialog-icon" style="font-size: 32px;">bluetooth_disabled</span>
+        </div>
+        <h3 class="dialog-title" style="margin-top: 12px; font-weight: 700; color: var(--color-primary-dark);">مطلوب تشغيل التطبيق في نافذة مستقلة</h3>
+        <p class="dialog-message" style="font-size: 11px; line-height: 1.6; color: var(--color-text-muted); margin: 12px 0 16px 0;">
+          حماية المتصفحات الصارمة تمنع تشغيل واجهة اقتران البلوتوث (Web Bluetooth) داخل الإطارات البرمجية المدمجة (iFrames) في منصة AI Studio.
+          <br><br>
+          لتوصيل طابعتك الحرارية الحقيقية والطباعة بنجاح، يرجى النقر على زر <strong>"فتح في نافذة جديدة" (Open in New Tab)</strong> أعلى يسار منصة AI Studio، أو نسخ الرابط بالأسفل وفتحه مباشرة في متصفح Google Chrome أو Edge.
+        </p>
+        <div class="form-group" style="width: 100%; margin-bottom: 16px;">
+          <input type="text" class="form-input" id="iframe-app-url" readonly style="text-align: center; font-size: 11px; background: rgba(0,0,0,0.03); font-family: monospace;" onclick="this.select();">
+        </div>
+        <div class="dialog-actions" style="gap: 8px; width: 100%;">
+          <button class="btn-secondary" id="btn-iframe-copy-url" style="flex: 1; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 10px;">
+            <span class="material-icons-round" style="font-size: 14px;">content_copy</span>
+            نسخ الرابط
+          </button>
+          <button class="btn-primary" id="btn-iframe-ok" style="flex: 1; font-size: 11px; background: var(--color-primary); padding: 10px;">حسناً، فهمت</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Custom Numeric Keypad Dialog -->
+    <div id="custom-keypad-dialog" class="dialog-overlay" style="display: none; align-items: flex-end; padding: 0;">
+      <div class="dialog-card animate-slide-up" style="max-width: 480px; width: 100%; border-radius: 24px 24px 0 0; background: #ffffff; padding: 24px; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15); display: flex; flex-direction: column; gap: 16px; margin: 0; box-sizing: border-box;">
+        <div style="width: 40px; height: 4px; background: rgba(0,0,0,0.08); border-radius: 9999px; margin: -12px auto 8px auto;"></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(0,0,0,0.04); padding-bottom: 12px; width: 100%; box-sizing: border-box;">
+          <h3 id="keypad-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary-dark); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-round" style="color: var(--color-primary); font-size: 20px;">dialpad</span>
+            <span id="keypad-title-text">إدخال قيمة</span>
+          </h3>
+          <button class="icon-btn" id="btn-close-keypad" style="background: rgba(0,0,0,0.04); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: background 0.2s;">
+            <span class="material-icons-round" style="font-size: 18px; color: var(--color-text-muted);">close</span>
+          </button>
+        </div>
+
+        <!-- Display Area -->
+        <div style="background: #f4f7f5; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; border: 1.5px solid rgba(82, 183, 136, 0.12); width: 100%; box-sizing: border-box;">
+          <span id="keypad-subtitle" style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">القيمة المدخلة</span>
+          <div style="display: flex; align-items: baseline; gap: 6px; direction: ltr; width: 100%; justify-content: flex-end;">
+            <span id="keypad-display-suffix" style="font-size: 15px; font-weight: 700; color: var(--color-primary-mid);"></span>
+            <span id="keypad-display-val" style="font-size: 32px; font-weight: 800; color: var(--color-primary-dark); font-family: var(--font-mono); letter-spacing: 1px;">0</span>
+          </div>
+        </div>
+
+        <!-- Keypad Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; box-sizing: border-box;">
+          <button type="button" class="keypad-btn" data-key="3">3</button>
+          <button type="button" class="keypad-btn" data-key="2">2</button>
+          <button type="button" class="keypad-btn" data-key="1">1</button>
+          <button type="button" class="keypad-btn" data-key="6">6</button>
+          <button type="button" class="keypad-btn" data-key="5">5</button>
+          <button type="button" class="keypad-btn" data-key="4">4</button>
+          <button type="button" class="keypad-btn" data-key="9">9</button>
+          <button type="button" class="keypad-btn" data-key="8">8</button>
+          <button type="button" class="keypad-btn" data-key="7">7</button>
+          <button type="button" class="keypad-btn" data-key=".">.</button>
+          <button type="button" class="keypad-btn" data-key="0">0</button>
+          <button type="button" class="keypad-btn text-danger" data-key="C">C</button>
+        </div>
+
+        <!-- Additional Action buttons for single-click backspace and clear -->
+        <div style="display: flex; gap: 12px; width: 100%; box-sizing: border-box;">
+          <button type="button" class="keypad-btn" data-key="backspace" style="flex: 1; height: 56px; background: #fbebe9; border: 1px solid rgba(239, 68, 68, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <span class="material-icons-round" style="pointer-events: none; font-size: 24px;">backspace</span>
+            <span style="font-size: 14px; font-weight: 700; font-family: var(--font-sans);">مسح</span>
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 12px; margin-top: 4px; width: 100%; box-sizing: border-box;">
+          <button type="button" class="btn-primary" id="btn-keypad-confirm" style="flex: 2; height: 50px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(82, 183, 136, 0.15); border: none; color: white;">
+            <span class="material-icons-round" style="font-size: 20px;">check_circle</span>
+            <span>تأكيد وحفظ</span>
+          </button>
+          <button type="button" class="btn-secondary" id="btn-keypad-cancel" style="flex: 1; height: 50px; border-radius: 12px; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid rgba(0,0,0,0.08); background: #fdfdfd; color: var(--color-text-muted);">
+            <span>إلغاء</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Audio sounds for notifications -->
+  <audio id="sound-success" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-84.wav" preload="auto"></audio>
+  <audio id="sound-alert" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>
+  <audio id="sound-print" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-84.wav" preload="auto"></audio>
+
+  <!-- HTML2Canvas to generate image backups of receipt sharing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- QRious for offline QR code generation in printable thermal invoices -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <!-- Application Main Script -->
+</body>
+</html>
