@@ -1,4 +1,4 @@
-name: Mega-Smart Universal Android Builder (Pro V6)
+name: Mega-Smart Universal Android Builder (Pro V7)
 
 on:
   push:
@@ -104,7 +104,7 @@ jobs:
         fi
         npx @capacitor/cli sync android
 
-    # 🔥 12. خطوة برمجية خارقة: إعادة توليد الـ Wrapper السليم 100% محلياً بإصدار 8.13 قبل البناء
+    # 12. إعادة توليد الـ Wrapper السليم محلياً بإصدار 8.13
     - name: Regenerate Pristine Gradle Wrapper
       run: |
         if [ -d "android" ]; then
@@ -114,7 +114,7 @@ jobs:
           gradle wrapper --gradle-version 8.13 --distribution-type bin
         fi
 
-    # 13. خطوة البناء والتجميع القياسي للأندرويد عبر الـ Wrapper الجديد
+    # 🔥 13. خطوة البناء والتجميع القياسي للأندرويد مع حقن إجبار كوتلن على إصدار Java 21
     - name: Build Android APK
       run: |
         if [ -d "android" ]; then
@@ -125,9 +125,13 @@ jobs:
         
         GRADLE_FILE="$TARGET_DIR/app/build.gradle"
         if [ -f "$GRADLE_FILE" ]; then
+          # أ) حقن إلغاء إيقاف البناء بسبب أخطاء الـ Lint
           if ! grep -q "abortOnError" "$GRADLE_FILE"; then
             sed -i '/android {/a \    lintOptions { abortOnError false; checkReleaseBuilds false; }' $GRADLE_FILE || true
           fi
+          
+          # ب) حقن برمي ذكي في نهاية الملف لإجبار كوتلن على استخدام توافق Java 21 ومطابقة الجافا تماماً!
+          echo -e "\ntasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {\n    kotlinOptions {\n        jvmTarget = \"21\"\n    }\n}" >> $GRADLE_FILE
         fi
         
         if [ -f "$TARGET_DIR/gradlew" ]; then
