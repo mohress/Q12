@@ -1618,6 +1618,8 @@ input:checked + .slider:before {
   body {
     background: #FFFFFF !important;
     color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   
   /* Hide all elements on screen except the print paper */
@@ -1630,6 +1632,8 @@ input:checked + .slider:before {
   #receipt-paper,
   #receipt-paper * {
     visibility: visible;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   
   /* Position the receipt paper at the very top-left of the page */
