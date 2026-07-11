@@ -7841,6 +7841,8 @@ async function executePrintJob(saleId) {
   // Convert canvas graphics into ESC/POS monochrome bitmap using standard ESC * 24-dot double-density mode.
   // This is 100% compatible with ultra-cheap, low-end Chinese BLE/Classic Bluetooth thermal printers (like PT-210, MPT-II, Xprinter, Zjiang, etc.).
   // Those printers lack support for GS v 0 (which causes them to print endless garbage and make crazy sounds).
+  const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
+  const pixels = imgData.data;
   const escposCommands = [];
   
   // 1. Initialize printer (ESC @)
