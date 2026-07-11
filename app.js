@@ -7484,7 +7484,9 @@ function initAutoConnect() {
           let writeChar = null;
           if (device.services && device.characteristics) {
             for (const char of device.characteristics) {
-              if (char.properties.indexOf('Write') !== -1 || char.properties.indexOf('WriteWithoutResponse') !== -1) {
+              const props = Array.isArray(char.properties) ? char.properties : (typeof char.properties === 'string' ? [char.properties] : []);
+              const hasWrite = props.some(p => typeof p === 'string' && (p.toLowerCase().indexOf('write') !== -1));
+              if (hasWrite) {
                 bleWriteServiceUUID = char.service;
                 bleWriteCharUUID = char.characteristic;
                 writeChar = char;
@@ -7897,67 +7899,96 @@ async function executePrintJob(saleId) {
       const chunkSize = 20;
       for (let i = 0; i < payloadBytes.length; i += chunkSize) {
         const chunk = payloadBytes.slice(i, i + chunkSize);
-        await activeWebBluetoothCharacteristic.writeValue(chunk);
+        
+        // Create an exact-sized ArrayBuffer and copy chunk data
+        const cleanBuffer = new ArrayBuffer(chunk.length);
+        new Uint8Array(cleanBuffer).set(chunk);
+        
+        if (typeof activeWebBluetoothCharacteristic.writeValueWithoutResponse === 'function') {
+          await activeWebBluetoothCharacteristic.writeValueWithoutResponse(cleanBuffer);
+        } else if (typeof activeWebBluetoothCharacteristic.writeValueWithResponse === 'function') {
+          await activeWebBluetoothCharacteristic.writeValueWithResponse(cleanBuffer);
+        } else {
+          await activeWebBluetoothCharacteristic.writeValue(cleanBuffer);
+        }
         await new Promise(resolve => setTimeout(resolve, 5)); // Reliable 5ms pacing delay
       }
       isWriteSuccess = true;
     } catch (err) {
       console.error('WebBT print failure:', err);
+      isWriteSuccess = false;
     }
   } else if (typeof window.bluetoothSerial !== 'undefined' && isCordovaSerialActive) {
     // 2. Send via Classic Bluetooth Serial SPP
-    window.bluetoothSerial.write(payloadBytes, function() {
-      // success callback
-    }, function(err) {
-      console.error('Classic serial print failure:', err);
-    });
-    isWriteSuccess = true;
-  } else if (typeof window.ble !== 'undefined' && bleConnectedDeviceId && bleWriteServiceUUID && bleWriteCharUUID) {
-    isWriteSuccess = true;
-    const chunkSize = 20;
-    let offset = 0;
-    
-    function sendNextBleChunk() {
-      if (offset >= payloadBytes.length) {
-        console.log('BLE printing native write completed successfully');
-        return;
-      }
-      const chunk = payloadBytes.slice(offset, offset + chunkSize);
-      const buffer = chunk.buffer;
-      
-      window.ble.writeWithoutResponse(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
-        offset += chunkSize;
-        setTimeout(sendNextBleChunk, 5); // 5ms pacing delay for stable BLE transfers
-      }, function(err) {
-        window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, buffer, function() {
-          offset += chunkSize;
-          setTimeout(sendNextBleChunk, 5);
-        }, function(writeErr) {
-          console.error('BLE Central write failure on chunk:', writeErr);
+    try {
+      await new Promise((resolve, reject) => {
+        window.bluetoothSerial.write(payloadBytes, function() {
+          resolve();
+        }, function(err) {
+          reject(err);
         });
       });
+      isWriteSuccess = true;
+    } catch (err) {
+      console.error('Classic serial print failure:', err);
+      isWriteSuccess = false;
     }
-    
-    sendNextBleChunk();
+  } else if (typeof window.ble !== 'undefined' && bleConnectedDeviceId && bleWriteServiceUUID && bleWriteCharUUID) {
+    try {
+      await new Promise((resolve, reject) => {
+        const chunkSize = 20;
+        let offset = 0;
+        
+        function sendNextBleChunk() {
+          if (offset >= payloadBytes.length) {
+            resolve();
+            return;
+          }
+          const chunk = payloadBytes.slice(offset, offset + chunkSize);
+          
+          // Create an exact-sized ArrayBuffer and copy chunk data
+          const cleanBuffer = new ArrayBuffer(chunk.length);
+          new Uint8Array(cleanBuffer).set(chunk);
+          
+          window.ble.writeWithoutResponse(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, cleanBuffer, function() {
+            offset += chunkSize;
+            setTimeout(sendNextBleChunk, 5); // 5ms pacing delay for stable BLE transfers
+          }, function(err) {
+            // Fallback to write with response if writeWithoutResponse fails
+            window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, cleanBuffer, function() {
+              offset += chunkSize;
+              setTimeout(sendNextBleChunk, 5);
+            }, function(writeErr) {
+              console.error('BLE Central write failure on chunk:', writeErr);
+              reject(writeErr);
+            });
+          });
+        }
+        
+        sendNextBleChunk();
+      });
+      isWriteSuccess = true;
+    } catch (err) {
+      console.error('Cordova BLE print failure:', err);
+      isWriteSuccess = false;
+    }
   } else {
     // Mock simulation mode
     isWriteSuccess = true;
   }
 
   // Finalize UI state flow
-  setTimeout(() => {
-    if (isWriteSuccess) {
-      playSound('success');
-      showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة الرسومية بنجاح!' : 'Hardware raster print job dispatched successfully!', 'print');
-    } else {
-      showToast(currentLanguage === 'ar' ? 'فشل إرسال كود الطباعة إلى الطابعة الموصولة' : 'Failed to write data to active printer port', 'error', true);
-    }
+  if (isWriteSuccess) {
+    playSound('success');
+    showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة الرسومية بنجاح!' : 'Hardware raster print job dispatched successfully!', 'print');
+  } else {
+    showToast(currentLanguage === 'ar' ? 'فشل إرسال كود الطباعة إلى الطابعة الموصولة' : 'Failed to write data to active printer port', 'error', true);
+  }
 
-    setTimeout(() => {
-      if (printSimulator) printSimulator.style.display = 'none';
-      if (paperStrip) paperStrip.classList.remove('printing');
-    }, 1200);
-  }, 1800);
+  setTimeout(() => {
+    if (printSimulator) printSimulator.style.display = 'none';
+    if (paperStrip) paperStrip.classList.remove('printing');
+  }, 1200);
 }
 
 function executeSystemPrintJob() {
