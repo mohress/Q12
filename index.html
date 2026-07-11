@@ -370,21 +370,28 @@
             <div class="financial-item inflow">
               <div class="financial-label-group">
                 <span class="financial-label-icon">💵</span>
-                <span class="financial-label">مبيعات نقدية</span>
+                <span class="financial-label" id="lbl-total-cash-title">مبيعات نقدية</span>
               </div>
               <span class="financial-value" id="val-total-cash-sales">0 د.ع</span>
             </div>
             <div class="financial-item inflow">
               <div class="financial-label-group">
+                <span class="financial-label-icon">📝</span>
+                <span class="financial-label" id="lbl-total-debt-title">مبيعات آجلة</span>
+              </div>
+              <span class="financial-value" id="val-total-debt-sales">0 د.ع</span>
+            </div>
+            <div class="financial-item inflow">
+              <div class="financial-label-group">
                 <span class="financial-label-icon">🧮</span>
-                <span class="financial-label">ديون محصلة</span>
+                <span class="financial-label" id="lbl-total-collected-title">ديون محصلة</span>
               </div>
               <span class="financial-value" id="val-total-collected-debts">0 د.ع</span>
             </div>
             <div class="financial-item inflow">
               <div class="financial-label-group">
                 <span class="financial-label-icon">📈</span>
-                <span class="financial-label">عمولة المكتب 5%</span>
+                <span class="financial-label" id="lbl-total-commission-title">عمولة المكتب 5%</span>
               </div>
               <span class="financial-value" id="val-total-commission-5">0 د.ع</span>
             </div>
@@ -814,36 +821,125 @@
         <h3 id="txt-sheet-import-title">إنشاء فاتورة استيراد جديدة</h3>
         <button class="icon-btn" id="btn-close-import-sheet"><span class="material-icons-round">close</span></button>
       </div>
-      <div class="bottom-sheet-body">
-        
-        <div class="form-group">
-          <label id="lbl-farmer-name">اسم الفلاح</label>
-          <div style="position: relative;">
-            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
-            <input type="text" class="form-input" id="import-farmer-name" placeholder="أدخل اسم الفلاح..." autocomplete="off" style="padding-right: 42px;">
-            <div class="autocomplete-dropdown" id="farmer-autocomplete"></div>
+      
+      <div class="sheet-split-container" style="display: flex; flex-direction: row; direction: ltr; width: 100%; align-items: stretch; overflow: hidden; min-height: 0; flex: 1;">
+        <div class="bottom-sheet-body" style="flex: 1; min-width: 0; direction: rtl; padding-bottom: 80px !important;">
+          <div class="sheet-desktop-split-wrapper">
+            <!-- Column 1: Main Inputs & Crops -->
+            <div class="sheet-desktop-main-col">
+              <div class="sheet-form-header-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-farmer-name">اسم الفلاح</label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
+                    <input type="text" class="form-input" id="import-farmer-name" placeholder="أدخل اسم الفلاح..." autocomplete="off" style="padding-right: 42px;">
+                    <div class="autocomplete-dropdown" id="farmer-autocomplete"></div>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-vehicle-type">نوع السيارة</label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">local_shipping</span>
+                    <input type="text" class="form-input" id="import-vehicle-type" placeholder="مثال: كيا حمل 4 طن..." style="padding-right: 42px;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Crop Items section inside Import -->
+              <div style="display: flex; flex-direction: column; gap: 10px;" id="import-items-container">
+                <!-- Dynamic Items added here -->
+              </div>
+
+              <button class="btn-secondary" id="btn-import-add-item" style="border-style: dashed; padding: 10px; font-size: 12px; margin-top: 4px;">
+                <span class="material-icons-round">add</span>
+                <span id="txt-add-crop">إضافة صنف آخر</span>
+              </button>
+            </div>
+
+            <!-- Column 2: Info Summary Card & Save Button -->
+            <div class="sheet-desktop-side-col">
+              <div style="display: flex; flex-direction: column; gap: 14px; background: white; border-radius: 16px; padding: 16px; border: 1.5px solid rgba(82, 183, 136, 0.1);">
+                <div style="display: flex; align-items: center; gap: 10px; color: var(--color-primary); border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
+                  <span class="material-icons-round" style="font-size: 22px;">info</span>
+                  <span style="font-weight: 700; font-size: 14px;">فاتورة استيراد جديدة</span>
+                </div>
+                
+                <p style="font-size: 12px; line-height: 1.6; color: var(--color-text-muted); margin: 0;">
+                  عند حفظ الفاتورة، سيتم إدراج البضائع مباشرة في المخزن، وستظهر كبضائع متاحة للبيع في صفحة "العرض" لتسجيل المبيعات للزبائن.
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px; font-size: 12px; color: var(--color-text-dark);">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-light);">check_circle</span>
+                    <span>تسجيل دقيق لأوزان السيارات وعداد الصناديق</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-light);">check_circle</span>
+                    <span>تحديث فوري لبيانات العرض للمشترين</span>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn-primary" id="btn-submit-import" style="margin-top: auto; width: 100%;">حفظ الفاتورة والبدء في العرض</button>
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label id="lbl-vehicle-type">نوع السيارة</label>
-          <div style="position: relative;">
-            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">local_shipping</span>
-            <input type="text" class="form-input" id="import-vehicle-type" placeholder="مثال: كيا حمل 4 طن..." style="padding-right: 42px;">
+        <!-- Right Side: Integrated Numeric Keypad Panel for Import -->
+        <div id="sheet-import-keypad-sidebar" style="width: 380px; border-left: 1.5px solid rgba(0,0,0,0.08); background: #fbfdfd; display: none; flex-direction: column; padding: 24px; box-sizing: border-box; overflow-y: auto; gap: 16px; flex-shrink: 0; direction: rtl;">
+          <!-- Sidebar Keypad Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(0,0,0,0.04); padding-bottom: 12px; width: 100%; box-sizing: border-box;">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--color-primary-dark); margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span class="material-icons-round" style="color: var(--color-primary); font-size: 20px;">dialpad</span>
+              <span id="sidebar-import-keypad-title-text">إدخال قيمة</span>
+            </h3>
+          </div>
+
+          <!-- Display Area -->
+          <div style="background: #f4f7f5; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; border: 1.5px solid rgba(82, 183, 136, 0.12); width: 100%; box-sizing: border-box;">
+            <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">القيمة المدخلة</span>
+            <div style="display: flex; align-items: baseline; gap: 6px; direction: ltr; width: 100%; justify-content: flex-end;">
+              <span id="sidebar-import-keypad-display-suffix" style="font-size: 15px; font-weight: 700; color: var(--color-primary-mid);"></span>
+              <span id="sidebar-import-keypad-display-val" style="font-size: 32px; font-weight: 800; color: var(--color-primary-dark); font-family: var(--font-mono); letter-spacing: 1px;">0</span>
+            </div>
+          </div>
+
+          <!-- Keypad Grid -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; box-sizing: border-box;">
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="3">3</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="2">2</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="1">1</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="6">6</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="5">5</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="4">4</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="9">9</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="8">8</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="7">7</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key=".">.</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="0">0</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn text-danger" data-key="C">C</button>
+          </div>
+
+          <!-- Additional Action buttons for single-click backspace and clear -->
+          <div style="display: flex; gap: 12px; width: 100%; box-sizing: border-box;">
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="backspace" style="flex: 1; height: 56px; background: #fbebe9; border: 1px solid rgba(239, 68, 68, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; gap: 10px;">
+              <span class="material-icons-round" style="pointer-events: none; font-size: 24px;">backspace</span>
+              <span style="font-size: 14px; font-weight: 700; font-family: var(--font-sans);">مسح</span>
+            </button>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 12px; margin-top: 4px; width: 100%; box-sizing: border-box;">
+            <button type="button" class="btn-primary" id="btn-sidebar-import-keypad-confirm" style="flex: 2; height: 50px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(82, 183, 136, 0.15); border: none; color: white;">
+              <span class="material-icons-round" style="font-size: 20px;">check_circle</span>
+              <span>تأكيد وحفظ</span>
+            </button>
+            <button type="button" class="btn-secondary" id="btn-sidebar-import-keypad-cancel" style="flex: 1; height: 50px; border-radius: 12px; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid rgba(0,0,0,0.08); background: #fdfdfd; color: var(--color-text-muted);">
+              <span>إلغاء</span>
+            </button>
           </div>
         </div>
-
-        <!-- Crop Items section inside Import -->
-        <div style="display: flex; flex-direction: column; gap: 10px;" id="import-items-container">
-          <!-- Dynamic Items added here -->
-        </div>
-
-        <button class="btn-secondary" id="btn-import-add-item" style="border-style: dashed; padding: 10px; font-size: 12px;">
-          <span class="material-icons-round">add</span>
-          <span id="txt-add-crop">إضافة صنف آخر</span>
-        </button>
-
-        <button class="btn-primary" id="btn-submit-import">حفظ الفاتورة والبدء في العرض</button>
       </div>
     </div>
 
@@ -854,109 +950,175 @@
         <h3 id="txt-sheet-sale-title">إنشاء فاتورة بيع جديدة</h3>
         <button class="icon-btn" id="btn-close-sale-sheet"><span class="material-icons-round">close</span></button>
       </div>
-      <div class="bottom-sheet-body">
-        
-        <div class="form-group">
-          <label id="lbl-customer-name" style="display: flex; align-items: center; gap: 6px;">
-            <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
-            <span>اسم الزبون (صاحب المحل)</span>
-          </label>
-          <div style="position: relative;">
-            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
-            <input type="text" class="form-input" id="sale-customer-name" placeholder="أدخل اسم الزبون..." autocomplete="off" style="padding-right: 42px;">
-            <div class="autocomplete-dropdown" id="customer-autocomplete"></div>
-          </div>
-        </div>
+      
+      <div class="sheet-split-container" style="display: flex; flex-direction: row; direction: ltr; width: 100%; align-items: stretch; overflow: hidden; min-height: 0; flex: 1;">
+        <div class="bottom-sheet-body" style="flex: 1; min-width: 0; direction: rtl; padding-bottom: 80px;">
+          <div class="sheet-desktop-split-wrapper">
+            <!-- Column 1: Main Customer Info & Crops List -->
+            <div class="sheet-desktop-main-col">
+              <div class="sheet-form-header-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-customer-name" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
+                    <span>اسم الزبون (صاحب المحل)</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
+                    <input type="text" class="form-input" id="sale-customer-name" placeholder="أدخل اسم الزبون..." autocomplete="off" style="padding-right: 42px;">
+                    <div class="autocomplete-dropdown" id="customer-autocomplete"></div>
+                  </div>
+                </div>
 
-        <div class="summary-grid">
-          <div class="form-group">
-            <label id="lbl-customer-phone" style="display: flex; align-items: center; gap: 6px;">
-              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">phone</span>
-              <span>رقم الهاتف (اختياري)</span>
-            </label>
-            <div style="position: relative;">
-              <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">phone</span>
-              <input type="text" class="form-input" id="sale-customer-phone" placeholder="رقم الهاتف..." style="padding-right: 42px;" inputmode="none" readonly>
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-customer-phone" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">phone</span>
+                    <span>رقم الهاتف (اختياري)</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">phone</span>
+                    <input type="text" class="form-input" id="sale-customer-phone" placeholder="رقم الهاتف..." style="padding-right: 42px;" inputmode="none" readonly>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-customer-address" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">location_on</span>
+                    <span>العنوان (اختياري)</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">location_on</span>
+                    <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون..." style="padding-right: 42px;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Crops for Sale -->
+              <div style="display: flex; flex-direction: column; gap: 10px;" id="sale-items-container">
+                <!-- Dynamic Items added here -->
+              </div>
+
+              <button class="btn-secondary" id="btn-sale-add-item" style="border-style: dashed; padding: 10px; font-size: 12px; margin-top: 4px;">
+                <span class="material-icons-round">add</span>
+                <span id="txt-add-sale-crop">إضافة صنف آخر في الفاتورة</span>
+              </button>
+
+              <!-- General invoice options & Payment Method -->
+              <div class="sheet-form-options-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start;">
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-bags-cost" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">shopping_bag</span>
+                    <span>تكلفة الأكياس والكراتين (إجمالي اختياري)</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">shopping_bag</span>
+                    <input type="number" class="form-input" id="sale-bags-cost" placeholder="أدخل التكلفة الكلية للدواخل..." value="0" style="padding-right: 42px;" inputmode="none" readonly>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-payment-method">طريقة الدفع</label>
+                  <div class="toggle-switch-group">
+                    <button class="toggle-switch-btn active" id="btn-pay-cash" data-method="cash">💵 نقد</button>
+                    <button class="toggle-switch-btn" id="btn-pay-debt" data-method="debt">📋 دين بالأجل</button>
+                  </div>
+                </div>
+
+                <div class="form-group" id="group-debt-options" style="display: none; margin: 0;">
+                  <label id="lbl-debt-due">موعد المطالبة بالدين</label>
+                  <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);">
+                    <button class="segmented-control-btn active" data-days="5">5 أيام</button>
+                    <button class="segmented-control-btn" data-days="10">10 أيام</button>
+                    <button class="segmented-control-btn" data-days="15">15 يوم</button>
+                    <button class="segmented-control-btn" data-days="custom" id="btn-custom-debt-days">مخصص</button>
+                  </div>
+                  <div id="custom-debt-days-input-group" style="display: none; margin-top: 8px;">
+                    <input type="number" class="form-input" id="custom-debt-days-input" placeholder="أدخل عدد الأيام..." min="1" step="1">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Column 2: Invoice Options & Dynamic Calculations -->
+            <div class="sheet-desktop-side-col">
+              <!-- Real-time Balance calculation details -->
+              <div class="premium-card" style="background-color: rgba(27,67,50,0.05); border: 1px solid rgba(27,67,50,0.1); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+                  <span id="lbl-subtotal" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع أسعار البضاعة:</span>
+                  <span id="val-subtotal" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+                  <span id="lbl-commission-7" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع العمولات (7%):</span>
+                  <span id="val-commission-7" style="font-weight: 700; color: var(--color-primary-light); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
+                  <span id="lbl-carrying-total" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع الحمالية:</span>
+                  <span id="val-carrying-total" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+                </div>
+                <div style="border-top: 1px dashed rgba(27,67,50,0.15); margin-top: 4px; padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 14px; font-weight: 700;">
+                  <span id="lbl-total-calc" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">المبلغ الإجمالي المستحق:</span>
+                  <span id="val-total-calc" style="color: var(--color-primary); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
+                </div>
+              </div>
+
+              <button class="btn-primary" id="btn-submit-sale" style="margin-top: auto; width: 100%;">إصدار الفاتورة وحساب الأرباح</button>
             </div>
           </div>
-          <div class="form-group">
-            <label id="lbl-customer-address" style="display: flex; align-items: center; gap: 6px;">
-              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">location_on</span>
-              <span>العنوان (اختياري)</span>
-            </label>
-            <div style="position: relative;">
-              <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">location_on</span>
-              <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون..." style="padding-right: 42px;">
+        </div>
+
+        <!-- Right Side: Integrated Numeric Keypad Panel -->
+        <div id="sheet-sale-keypad-sidebar" style="width: 380px; border-left: 1.5px solid rgba(0,0,0,0.08); background: #fbfdfd; display: none; flex-direction: column; padding: 24px; box-sizing: border-box; overflow-y: auto; gap: 16px; flex-shrink: 0; direction: rtl;">
+          <!-- Sidebar Keypad Header -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(0,0,0,0.04); padding-bottom: 12px; width: 100%; box-sizing: border-box;">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--color-primary-dark); margin: 0; display: flex; align-items: center; gap: 8px;">
+              <span class="material-icons-round" style="color: var(--color-primary); font-size: 20px;">dialpad</span>
+              <span id="sidebar-keypad-title-text">إدخال قيمة</span>
+            </h3>
+          </div>
+
+          <!-- Display Area -->
+          <div style="background: #f4f7f5; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; border: 1.5px solid rgba(82, 183, 136, 0.12); width: 100%; box-sizing: border-box;">
+            <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">القيمة المدخلة</span>
+            <div style="display: flex; align-items: baseline; gap: 6px; direction: ltr; width: 100%; justify-content: flex-end;">
+              <span id="sidebar-keypad-display-suffix" style="font-size: 15px; font-weight: 700; color: var(--color-primary-mid);"></span>
+              <span id="sidebar-keypad-display-val" style="font-size: 32px; font-weight: 800; color: var(--color-primary-dark); font-family: var(--font-mono); letter-spacing: 1px;">0</span>
             </div>
           </div>
-        </div>
 
-        <!-- Crops for Sale -->
-        <div style="display: flex; flex-direction: column; gap: 10px;" id="sale-items-container">
-          <!-- Dynamic Items added here -->
-        </div>
-
-        <button class="btn-secondary" id="btn-sale-add-item" style="border-style: dashed; padding: 10px; font-size: 12px;">
-          <span class="material-icons-round">add</span>
-          <span id="txt-add-sale-crop">إضافة صنف آخر في الفاتورة</span>
-        </button>
-
-        <!-- General invoice options -->
-        <div class="form-group">
-          <label id="lbl-bags-cost" style="display: flex; align-items: center; gap: 6px;">
-            <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">shopping_bag</span>
-            <span>تكلفة الأكياس والكراتين (إجمالي اختياري)</span>
-          </label>
-          <div style="position: relative;">
-            <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">shopping_bag</span>
-            <input type="number" class="form-input" id="sale-bags-cost" placeholder="أدخل التكلفة الكلية للدواخل..." value="0" style="padding-right: 42px;" inputmode="none" readonly>
+          <!-- Keypad Grid -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; box-sizing: border-box;">
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="3">3</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="2">2</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="1">1</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="6">6</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="5">5</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="4">4</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="9">9</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="8">8</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="7">7</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key=".">.</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="0">0</button>
+            <button type="button" class="keypad-btn sidebar-keypad-btn text-danger" data-key="C">C</button>
           </div>
-        </div>
 
-        <!-- Payment Method -->
-        <div class="form-group">
-          <label id="lbl-payment-method">طريقة الدفع</label>
-          <div class="toggle-switch-group">
-            <button class="toggle-switch-btn active" id="btn-pay-cash" data-method="cash">💵 نقد</button>
-            <button class="toggle-switch-btn" id="btn-pay-debt" data-method="debt">📋 دين بالأجل</button>
+          <!-- Additional Action buttons for single-click backspace and clear -->
+          <div style="display: flex; gap: 12px; width: 100%; box-sizing: border-box;">
+            <button type="button" class="keypad-btn sidebar-keypad-btn" data-key="backspace" style="flex: 1; height: 56px; background: #fbebe9; border: 1px solid rgba(239, 68, 68, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; gap: 10px;">
+              <span class="material-icons-round" style="pointer-events: none; font-size: 24px;">backspace</span>
+              <span style="font-size: 14px; font-weight: 700; font-family: var(--font-sans);">مسح</span>
+            </button>
           </div>
-        </div>
 
-        <!-- Debt Due Options -->
-        <div class="form-group" id="group-debt-options" style="display: none;">
-          <label id="lbl-debt-due">موعد المطالبة بالدين</label>
-          <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);">
-            <button class="segmented-control-btn active" data-days="5">5 أيام</button>
-            <button class="segmented-control-btn" data-days="10">10 أيام</button>
-            <button class="segmented-control-btn" data-days="15">15 يوم</button>
-            <button class="segmented-control-btn" data-days="custom" id="btn-custom-debt-days">مخصص</button>
-          </div>
-          <div id="custom-debt-days-input-group" style="display: none; margin-top: 8px;">
-            <input type="number" class="form-input" id="custom-debt-days-input" placeholder="أدخل عدد الأيام..." min="1" step="1">
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 12px; margin-top: 4px; width: 100%; box-sizing: border-box;">
+            <button type="button" class="btn-primary" id="btn-sidebar-keypad-confirm" style="flex: 2; height: 50px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(82, 183, 136, 0.15); border: none; color: white;">
+              <span class="material-icons-round" style="font-size: 20px;">check_circle</span>
+              <span>تأكيد وحفظ</span>
+            </button>
+            <button type="button" class="btn-secondary" id="btn-sidebar-keypad-cancel" style="flex: 1; height: 50px; border-radius: 12px; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid rgba(0,0,0,0.08); background: #fdfdfd; color: var(--color-text-muted);">
+              <span>إلغاء</span>
+            </button>
           </div>
         </div>
-
-        <!-- Real-time Balance calculation details -->
-        <div class="premium-card" style="background-color: rgba(27,67,50,0.05); border: 1px solid rgba(27,67,50,0.1); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
-            <span id="lbl-subtotal" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع أسعار البضاعة:</span>
-            <span id="val-subtotal" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
-            <span id="lbl-commission-7" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع العمولات (7%):</span>
-            <span id="val-commission-7" style="font-weight: 700; color: var(--color-primary-light); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
-            <span id="lbl-carrying-total" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع الحمالية:</span>
-            <span id="val-carrying-total" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-          </div>
-          <div style="border-top: 1px dashed rgba(27,67,50,0.15); margin-top: 4px; padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 14px; font-weight: 700;">
-            <span id="lbl-total-calc" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">المبلغ الإجمالي المستحق:</span>
-            <span id="val-total-calc" style="color: var(--color-primary); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-          </div>
-        </div>
-
-        <button class="btn-primary" id="btn-submit-sale">إصدار الفاتورة وحساب الأرباح</button>
       </div>
     </div>
 

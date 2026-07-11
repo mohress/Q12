@@ -30,6 +30,7 @@ const MAPPINGS_DICTIONARY = {
   'lbl-safebox-title': 'txt-safe-box-label',
   'safe-box-val': 'val-safe-box',
   'total-cash-sales': 'val-total-cash-sales',
+  'total-debt-sales': 'val-total-debt-sales',
   'total-collected-debts': 'val-total-collected-debts',
   'total-adjustments': 'val-total-adjustments',
   'total-commission-5': 'val-total-commission-5',
@@ -665,6 +666,7 @@ const translations = {
     searchDuesPl: "🔍 ابحث باسم الفلاح...",
     safeBoxLabel: "صافي الخزنة الحالية",
     lblTotalCashSales: "مبيعات نقدية",
+    lblTotalDebtSales: "مبيعات آجلة",
     lblTotalCollectedDebts: "ديون محصلة",
     lblTotalCommission5: "عمولتنا 5%",
     lblTotalPaidDues: "مستحقات مدفوعة",
@@ -774,6 +776,7 @@ const translations = {
     searchDuesPl: "🔍 Search farmer name...",
     safeBoxLabel: "Current Safe Box Balance",
     lblTotalCashSales: "Cash Sales",
+    lblTotalDebtSales: "Debt Sales",
     lblTotalCollectedDebts: "Collected Debts",
     lblTotalCommission5: "Our Commission 5%",
     lblTotalPaidDues: "Paid Dues to Farmers",
@@ -2407,14 +2410,14 @@ async function addSaleCropRow() {
       </label>
       <div class="porter-options-row" style="display: flex; gap: 8px; margin-top: 4px; margin-bottom: 8px; flex-wrap: wrap;">
         <button type="button" class="porter-opt-btn" data-value="0" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">0</button>
-        <button type="button" class="porter-opt-btn active" data-value="100" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; text-align: center; transition: all 0.2s;">100</button>
+        <button type="button" class="porter-opt-btn" data-value="100" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">100</button>
         <button type="button" class="porter-opt-btn" data-value="200" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">200</button>
-        <button type="button" class="porter-opt-btn" data-value="250" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">250</button>
+        <button type="button" class="porter-opt-btn active" data-value="250" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; text-align: center; transition: all 0.2s;">250</button>
         <button type="button" class="porter-opt-btn btn-custom-porter-trigger" data-value="custom" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">${currentLanguage === 'ar' ? 'مخصص' : 'Custom'}</button>
       </div>
       <div class="sale-porter-rate-wrapper" style="position: relative; display: none;">
         <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">engineering</span>
-        <input type="number" class="form-input sale-porter-rate" value="100" style="display: none; text-align: center; font-weight: 600; padding-right: 42px;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}" inputmode="none" readonly>
+        <input type="number" class="form-input sale-porter-rate" value="250" style="display: none; text-align: center; font-weight: 600; padding-right: 42px;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}" inputmode="none" readonly>
       </div>
       <span class="sale-row-porter-total-label" style="font-size:11px; font-weight:600; color:var(--color-primary-mid); display:block; margin-top:4px;"></span>
     </div>
@@ -5286,6 +5289,7 @@ async function submitFarmerPayout() {
 async function renderStatsPanel() {
   const safeBoxValEl = document.getElementById('safe-box-val');
   const totalCashSalesEl = document.getElementById('total-cash-sales');
+  const totalDebtSalesEl = document.getElementById('total-debt-sales');
   const totalCollectedDebtsEl = document.getElementById('total-collected-debts');
   const totalAdjustmentsEl = document.getElementById('total-adjustments');
   const totalCommissionEl = document.getElementById('total-commission-5');
@@ -5343,6 +5347,7 @@ async function renderStatsPanel() {
   const selectedMonth = monthSelector ? monthSelector.value : 'active';
 
   let cashSalesTotal = 0;
+  let debtSalesTotal = 0;
   let collectedDebtsTotal = 0;
   let manualAdditionsTotal = 0;
   let paidDuesTotal = 0;
@@ -5363,6 +5368,7 @@ async function renderStatsPanel() {
     };
 
     cashSalesTotal = allSales.filter(s => s.payment_type === 'cash' && isCurrentMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
+    debtSalesTotal = allSales.filter(s => s.payment_type === 'debt' && isCurrentMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
 
     collectedDebtsTotal = allDebts.filter(d => d.is_paid && isCurrentMonth(d.created_at)).reduce((sum, d) => sum + d.amount, 0) +
                           safeAdjustments.filter(a => a.type === 'partial_debt_payout' && isCurrentMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
@@ -5386,6 +5392,7 @@ async function renderStatsPanel() {
     const archive = archives.find(a => a.month === selectedMonth);
     if (archive) {
       cashSalesTotal = archive.cashSales;
+      debtSalesTotal = archive.debtSales || 0;
       collectedDebtsTotal = archive.collectedDebts;
       manualAdditionsTotal = archive.manualAdditions || 0;
       paidDuesTotal = archive.paidDues;
@@ -5401,6 +5408,9 @@ async function renderStatsPanel() {
 
   // Render monthly stats
   totalCashSalesEl.textContent = formatVal(cashSalesTotal, true);
+  if (totalDebtSalesEl) {
+    totalDebtSalesEl.textContent = formatVal(debtSalesTotal, true);
+  }
   totalCollectedDebtsEl.textContent = formatVal(collectedDebtsTotal, true);
   if (totalAdjustmentsEl) {
     totalAdjustmentsEl.textContent = formatVal(manualAdditionsTotal, true);
@@ -5460,6 +5470,111 @@ async function renderStatsPanel() {
 
   // Render daily application logs
   renderAppLogs();
+
+  // Show professional rollover warning alert if 1 day before month end or on the last day
+  renderMonthlyRolloverAlert();
+}
+
+function renderMonthlyRolloverAlert() {
+  const container = document.querySelector('#screen-stats');
+  if (!container) return;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+
+  const lastDayDate = new Date(year, month + 1, 0);
+  const lastDayNum = lastDayDate.getDate();
+
+  const isOneDayBefore = today === lastDayNum - 1;
+  const isLastDay = today === lastDayNum;
+
+  const shouldShow = isOneDayBefore || isLastDay || sessionStorage.getItem('alwa_force_rollover_alert') === 'true';
+
+  if (sessionStorage.getItem('alwa_dismissed_rollover_alert')) {
+    const existing = document.querySelector('#monthly-rollover-alert-banner');
+    if (existing) existing.remove();
+    return;
+  }
+
+  let alertEl = document.querySelector('#monthly-rollover-alert-banner');
+  if (alertEl) {
+    if (!shouldShow) {
+      alertEl.remove();
+    }
+    return;
+  }
+
+  if (!shouldShow) return;
+
+  alertEl = document.createElement('div');
+  alertEl.id = 'monthly-rollover-alert-banner';
+  
+  // Custom professional alert card style
+  alertEl.style.cssText = `
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border: 1.5px solid #f59e0b;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+  `;
+
+  const isAr = currentLanguage === 'ar';
+  
+  const alertTextAr = isOneDayBefore 
+    ? "تنبيه ترحيل الإحصائيات: سيتم ترحيل وإقفال إحصائيات الشهر الحالي تلقائياً وأرشفتها بنهاية يوم غد للبدء بدورة إحصائيات جديدة للشهر القادم. رصيد الخزنة الفعلي والديون لن تتأثر."
+    : "تنبيه ترحيل الإحصائيات: سيتم ترحيل وإقفال إحصائيات الشهر الحالي تلقائياً وأرشفتها بنهاية هذا اليوم للبدء بدورة إحصائيات جديدة للشهر القادم. رصيد الخزنة الفعلي والديون لن تتأثر.";
+    
+  const alertTextEn = isOneDayBefore
+    ? "Statistics Rollover Notice: The current month's statistics will be automatically closed, archived, and reset at the end of tomorrow to start a new tracking cycle. Active safe box balances and customer debts remain unaffected."
+    : "Statistics Rollover Notice: The current month's statistics will be automatically closed, archived, and reset at the end of today to start a new tracking cycle. Active safe box balances and customer debts remain unaffected.";
+
+  const displayText = isAr ? alertTextAr : alertTextEn;
+  const displayTitle = isAr ? "إشعار ترحيل الإحصائيات التلقائي" : "Automatic Statistics Rollover Notice";
+
+  alertEl.innerHTML = `
+    <span class="material-icons-round" style="color: #d97706; font-size: 24px; flex-shrink: 0; margin-top: 2px; user-select: none;">warning</span>
+    <div style="flex: 1; padding-left: 4px; padding-right: 24px; text-align: ${isAr ? 'right' : 'left'};">
+      <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #78350f;">${displayTitle}</h4>
+      <p style="margin: 0; font-size: 13px; font-weight: 600; color: #92400e; line-height: 1.5; font-family: var(--font-family) !important;">${displayText}</p>
+    </div>
+    <button type="button" id="btn-close-rollover-alert" style="
+      position: absolute;
+      ${isAr ? 'left' : 'right'}: 10px;
+      top: 10px;
+      background: none;
+      border: none;
+      color: #b45309;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 50%;
+      transition: background 0.2s;
+    " onmouseover="this.style.background='rgba(180, 83, 9, 0.1)'" onmouseout="this.style.background='none'">
+      <span class="material-icons-round" style="font-size: 18px;">close</span>
+    </button>
+  `;
+
+  // Prepend before the first child of screen-stats
+  container.insertBefore(alertEl, container.firstChild);
+
+  // Attach dismiss event listener
+  const closeBtn = alertEl.querySelector('#btn-close-rollover-alert');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      sessionStorage.setItem('alwa_dismissed_rollover_alert', 'true');
+      alertEl.remove();
+    });
+  }
 }
 
 function drawStatsChart(expenses, companyRevenue) {
@@ -8619,6 +8734,7 @@ function applyBilingualTranslations() {
   // Safe box card
   document.getElementById('lbl-safebox-title').textContent = t.safeBoxLabel;
   document.getElementById('lbl-total-cash-title').textContent = t.lblTotalCashSales;
+  document.getElementById('lbl-total-debt-title').textContent = t.lblTotalDebtSales;
   document.getElementById('lbl-total-collected-title').textContent = t.lblTotalCollectedDebts;
   document.getElementById('lbl-total-commission-title').textContent = t.lblTotalCommission5;
   document.getElementById('lbl-total-dues-title').textContent = t.lblTotalPaidDues;
@@ -8960,6 +9076,14 @@ function openBottomSheet(id) {
     const vehicleInput = document.getElementById('import-vehicle-type');
     if (vehicleInput) vehicleInput.value = '';
     addImportCropRow();
+    setTimeout(() => {
+      if (container) {
+        const firstWeightInput = container.querySelector('.import-crop-weight');
+        if (firstWeightInput) {
+          openCustomKeypad(firstWeightInput);
+        }
+      }
+    }, 150);
   } else if (id === 'sheet-new-sale') {
     const container = document.getElementById('sale-items-container');
     if (container) container.innerHTML = '';
@@ -8982,7 +9106,16 @@ function openBottomSheet(id) {
     if (carryingEl) carryingEl.textContent = formatVal(0, true);
     if (totalEl) totalEl.textContent = formatVal(0, true);
 
-    addSaleCropRow();
+    addSaleCropRow().then(() => {
+      setTimeout(() => {
+        if (container) {
+          const firstWeightInput = container.querySelector('.sale-crop-weight');
+          if (firstWeightInput) {
+            openCustomKeypad(firstWeightInput);
+          }
+        }
+      }, 150);
+    });
   } else if (id === 'sheet-due-claims') {
     renderDueClaims();
   } else if (id === 'sheet-new-loss') {
@@ -9016,6 +9149,18 @@ function closeBottomSheet(id) {
   if (!isNavigatingViaHistory) {
     window.history.back();
     return;
+  }
+
+  if (id === 'sheet-new-sale' || id === 'sheet-new-import') {
+    isSidebarKeypadActive = false;
+    const sidebarSaleKeypad = document.getElementById('sheet-sale-keypad-sidebar');
+    if (sidebarSaleKeypad) sidebarSaleKeypad.style.display = 'none';
+    const sidebarImportKeypad = document.getElementById('sheet-import-keypad-sidebar');
+    if (sidebarImportKeypad) sidebarImportKeypad.style.display = 'none';
+    const saleSheet = document.getElementById('sheet-new-sale');
+    if (saleSheet) saleSheet.style.maxWidth = '';
+    const importSheet = document.getElementById('sheet-new-import');
+    if (importSheet) importSheet.style.maxWidth = '';
   }
 
   sheet.classList.remove('show', 'open');
@@ -9132,6 +9277,7 @@ async function executeMonthlyRollover(monthKey) {
   };
 
   const cashSalesTotal = allSales.filter(s => s.payment_type === 'cash' && isTargetMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
+  const debtSalesTotal = allSales.filter(s => s.payment_type === 'debt' && isTargetMonth(s.created_at)).reduce((sum, s) => sum + s.total_amount, 0);
   
   const collectedDebtsTotal = allDebts.filter(d => d.is_paid && isTargetMonth(d.created_at)).reduce((sum, d) => sum + d.amount, 0) +
                                safeAdjustments.filter(a => a.type === 'partial_debt_payout' && isTargetMonth(a.created_at)).reduce((sum, a) => sum + a.amount, 0);
@@ -9152,6 +9298,7 @@ async function executeMonthlyRollover(monthKey) {
     id: monthKey,
     month: monthKey,
     cashSales: cashSalesTotal,
+    debtSales: debtSalesTotal,
     collectedDebts: collectedDebtsTotal,
     manualAdditions: manualAdditionsTotal,
     paidDues: paidDuesTotal,
@@ -10986,6 +11133,8 @@ async function startApp() {
 // Global states for custom keypad
 let activeKeypadInput = null;
 let keypadBuffer = "0";
+let isSidebarKeypadActive = false;
+let keypadPreviousValue = "";
 
 function initCustomKeypad() {
   // Bind keypad button clicks
@@ -11006,7 +11155,7 @@ function initCustomKeypad() {
   if (btnClose) {
     btnClose.addEventListener('click', (e) => {
       e.preventDefault();
-      closeCustomKeypad();
+      closeCustomKeypad(true);
     });
   }
 
@@ -11014,7 +11163,7 @@ function initCustomKeypad() {
   if (btnCancel) {
     btnCancel.addEventListener('click', (e) => {
       e.preventDefault();
-      closeCustomKeypad();
+      closeCustomKeypad(true);
     });
   }
 
@@ -11022,6 +11171,39 @@ function initCustomKeypad() {
   const btnConfirm = document.getElementById('btn-keypad-confirm');
   if (btnConfirm) {
     btnConfirm.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveKeypadValue();
+    });
+  }
+
+  // Bind sidebar keypad buttons
+  const btnSidebarCancel = document.getElementById('btn-sidebar-keypad-cancel');
+  if (btnSidebarCancel) {
+    btnSidebarCancel.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeCustomKeypad(true);
+    });
+  }
+
+  const btnSidebarConfirm = document.getElementById('btn-sidebar-keypad-confirm');
+  if (btnSidebarConfirm) {
+    btnSidebarConfirm.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveKeypadValue();
+    });
+  }
+
+  const btnSidebarImportCancel = document.getElementById('btn-sidebar-import-keypad-cancel');
+  if (btnSidebarImportCancel) {
+    btnSidebarImportCancel.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeCustomKeypad(true);
+    });
+  }
+
+  const btnSidebarImportConfirm = document.getElementById('btn-sidebar-import-keypad-confirm');
+  if (btnSidebarImportConfirm) {
+    btnSidebarImportConfirm.addEventListener('click', (e) => {
       e.preventDefault();
       saveKeypadValue();
     });
@@ -11067,6 +11249,7 @@ function initCustomKeypad() {
 
 function openCustomKeypad(inputElement) {
   activeKeypadInput = inputElement;
+  keypadPreviousValue = inputElement.value || "";
   
   const isAr = currentLanguage === 'ar';
   let titleText = isAr ? 'إدخال قيمة' : 'Enter Value';
@@ -11101,31 +11284,113 @@ function openCustomKeypad(inputElement) {
     suffixText = '';
   }
   
-  const titleEl = document.getElementById('keypad-title-text');
-  if (titleEl) titleEl.textContent = titleText;
-  
-  const suffixEl = document.getElementById('keypad-display-suffix');
-  if (suffixEl) suffixEl.textContent = suffixText;
-  
   const currentVal = inputElement.value;
   if (currentVal && currentVal !== '0') {
     keypadBuffer = currentVal.toString();
   } else {
     keypadBuffer = "0";
   }
-  
-  updateKeypadDisplay();
-  
-  const dialog = document.getElementById('custom-keypad-dialog');
-  if (dialog) {
-    dialog.style.display = 'flex';
+
+  const isInSaleSheet = inputElement.closest('#sheet-new-sale') !== null;
+  const isInImportSheet = inputElement.closest('#sheet-new-import') !== null;
+  const isMobile = window.innerWidth < 768;
+  isSidebarKeypadActive = (isInSaleSheet || isInImportSheet) && !isMobile;
+
+  if (isSidebarKeypadActive) {
+    // Hide standard dialog keypad if any was visible
+    const dialog = document.getElementById('custom-keypad-dialog');
+    if (dialog) dialog.style.display = 'none';
+
+    if (isInSaleSheet) {
+      // Hide other sidebar keypad
+      const otherKeypad = document.getElementById('sheet-import-keypad-sidebar');
+      if (otherKeypad) otherKeypad.style.display = 'none';
+      const otherSheet = document.getElementById('sheet-new-import');
+      if (otherSheet) otherSheet.style.maxWidth = '';
+
+      // Show sale sidebar keypad
+      const sidebarKeypad = document.getElementById('sheet-sale-keypad-sidebar');
+      if (sidebarKeypad) sidebarKeypad.style.display = 'flex';
+
+      // Expand sale sheet max width so they sit side by side
+      const saleSheet = document.getElementById('sheet-new-sale');
+      if (saleSheet) saleSheet.style.maxWidth = '1150px';
+
+      const titleEl = document.getElementById('sidebar-keypad-title-text');
+      if (titleEl) titleEl.textContent = titleText;
+      
+      const suffixEl = document.getElementById('sidebar-keypad-display-suffix');
+      if (suffixEl) suffixEl.textContent = suffixText;
+    } else {
+      // Hide other sidebar keypad
+      const otherKeypad = document.getElementById('sheet-sale-keypad-sidebar');
+      if (otherKeypad) otherKeypad.style.display = 'none';
+      const otherSheet = document.getElementById('sheet-new-sale');
+      if (otherSheet) otherSheet.style.maxWidth = '';
+
+      // Show import sidebar keypad
+      const sidebarKeypad = document.getElementById('sheet-import-keypad-sidebar');
+      if (sidebarKeypad) sidebarKeypad.style.display = 'flex';
+
+      // Expand import sheet max width so they sit side by side
+      const importSheet = document.getElementById('sheet-new-import');
+      if (importSheet) importSheet.style.maxWidth = '1150px';
+
+      const titleEl = document.getElementById('sidebar-import-keypad-title-text');
+      if (titleEl) titleEl.textContent = titleText;
+      
+      const suffixEl = document.getElementById('sidebar-import-keypad-display-suffix');
+      if (suffixEl) suffixEl.textContent = suffixText;
+    }
+
+    updateKeypadDisplay();
+  } else {
+    // Hide sidebar keypads if visible
+    const sidebarSaleKeypad = document.getElementById('sheet-sale-keypad-sidebar');
+    if (sidebarSaleKeypad) sidebarSaleKeypad.style.display = 'none';
+    const sidebarImportKeypad = document.getElementById('sheet-import-keypad-sidebar');
+    if (sidebarImportKeypad) sidebarImportKeypad.style.display = 'none';
+
+    // Reset sheet max-widths
+    const saleSheet = document.getElementById('sheet-new-sale');
+    if (saleSheet) saleSheet.style.maxWidth = '';
+    const importSheet = document.getElementById('sheet-new-import');
+    if (importSheet) importSheet.style.maxWidth = '';
+
+    // Show standard dialog keypad
+    const titleEl = document.getElementById('keypad-title-text');
+    if (titleEl) titleEl.textContent = titleText;
+    
+    const suffixEl = document.getElementById('keypad-display-suffix');
+    if (suffixEl) suffixEl.textContent = suffixText;
+
+    updateKeypadDisplay();
+
+    const dialog = document.getElementById('custom-keypad-dialog');
+    if (dialog) {
+      dialog.style.display = 'flex';
+    }
   }
 }
 
 function updateKeypadDisplay() {
-  const displayVal = document.getElementById('keypad-display-val');
-  if (displayVal) {
-    displayVal.textContent = keypadBuffer;
+  if (isSidebarKeypadActive) {
+    if (activeKeypadInput && activeKeypadInput.closest('#sheet-new-sale') !== null) {
+      const displayVal = document.getElementById('sidebar-keypad-display-val');
+      if (displayVal) {
+        displayVal.textContent = keypadBuffer;
+      }
+    } else {
+      const displayVal = document.getElementById('sidebar-import-keypad-display-val');
+      if (displayVal) {
+        displayVal.textContent = keypadBuffer;
+      }
+    }
+  } else {
+    const displayVal = document.getElementById('keypad-display-val');
+    if (displayVal) {
+      displayVal.textContent = keypadBuffer;
+    }
   }
 }
 
@@ -11165,13 +11430,46 @@ function handleKeypadPress(key) {
     }
   }
   updateKeypadDisplay();
+
+  // LIVE UPDATE THE INPUT FIELD DIRECTLY
+  if (activeKeypadInput) {
+    activeKeypadInput.value = keypadBuffer;
+    // Trigger existing listeners for automatic live calculations
+    activeKeypadInput.dispatchEvent(new Event('input', { bubbles: true }));
+    activeKeypadInput.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 }
 
-function closeCustomKeypad() {
+function closeCustomKeypad(revert = false) {
   const dialog = document.getElementById('custom-keypad-dialog');
   if (dialog) {
     dialog.style.display = 'none';
   }
+  const sidebarSaleKeypad = document.getElementById('sheet-sale-keypad-sidebar');
+  if (sidebarSaleKeypad) {
+    sidebarSaleKeypad.style.display = 'none';
+  }
+  const sidebarImportKeypad = document.getElementById('sheet-import-keypad-sidebar');
+  if (sidebarImportKeypad) {
+    sidebarImportKeypad.style.display = 'none';
+  }
+  const saleSheet = document.getElementById('sheet-new-sale');
+  if (saleSheet) {
+    saleSheet.style.maxWidth = '';
+  }
+  const importSheet = document.getElementById('sheet-new-import');
+  if (importSheet) {
+    importSheet.style.maxWidth = '';
+  }
+
+  if (revert && activeKeypadInput) {
+    activeKeypadInput.value = keypadPreviousValue;
+    // Trigger calculations to restore initial state
+    activeKeypadInput.dispatchEvent(new Event('input', { bubbles: true }));
+    activeKeypadInput.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  isSidebarKeypadActive = false;
   activeKeypadInput = null;
 }
 
@@ -11193,7 +11491,7 @@ function saveKeypadValue() {
     activeKeypadInput.dispatchEvent(new Event('input', { bubbles: true }));
     activeKeypadInput.dispatchEvent(new Event('change', { bubbles: true }));
   }
-  closeCustomKeypad();
+  closeCustomKeypad(false);
 }
 
 // Cordova / Native platform back-button binding for Capacitor hybrid environments
