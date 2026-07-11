@@ -7889,9 +7889,8 @@ async function executePrintJob(saleId) {
     }
   }
 
-  // Feed paper (4 lines) and trigger cutter
-  escposCommands.push(0x0A, 0x0A, 0x0A, 0x0A);
-  escposCommands.push(0x1D, 0x56, 0x42, 0x00);
+  // Feed paper (6 lines) for safe manual tear-off (No cutter command to prevent low-end printer firmware crashes/freezes)
+  escposCommands.push(0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A);
 
   // Convert array to binary package
   const payloadBytes = new Uint8Array(escposCommands);
@@ -10928,17 +10927,61 @@ async function startApp() {
       btnMonthlyProfitReport.addEventListener('click', generateMonthlyProfitReport);
     }
     
-    // Test print
-    document.getElementById('btn-test-print').addEventListener('click', () => {
+    // Test print - Real Hardware Transmission
+    document.getElementById('btn-test-print').addEventListener('click', async () => {
       if (!isPrinterConnected) {
         showToast(currentLanguage === 'ar' ? 'الرجاء تشغيل واقتران طابعة البلوتوث BLE أولاً!' : 'Please connect BLE printer first!', 'bluetooth', true);
         return;
       }
-      showToast(currentLanguage === 'ar' ? 'جاري طباعة تذكرة الفحص الحراري...' : 'Printing hardware test page...', 'hourglass_empty');
+      
+      const officeName = localStorage.getItem('alwa_office_name') || (currentLanguage === 'ar' ? 'مكتب علوة مخضر ذكي' : 'Alwa Crop Office');
+      const ownerName = localStorage.getItem('alwa_office_owner') || '';
+      const phoneNo = localStorage.getItem('alwa_office_phone') || '';
+      
+      const now = new Date();
+      const dateString = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeString = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+      const container = document.getElementById('receipt-paper');
+      if (!container) return;
+
+      // Generate a beautiful, high-contrast, professional test print HTML in Arabic
+      container.innerHTML = `
+        <div style="text-align: center; font-family: 'Cairo', sans-serif; direction: rtl; padding: 12px 6px; color: #000; background: #FFF;">
+          <h2 style="margin: 0 0 5px 0; font-size: 20px; font-weight: 800; border-bottom: 2px dashed #000; padding-bottom: 8px;">${officeName}</h2>
+          ${ownerName ? `<p style="margin: 3px 0; font-size: 14px; font-weight: 600;">بإدارة: ${ownerName}</p>` : ''}
+          ${phoneNo ? `<p style="margin: 3px 0; font-size: 13px;">هاتف: ${phoneNo}</p>` : ''}
+          
+          <div style="margin: 15px 0; padding: 10px; border: 2px solid #000; border-radius: 8px; background-color: #000; color: #FFF;">
+            <p style="margin: 0; font-size: 15px; font-weight: bold; color: #FFF;">تذكرة فحص اتصال الطابعة</p>
+            <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: 900; color: #FFF;">✓ ناجح ✓</p>
+          </div>
+
+          <div style="text-align: right; font-size: 12px; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; color: #000;">
+            <p style="margin: 4px 0;"><b>التاريخ:</b> ${dateString}</p>
+            <p style="margin: 4px 0;"><b>الوقت:</b> ${timeString}</p>
+            <p style="margin: 4px 0;"><b>العرض:</b> 58 ملم (384 نقطة)</p>
+          </div>
+
+          <p style="margin: 10px 0; font-size: 13px; line-height: 1.4; text-align: center; font-weight: bold; color: #000;">
+            تم فحص وتهيئة نظام الطباعة الرسومية ثنائية الأبعاد بنجاح. الطابعة جاهزة للعمل وإصدار الفواتير!
+          </p>
+
+          <div style="margin-top: 15px; font-size: 10px; text-align: center; color: #000; border-top: 1px dashed #000; padding-top: 8px;">
+            برمجة علوة مخضر ذكية © 2026
+          </div>
+        </div>
+      `;
+
+      // Set dataset ID to -1 to print current preview directly
+      document.getElementById('btn-execute-print').dataset.id = "-1";
+
+      showToast(currentLanguage === 'ar' ? 'جاري إرسال تذكرة الفحص للطابعة الحرارية...' : 'Sending test ticket to thermal printer...', 'hourglass_empty');
+      
+      // Execute the real print job immediately
       setTimeout(() => {
-        playSound('success');
-        showToast(currentLanguage === 'ar' ? 'تمت طباعة تذكرة الفحص بنجاح!' : 'Test page printed successfully!', 'print');
-      }, 1200);
+        executePrintJob(-1);
+      }, 100);
     });
 
     // Paper width selector supporting both select dropdown and custom buttons
