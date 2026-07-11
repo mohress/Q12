@@ -1811,14 +1811,14 @@ function addImportCropRow() {
         <label class="import-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي القائم (كغم)' : 'الوزن الكلي القائم (Kg)') : 'Total Weight (Kg)'}</label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
-          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'أدخل الوزن كغم...' : 'أدخل الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'أدخل الوزن كغم...' : 'أدخل الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;">
         </div>
       </div>
       <div class="form-group import-box-count-container" style="flex: 1; min-width: 0;">
         <label class="import-box-count-label">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
-          <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'العدد...' : 'Count...'}" style="padding-right: 42px;" inputmode="none" readonly>
+          <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'العدد...' : 'Count...'}" style="padding-right: 42px;">
         </div>
       </div>
     </div>
@@ -2379,7 +2379,7 @@ async function addSaleCropRow() {
         </label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
-          <input type="number" class="form-input sale-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي...' : 'الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+          <input type="number" class="form-input sale-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي...' : 'الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;">
         </div>
       </div>
 
@@ -2389,7 +2389,7 @@ async function addSaleCropRow() {
         </label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
-          <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+          <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...'}" required style="padding-right: 42px;">
         </div>
       </div>
     </div>
@@ -2400,7 +2400,7 @@ async function addSaleCropRow() {
       </label>
       <div style="position: relative;">
         <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">payments</span>
-        <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required style="padding-right: 42px;" inputmode="none" readonly>
+        <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required style="padding-right: 42px;">
       </div>
     </div>
 
@@ -2417,7 +2417,7 @@ async function addSaleCropRow() {
       </div>
       <div class="sale-porter-rate-wrapper" style="position: relative; display: none;">
         <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">engineering</span>
-        <input type="number" class="form-input sale-porter-rate" value="250" style="display: none; text-align: center; font-weight: 600; padding-right: 42px;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}" inputmode="none" readonly>
+        <input type="number" class="form-input sale-porter-rate" value="250" style="display: none; text-align: center; font-weight: 600; padding-right: 42px;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}">
       </div>
       <span class="sale-row-porter-total-label" style="font-size:11px; font-weight:600; color:var(--color-primary-mid); display:block; margin-top:4px;"></span>
     </div>
@@ -11137,119 +11137,19 @@ let isSidebarKeypadActive = false;
 let keypadPreviousValue = "";
 
 function initCustomKeypad() {
-  // Bind keypad button clicks
-  const keypadButtons = document.querySelectorAll('.keypad-btn');
-  keypadButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const key = btn.dataset.key;
-      if (key) {
-        handleKeypadPress(key);
-      }
-    });
-  });
-
-  // Bind close buttons
-  const btnClose = document.getElementById('btn-close-keypad');
-  if (btnClose) {
-    btnClose.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeCustomKeypad(true);
-    });
-  }
-
-  const btnCancel = document.getElementById('btn-keypad-cancel');
-  if (btnCancel) {
-    btnCancel.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeCustomKeypad(true);
-    });
-  }
-
-  // Bind confirm button
-  const btnConfirm = document.getElementById('btn-keypad-confirm');
-  if (btnConfirm) {
-    btnConfirm.addEventListener('click', (e) => {
-      e.preventDefault();
-      saveKeypadValue();
-    });
-  }
-
-  // Bind sidebar keypad buttons
-  const btnSidebarCancel = document.getElementById('btn-sidebar-keypad-cancel');
-  if (btnSidebarCancel) {
-    btnSidebarCancel.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeCustomKeypad(true);
-    });
-  }
-
-  const btnSidebarConfirm = document.getElementById('btn-sidebar-keypad-confirm');
-  if (btnSidebarConfirm) {
-    btnSidebarConfirm.addEventListener('click', (e) => {
-      e.preventDefault();
-      saveKeypadValue();
-    });
-  }
-
-  const btnSidebarImportCancel = document.getElementById('btn-sidebar-import-keypad-cancel');
-  if (btnSidebarImportCancel) {
-    btnSidebarImportCancel.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeCustomKeypad(true);
-    });
-  }
-
-  const btnSidebarImportConfirm = document.getElementById('btn-sidebar-import-keypad-confirm');
-  if (btnSidebarImportConfirm) {
-    btnSidebarImportConfirm.addEventListener('click', (e) => {
-      e.preventDefault();
-      saveKeypadValue();
-    });
-  }
-
-  // Event delegation to catch dynamic inputs
-  document.addEventListener('focusin', (e) => {
-    const target = e.target;
-    if (target && target.tagName === 'INPUT' && (
-      target.classList.contains('sale-crop-weight') ||
-      target.classList.contains('sale-box-count') ||
-      target.classList.contains('sale-crop-unit-price') ||
-      target.classList.contains('import-crop-weight') ||
-      target.classList.contains('import-box-count') ||
-      target.classList.contains('sale-porter-rate') ||
-      target.id === 'sale-bags-cost' ||
-      target.id === 'setting-office-phone' ||
-      target.id === 'sale-customer-phone'
-    )) {
-      target.setAttribute('inputmode', 'none');
-      openCustomKeypad(target);
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    const target = e.target;
-    if (target && target.tagName === 'INPUT' && (
-      target.classList.contains('sale-crop-weight') ||
-      target.classList.contains('sale-box-count') ||
-      target.classList.contains('sale-crop-unit-price') ||
-      target.classList.contains('import-crop-weight') ||
-      target.classList.contains('import-box-count') ||
-      target.classList.contains('sale-porter-rate') ||
-      target.id === 'sale-bags-cost' ||
-      target.id === 'setting-office-phone' ||
-      target.id === 'sale-customer-phone'
-    )) {
-      target.setAttribute('inputmode', 'none');
-      openCustomKeypad(target);
-    }
-  });
+  // Disabled custom virtual keypad
 }
 
 function openCustomKeypad(inputElement) {
-  activeKeypadInput = inputElement;
-  keypadPreviousValue = inputElement.value || "";
+  if (inputElement) {
+    inputElement.focus();
+  }
+}
+
+/*
+function dummyKeypadOldCode() {
+  var activeKeypadInput = null;
+  var keypadPreviousValue = "";
   
   const isAr = currentLanguage === 'ar';
   let titleText = isAr ? 'إدخال قيمة' : 'Enter Value';
@@ -11493,6 +11393,13 @@ function saveKeypadValue() {
   }
   closeCustomKeypad(false);
 }
+}
+*/
+
+function updateKeypadDisplay() {}
+function handleKeypadPress(key) {}
+function closeCustomKeypad(revert = false) {}
+function saveKeypadValue() {}
 
 // Cordova / Native platform back-button binding for Capacitor hybrid environments
 document.addEventListener('deviceready', () => {

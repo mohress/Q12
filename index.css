@@ -3582,11 +3582,10 @@ div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3)
   gap: 16px;
 }
 
-/* Hide display area and action buttons in sidebar keypads since we input directly to the fields */
-#sheet-import-keypad-sidebar > div:nth-of-type(2),
-#sheet-sale-keypad-sidebar > div:nth-of-type(2),
-#sheet-import-keypad-sidebar > div:nth-of-type(5),
-#sheet-sale-keypad-sidebar > div:nth-of-type(5) {
+/* Completely hide keypad sidebars and the custom keypad dialog under all conditions */
+#sheet-import-keypad-sidebar,
+#sheet-sale-keypad-sidebar,
+#custom-keypad-dialog {
   display: none !important;
 }
 
