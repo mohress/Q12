@@ -7868,20 +7868,32 @@ async function executePrintJob(saleId) {
     }
   }
 
-  // --- CONSTRUCT THE ESC/POS GRAPHIC CMD: GS v 0 m xL xH yL yH d1...dk ---
+  // --- CONSTRUCT THE ESC/POS GRAPHIC CMD IN SAFE BANDS TO PREVENT CHINESE PRINTER BUFFER OVERFLOWS ---
   const escposCommands = [];
   
   // Initialize printer
   escposCommands.push(0x1B, 0x40);
 
-  // GS v 0 0 command header
-  escposCommands.push(0x1D, 0x76, 0x30, 0x00);
-  escposCommands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (horizontal bytes)
-  escposCommands.push(finalHeight & 0xFF, (finalHeight >> 8) & 0xFF); // yL, yH (vertical height)
+  // Split into safe bands of 24 pixels height to fit tiny Chinese printer receive buffers (and avoid vertical height bugs)
+  const bandHeight = 24;
+  const totalBands = Math.ceil(finalHeight / bandHeight);
 
-  // Append binary image raster payload
-  for (let i = 0; i < bitmapData.length; i++) {
-    escposCommands.push(bitmapData[i]);
+  for (let b = 0; b < totalBands; b++) {
+    const startY = b * bandHeight;
+    const endY = Math.min(startY + bandHeight, finalHeight);
+    const currentBandHeight = endY - startY;
+
+    // GS v 0 0 command header for this band
+    escposCommands.push(0x1D, 0x76, 0x30, 0x00);
+    escposCommands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (horizontal bytes)
+    escposCommands.push(currentBandHeight & 0xFF, (currentBandHeight >> 8) & 0xFF); // yL, yH
+
+    // Append this band's raster bytes
+    const startByteIdx = startY * widthBytes;
+    const endByteIdx = endY * widthBytes;
+    for (let i = startByteIdx; i < endByteIdx; i++) {
+      escposCommands.push(bitmapData[i]);
+    }
   }
 
   // Feed paper (4 lines) and trigger cutter
@@ -7891,7 +7903,7 @@ async function executePrintJob(saleId) {
   // Convert array to binary package
   const payloadBytes = new Uint8Array(escposCommands);
 
-  // --- ASYNC CHUNKED BLE PACKETS WRITE (20 BYTES WITH 5MS DELAY) ---
+  // --- ASYNC CHUNKED BLE PACKETS WRITE (20 BYTES WITH SAFE 18MS DELAY FOR LOW-END HARDWARE) ---
   let isWriteSuccess = false;
 
   if (activeWebBluetoothCharacteristic) {
@@ -7911,7 +7923,7 @@ async function executePrintJob(saleId) {
         } else {
           await activeWebBluetoothCharacteristic.writeValue(cleanBuffer);
         }
-        await new Promise(resolve => setTimeout(resolve, 5)); // Reliable 5ms pacing delay
+        await new Promise(resolve => setTimeout(resolve, 18)); // Safe 18ms pacing delay to match 9600 baud rate bridge limits
       }
       isWriteSuccess = true;
     } catch (err) {
@@ -7919,14 +7931,27 @@ async function executePrintJob(saleId) {
       isWriteSuccess = false;
     }
   } else if (typeof window.bluetoothSerial !== 'undefined' && isCordovaSerialActive) {
-    // 2. Send via Classic Bluetooth Serial SPP
+    // 2. Send via Classic Bluetooth Serial SPP with pacing to prevent physical buffer floods
     try {
       await new Promise((resolve, reject) => {
-        window.bluetoothSerial.write(payloadBytes, function() {
-          resolve();
-        }, function(err) {
-          reject(err);
-        });
+        const chunkSize = 128;
+        let offset = 0;
+        
+        function sendNextSerialChunk() {
+          if (offset >= payloadBytes.length) {
+            resolve();
+            return;
+          }
+          const chunk = payloadBytes.slice(offset, offset + chunkSize);
+          window.bluetoothSerial.write(chunk, function() {
+            offset += chunkSize;
+            setTimeout(sendNextSerialChunk, 35); // 35ms pacing delay for stable classic serial printing
+          }, function(err) {
+            reject(err);
+          });
+        }
+        
+        sendNextSerialChunk();
       });
       isWriteSuccess = true;
     } catch (err) {
@@ -7952,12 +7977,12 @@ async function executePrintJob(saleId) {
           
           window.ble.writeWithoutResponse(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, cleanBuffer, function() {
             offset += chunkSize;
-            setTimeout(sendNextBleChunk, 5); // 5ms pacing delay for stable BLE transfers
+            setTimeout(sendNextBleChunk, 18); // Safe 18ms pacing delay for BLE central transfers
           }, function(err) {
             // Fallback to write with response if writeWithoutResponse fails
             window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, cleanBuffer, function() {
               offset += chunkSize;
-              setTimeout(sendNextBleChunk, 5);
+              setTimeout(sendNextBleChunk, 18);
             }, function(writeErr) {
               console.error('BLE Central write failure on chunk:', writeErr);
               reject(writeErr);
