@@ -1,5 +1,5 @@
 {
-  "appId": "com.alwa.app",
+  "appId": "com.alwa.accounts.manager",
   "appName": "Alwa",
   "webDir": "dist",
   "bundledWebRuntime": false,
