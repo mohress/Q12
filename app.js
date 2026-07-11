@@ -7838,65 +7838,63 @@ async function executePrintJob(saleId) {
   finalCtx.fillRect(0, 0, canvasWidth, finalHeight);
   finalCtx.drawImage(rawCanvas, 0, 0, canvasWidth, finalHeight);
 
-  // Convert canvas graphics into ESC/POS monochrome bitmap
-  const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
-  const pixels = imgData.data;
-  const widthBytes = canvasWidth / 8;
-  const bitmapData = [];
-
-  for (let y = 0; y < finalHeight; y++) {
-    for (let xByte = 0; xByte < widthBytes; xByte++) {
-      let byteVal = 0;
-      for (let bit = 0; bit < 8; bit++) {
-        const x = xByte * 8 + bit;
-        const idx = (y * canvasWidth + x) * 4;
-        const r = pixels[idx];
-        const g = pixels[idx + 1];
-        const b = pixels[idx + 2];
-        const a = pixels[idx + 3];
-
-        let isBlack = 0; // Default white
-        if (a > 128) {
-          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-          if (gray < 200) {
-            isBlack = 1; // 1 represents black in ESC/POS
-          }
-        }
-        byteVal = (byteVal << 1) | isBlack;
-      }
-      bitmapData.push(byteVal);
-    }
-  }
-
-  // --- CONSTRUCT THE ESC/POS GRAPHIC CMD IN SAFE BANDS TO PREVENT CHINESE PRINTER BUFFER OVERFLOWS ---
+  // Convert canvas graphics into ESC/POS monochrome bitmap using standard ESC * 24-dot double-density mode.
+  // This is 100% compatible with ultra-cheap, low-end Chinese BLE/Classic Bluetooth thermal printers (like PT-210, MPT-II, Xprinter, Zjiang, etc.).
+  // Those printers lack support for GS v 0 (which causes them to print endless garbage and make crazy sounds).
   const escposCommands = [];
   
-  // Initialize printer
+  // 1. Initialize printer (ESC @)
   escposCommands.push(0x1B, 0x40);
 
-  // Split into safe bands of 24 pixels height to fit tiny Chinese printer receive buffers (and avoid vertical height bugs)
+  // 2. Set line spacing to 24 dots (ESC 3 24) to ensure no white horizontal lines/gaps between bands
+  escposCommands.push(0x1B, 0x33, 24);
+
   const bandHeight = 24;
   const totalBands = Math.ceil(finalHeight / bandHeight);
 
   for (let b = 0; b < totalBands; b++) {
     const startY = b * bandHeight;
-    const endY = Math.min(startY + bandHeight, finalHeight);
-    const currentBandHeight = endY - startY;
+    
+    // Command header: ESC * m n1 n2
+    // m = 33 (24-dot double density)
+    const n1 = canvasWidth & 0xFF;
+    const n2 = (canvasWidth >> 8) & 0xFF;
+    escposCommands.push(0x1B, 0x2A, 33, n1, n2);
 
-    // GS v 0 0 command header for this band
-    escposCommands.push(0x1D, 0x76, 0x30, 0x00);
-    escposCommands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (horizontal bytes)
-    escposCommands.push(currentBandHeight & 0xFF, (currentBandHeight >> 8) & 0xFF); // yL, yH
-
-    // Append this band's raster bytes
-    const startByteIdx = startY * widthBytes;
-    const endByteIdx = endY * widthBytes;
-    for (let i = startByteIdx; i < endByteIdx; i++) {
-      escposCommands.push(bitmapData[i]);
+    // ESC * 33 expects 3 bytes (24 vertical pixels) per column, from column 0 to canvasWidth - 1
+    for (let x = 0; x < canvasWidth; x++) {
+      for (let byteIdx = 0; byteIdx < 3; byteIdx++) {
+        let byteVal = 0;
+        for (let bit = 0; bit < 8; bit++) {
+          const y = startY + byteIdx * 8 + bit;
+          let isBlack = 0; // Default white
+          if (y < finalHeight) {
+            const idx = (y * canvasWidth + x) * 4;
+            const r = pixels[idx];
+            const g = pixels[idx + 1];
+            const b = pixels[idx + 2];
+            const a = pixels[idx + 3];
+            
+            if (a > 128) {
+              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+              if (gray < 200) {
+                isBlack = 1; // Black pixel
+              }
+            }
+          }
+          byteVal = (byteVal << 1) | isBlack;
+        }
+        escposCommands.push(byteVal);
+      }
     }
+    // Feed one line after each 24-dot high band
+    escposCommands.push(0x0A);
   }
 
-  // Feed paper (4 lines) and trigger cutter
+  // 3. Restore default line spacing (1/6 inch = 30 dots, ESC 2)
+  escposCommands.push(0x1B, 0x32);
+
+  // 4. Feed paper (4 lines) and trigger cutter
   escposCommands.push(0x0A, 0x0A, 0x0A, 0x0A);
   escposCommands.push(0x1D, 0x56, 0x42, 0x00);
 
