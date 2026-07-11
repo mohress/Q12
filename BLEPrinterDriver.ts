@@ -1,168 +1,372 @@
 /**
- * BLEPrinterDriver - Standalone, Decoupled BLE Thermal Printer Driver for 58mm Printers (ESC/POS)
+ * BLEPrinterDriver - Advanced, Decoupled, & Highly Robust BLE/Classic Bluetooth Thermal Printer Driver
+ * Specifically engineered for ultra-cheap, low-end thermal printers (PT-210, MPT-II, Xprinter, Zjiang, etc.)
  * 
- * Requirements:
- * 1. BLE Chunking: Automatically split any output byte array into 20-byte packets
- *    and send them sequentially with a 5ms delay to prevent buffer overflow.
- * 2. Basic Commands: Implement initialize() (0x1B, 0x40) and lineFeed().
- * 3. Arabic Bitmap Engine: Shapes Arabic text (RTL), draws it on a 1-bit monochrome canvas
- *    (max width 384 pixels), and wraps it in ESC/POS raster image command GS v 0 (0x1D, 0x76, 0x30, 0x00).
- * 
- * This class is decoupled from specific frameworks (Web Bluetooth, Cordova, or Capacitor)
- * by accepting a low-level write callback in the constructor.
+ * Key Features:
+ * 1. Multi-Platform Support: Web Bluetooth, Cordova BLE, Cordova Classic Bluetooth (Serial), and Mock Simulator.
+ * 2. Strict Buffer Protection: Splits output into 20-byte chunks with configurable pacing delay (default 15ms)
+ *    to prevent micro-controller receive-buffer overflow, garbage characters, and printer freezes.
+ * 3. High-Fidelity 1-bit Raster Engine: Converts high-contrast captured Canvas elements into standard 
+ *    ESC/POS raster graphic commands (GS v 0) in safe horizontal bands (40px high).
+ * 4. Arabic Shaping & Bidi Fallback: Built-in basic RTL renderer for raw text fallback printing.
  */
 
+import html2canvas from 'html2canvas';
+
+export interface PrinterConnectionConfig {
+  type: 'web_ble' | 'classic' | 'ble' | 'mock';
+  webBluetoothCharacteristic?: any; // BluetoothRemoteGATTCharacteristic
+  deviceId?: string | null;         // MAC Address or BLE Device ID
+  writeServiceUUID?: string | null;
+  writeCharUUID?: string | null;
+  paperWidth?: '58' | '80';
+  pacingDelayMs?: number;           // Safe pacing delay in milliseconds
+  chunkSize?: number;               // Bytes per BLE packet
+}
+
 export class BLEPrinterDriver {
-  private writeCallback: (chunk: Uint8Array) => Promise<void>;
-  private queue: Promise<void> = Promise.resolve();
-  private readonly maxPacketSize = 20;
-  private readonly packetDelayMs = 5;
-  private readonly printerWidthPixels = 384; // 58mm printer standard width (384 dots)
-
   /**
-   * Constructor for the BLE Printer Driver.
-   * @param writeCallback A callback function that receives a 20-byte chunk and writes it to the BLE characteristic.
+   * Prints an HTML Element (e.g. invoice template) on a connected Bluetooth Thermal Printer.
+   * Captured dynamically via html2canvas, optimized for high contrast, and sent as chunked raster graphics.
    */
-  constructor(writeCallback: (chunk: Uint8Array) => Promise<void>) {
-    this.writeCallback = writeCallback;
-  }
+  public static async printHTMLElement(
+    element: HTMLElement,
+    config: PrinterConnectionConfig
+  ): Promise<boolean> {
+    const is58mm = (config.paperWidth || '58') === '58';
+    const canvasWidth = is58mm ? 384 : 576; // Printable dots for 58mm vs 80mm
+    const designWidth = is58mm ? 326 : 456; // Matching CSS layout width
+    const pacingDelay = config.pacingDelayMs !== undefined ? config.pacingDelayMs : 15;
+    const chunkSize = config.chunkSize || 20;
 
-  /**
-   * Queues and sends raw data through the BLE link, automatically chunking it into 20-byte packets
-   * and introducing a 5ms delay between packets to prevent printer buffer overflow.
-   * @param data The Uint8Array containing raw ESC/POS commands or bitmap data.
-   */
-  public async send(data: Uint8Array): Promise<void> {
-    this.queue = this.queue.then(() => this.sendChunks(data));
-    return this.queue;
-  }
+    console.log(`[BLEPrinterDriver] Printing HTML Element. Target width: ${canvasWidth}px, Pacing delay: ${pacingDelay}ms`);
 
-  /**
-   * Internal helper to split data into chunks and send with delay.
-   */
-  private async sendChunks(data: Uint8Array): Promise<void> {
-    for (let i = 0; i < data.length; i += this.maxPacketSize) {
-      const chunk = data.slice(i, i + this.maxPacketSize);
-      await this.writeCallback(chunk);
-      await new Promise((resolve) => setTimeout(resolve, this.packetDelayMs));
+    // 1. Create a safe clone of the element positioned off-screen to prevent layout shift and capture accurately
+    const clone = element.cloneNode(true) as HTMLElement;
+    clone.style.position = 'fixed';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.margin = '0';
+    clone.style.padding = '6px 4px';
+    clone.style.boxSizing = 'border-box';
+    clone.style.width = `${designWidth}px`;
+    clone.style.maxWidth = `${designWidth}px`;
+    clone.style.zIndex = '-9999';
+    clone.style.backgroundColor = '#FFFFFF';
+    clone.style.transform = 'none';
+
+    // Copy canvas data (like generated QR Codes) manually to the cloned element
+    const originalCanvases = element.querySelectorAll('canvas');
+    const clonedCanvases = clone.querySelectorAll('canvas');
+    originalCanvases.forEach((origCanvas, i) => {
+      const destCanvas = clonedCanvases[i] as HTMLCanvasElement;
+      if (destCanvas) {
+        destCanvas.width = origCanvas.width;
+        destCanvas.height = origCanvas.height;
+        const destCtx = destCanvas.getContext('2d');
+        if (destCtx) {
+          destCtx.drawImage(origCanvas, 0, 0);
+        }
+      }
+    });
+
+    document.body.appendChild(clone);
+
+    let rawCanvas: HTMLCanvasElement;
+    try {
+      const scaleFactor = canvasWidth / designWidth;
+      rawCanvas = await html2canvas(clone, {
+        scale: scaleFactor,
+        width: designWidth,
+        windowWidth: designWidth,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        delay: 100 // Extra breathing room to ensure fonts/images render perfectly
+      } as any);
+    } catch (err) {
+      console.error('[BLEPrinterDriver] html2canvas capture failed:', err);
+      document.body.removeChild(clone);
+      return false;
+    } finally {
+      if (document.body.contains(clone)) {
+        document.body.removeChild(clone);
+      }
     }
+
+    // 2. Map captured dimensions onto the final exact target canvas
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = canvasWidth;
+    const finalHeight = Math.round(rawCanvas.height * (canvasWidth / rawCanvas.width));
+    finalCanvas.height = finalHeight;
+
+    const finalCtx = finalCanvas.getContext('2d');
+    if (!finalCtx) {
+      console.error('[BLEPrinterDriver] Failed to initialize 2D context');
+      return false;
+    }
+
+    finalCtx.fillStyle = '#FFFFFF';
+    finalCtx.fillRect(0, 0, canvasWidth, finalHeight);
+    finalCtx.drawImage(rawCanvas, 0, 0, canvasWidth, finalHeight);
+
+    // 3. Process image into ESC/POS monochrome bitmap commands in 40px bands
+    const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
+    const pixels = imgData.data;
+    const commands: number[] = [];
+
+    // ESC @ - Initialize Printer
+    commands.push(0x1B, 0x40);
+
+    const bandHeight = 40;
+    const totalBands = Math.ceil(finalHeight / bandHeight);
+    const widthBytes = canvasWidth / 8;
+
+    for (let b = 0; b < totalBands; b++) {
+      const startY = b * bandHeight;
+      const currentBandHeight = Math.min(bandHeight, finalHeight - startY);
+
+      // GS v 0 0 - Print Raster Bit Image
+      commands.push(0x1D, 0x76, 0x30, 0x00);
+      commands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (width bytes)
+      commands.push(currentBandHeight & 0xFF, (currentBandHeight >> 8) & 0xFF); // yL, yH (height dots)
+
+      for (let y = startY; y < startY + currentBandHeight; y++) {
+        for (let xByte = 0; xByte < widthBytes; xByte++) {
+          let byteVal = 0;
+          for (let bit = 0; bit < 8; bit++) {
+            const x = xByte * 8 + bit;
+            let isBlack = 0;
+            if (x < canvasWidth) {
+              const idx = (y * canvasWidth + x) * 4;
+              const r = pixels[idx];
+              const g = pixels[idx + 1];
+              const b = pixels[idx + 2];
+              const a = pixels[idx + 3];
+
+              // High-contrast thresholding with transparency support
+              if (a > 128) {
+                const grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
+                if (grayscale < 195) { // Threshold for rich solid blacks
+                  isBlack = 1;
+                }
+              }
+            }
+            byteVal = (byteVal << 1) | isBlack;
+          }
+          commands.push(byteVal);
+        }
+      }
+    }
+
+    // 4. Feed paper for safe tear-off (Avoid ESC/POS Cutter command to protect cheap gear from firmware freeze)
+    commands.push(0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A);
+
+    const payload = new Uint8Array(commands);
+    return await this.sendBinaryPayload(payload, config, pacingDelay, chunkSize);
   }
 
   /**
-   * Sends the standard ESC/POS Initialize command (ESC @ - 0x1B 0x40)
-   * Clears the print buffer, resets settings, and prepares the printer for a new job.
+   * Sends binary payload (ESC/POS) to the physical printer with strict chunking and pacing
    */
-  public async initialize(): Promise<void> {
-    const initCmd = new Uint8Array([0x1B, 0x40]);
-    await this.send(initCmd);
+  public static async sendBinaryPayload(
+    payload: Uint8Array,
+    config: PrinterConnectionConfig,
+    pacingDelay: number = 15,
+    chunkSize: number = 20
+  ): Promise<boolean> {
+    console.log(`[BLEPrinterDriver] Dispatched payload of ${payload.length} bytes. Mode: ${config.type}`);
+
+    if (config.type === 'mock') {
+      console.log('[BLEPrinterDriver] Mock print dispatch successful');
+      return true;
+    }
+
+    // --- CASE 1: WEB BLUETOOTH ---
+    if (config.type === 'web_ble' && config.webBluetoothCharacteristic) {
+      try {
+        const char = config.webBluetoothCharacteristic;
+        for (let i = 0; i < payload.length; i += chunkSize) {
+          const chunk = payload.slice(i, i + chunkSize);
+          const buffer = new ArrayBuffer(chunk.length);
+          new Uint8Array(buffer).set(chunk);
+
+          if (typeof char.writeValueWithoutResponse === 'function') {
+            await char.writeValueWithoutResponse(buffer);
+          } else if (typeof char.writeValueWithResponse === 'function') {
+            await char.writeValueWithResponse(buffer);
+          } else {
+            await char.writeValue(buffer);
+          }
+
+          if (pacingDelay > 0) {
+            await new Promise((resolve) => setTimeout(resolve, pacingDelay));
+          }
+        }
+        return true;
+      } catch (err) {
+        console.error('[BLEPrinterDriver] Web Bluetooth write failure:', err);
+        return false;
+      }
+    }
+
+    // --- CASE 2: CORDOVA CLASSIC BLUETOOTH SERIAL SPP ---
+    if (config.type === 'classic' && typeof (window as any).bluetoothSerial !== 'undefined') {
+      try {
+        const btSerial = (window as any).bluetoothSerial;
+        await new Promise<void>((resolve, reject) => {
+          const serialChunkSize = 128; // Classic Bluetooth can take larger chunks comfortably
+          let offset = 0;
+
+          function writeNext() {
+            if (offset >= payload.length) {
+              resolve();
+              return;
+            }
+            const chunk = payload.slice(offset, offset + serialChunkSize);
+            btSerial.write(chunk, () => {
+              offset += serialChunkSize;
+              setTimeout(writeNext, 30); // 30ms stable classic serial delay
+            }, (err: any) => {
+              reject(err);
+            });
+          }
+          writeNext();
+        });
+        return true;
+      } catch (err) {
+        console.error('[BLEPrinterDriver] Classic Bluetooth Serial write failure:', err);
+        return false;
+      }
+    }
+
+    // --- CASE 3: CORDOVA BLE CENTRAL ---
+    if (config.type === 'ble' && typeof (window as any).ble !== 'undefined' && config.deviceId && config.writeServiceUUID && config.writeCharUUID) {
+      try {
+        const ble = (window as any).ble;
+        const deviceId = config.deviceId;
+        const serviceUUID = config.writeServiceUUID;
+        const charUUID = config.writeCharUUID;
+
+        await new Promise<void>((resolve, reject) => {
+          let offset = 0;
+
+          function writeNext() {
+            if (offset >= payload.length) {
+              resolve();
+              return;
+            }
+            const chunk = payload.slice(offset, offset + chunkSize);
+            const buffer = new ArrayBuffer(chunk.length);
+            new Uint8Array(buffer).set(chunk);
+
+            ble.writeWithoutResponse(deviceId, serviceUUID, charUUID, buffer, () => {
+              offset += chunkSize;
+              setTimeout(writeNext, pacingDelay);
+            }, (err: any) => {
+              // Fail-safe: try write with response if without-response is rejected
+              ble.write(deviceId, serviceUUID, charUUID, buffer, () => {
+                offset += chunkSize;
+                setTimeout(writeNext, pacingDelay);
+              }, (writeErr: any) => {
+                console.error('[BLEPrinterDriver] Cordova BLE write block error:', writeErr);
+                reject(writeErr);
+              });
+            });
+          }
+          writeNext();
+        });
+        return true;
+      } catch (err) {
+        console.error('[BLEPrinterDriver] Cordova BLE Central write failure:', err);
+        return false;
+      }
+    }
+
+    console.warn('[BLEPrinterDriver] No active hardware port matching config parameters was found.');
+    return false;
   }
 
   /**
-   * Sends a standard Line Feed command (LF - 0x0A)
-   * Feeds paper by one line.
+   * Standalone fallback generator to print basic text-based Arabic sentences directly
    */
-  public async lineFeed(): Promise<void> {
-    const lfCmd = new Uint8Array([0x0A]);
-    await this.send(lfCmd);
-  }
-
-  /**
-   * Feeds paper by multiple lines.
-   * @param count Number of lines to feed.
-   */
-  public async feedLines(count: number): Promise<void> {
-    const feedCmd = new Uint8Array([0x1B, 0x64, Math.min(255, Math.max(1, count))]);
-    await this.send(feedCmd);
-  }
-
-  /**
-   * Renders Arabic text (RTL and shaped) onto a 1-bit monochrome canvas,
-   * then wraps the resulting bitmap in the standard ESC/POS GS v 0 raster command.
-   * 
-   * @param text The input Arabic text (can include newlines).
-   * @param fontSize Font size in pixels (defaults to 24 for high legibility on 58mm paper).
-   * @param lineHeight Line height in pixels (defaults to 32).
-   * @returns A Uint8Array containing the ESC/POS GS v 0 raster image command and the bitmap data.
-   */
-  public renderArabicToBitmap(
+  public static renderArabicTextToESCPOSTicket(
     text: string,
+    paperWidth: '58' | '80' = '58',
     fontSize: number = 24,
     lineHeight: number = 32
   ): Uint8Array {
-    if (typeof document === 'undefined') {
-      throw new Error('renderArabicToBitmap requires a browser or web view environment with HTML5 Canvas support.');
-    }
-
-    // 1. Measure and wrap text using a temporary canvas to calculate the required height
+    const width = paperWidth === '58' ? 384 : 576;
+    
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = this.printerWidthPixels;
+    tempCanvas.width = width;
     const tempCtx = tempCanvas.getContext('2d');
     if (!tempCtx) {
-      throw new Error('Failed to get 2D canvas context for text measurement');
+      throw new Error('Canvas 2D context not supported');
     }
 
     tempCtx.font = `bold ${fontSize}px 'Cairo', 'Arial', sans-serif`;
-    const wrappedLines = this.wrapText(tempCtx, text, this.printerWidthPixels - 16); // 8px margin on each side
+    
+    // Simple line breaker
+    const words = text.split(/\s+/);
+    const lines: string[] = [];
+    let currentLine = '';
+    const maxTextWidth = width - 16;
 
-    // Calculate canvas height based on the number of wrapped lines
-    const height = Math.max(lineHeight, wrappedLines.length * lineHeight + 12);
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const metrics = tempCtx.measureText(testLine);
+      if (metrics.width > maxTextWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) {
+      lines.push(currentLine);
+    }
 
-    // 2. Create the actual drawing canvas
+    const height = Math.max(lineHeight, lines.length * lineHeight + 16);
     const canvas = document.createElement('canvas');
-    canvas.width = this.printerWidthPixels;
+    canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) {
-      throw new Error('Failed to get 2D canvas context for rendering');
-    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Failed to create canvas context');
 
-    // Fill background with white (0 in monochrome representation)
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, this.printerWidthPixels, height);
-
-    // Configure text rendering properties
-    ctx.fillStyle = '#000000'; // Black text (1 in monochrome)
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#000000';
     ctx.font = `bold ${fontSize}px 'Cairo', 'Arial', sans-serif`;
     ctx.textBaseline = 'top';
-    ctx.textAlign = 'right'; // RTL text alignment
-    // Set direction to RTL for native Arabic shaping and bidi ordering
+    ctx.textAlign = 'right';
     if ('direction' in ctx) {
-      ctx.direction = 'rtl';
+      (ctx as any).direction = 'rtl';
     }
 
-    // Draw lines of text from right to left
-    for (let i = 0; i < wrappedLines.length; i++) {
-      const lineY = i * lineHeight + 6;
-      // When textAlign = 'right', coordinates are anchored at the rightmost boundary of the canvas
-      ctx.fillText(wrappedLines[i], this.printerWidthPixels - 8, lineY);
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], width - 8, i * lineHeight + 8);
     }
 
-    // 3. Convert RGBA Canvas pixel data into 1-bit Monochrome ESC/POS format
-    const imgData = ctx.getImageData(0, 0, this.printerWidthPixels, height);
+    const imgData = ctx.getImageData(0, 0, width, height);
     const pixels = imgData.data;
-
-    const bytesPerLine = this.printerWidthPixels / 8; // 384 / 8 = 48 bytes
-    const dataSize = bytesPerLine * height;
-    const monoData = new Uint8Array(dataSize);
+    const bytesPerLine = width / 8;
+    const monoData = new Uint8Array(bytesPerLine * height);
 
     for (let y = 0; y < height; y++) {
-      for (let x = 0; x < this.printerWidthPixels; x++) {
-        const pixelIndex = (y * this.printerWidthPixels + x) * 4;
-        const r = pixels[pixelIndex];
-        const g = pixels[pixelIndex + 1];
-        const b = pixels[pixelIndex + 2];
-        const a = pixels[pixelIndex + 3];
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const r = pixels[idx];
+        const g = pixels[idx + 1];
+        const b = pixels[idx + 2];
+        const a = pixels[idx + 3];
 
-        // Determine if pixel is considered "black" or "white"
-        // Transparent pixels (a < 50) are treated as white
         let isBlack = false;
         if (a > 50) {
-          // Standard luminance formula
-          const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-          if (luminance < 128) {
-            isBlack = true;
-          }
+          const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (luma < 128) isBlack = true;
         }
 
         if (isBlack) {
@@ -173,80 +377,23 @@ export class BLEPrinterDriver {
       }
     }
 
-    // 4. Wrap in standard ESC/POS GS v 0 command
-    // Format: GS v 0 m xL xH yL yH d1...dk
-    // GS = 0x1D, v = 0x76, 0 = 0x30
-    // m = 0x00 (Normal mode)
-    // xL, xH = width of image in bytes (384 dots / 8 = 48 bytes -> xL = 48, xH = 0)
-    // yL, yH = height of image in lines (height -> yL = height % 256, yH = height / 256)
     const xL = bytesPerLine % 256;
     const xH = Math.floor(bytesPerLine / 256);
     const yL = height % 256;
     const yH = Math.floor(height / 256);
 
-    const header = new Uint8Array([
+    const header = [
+      0x1B, 0x40, // ESC @ Initialize
       0x1D, 0x76, 0x30, 0x00,
       xL, xH,
       yL, yH
-    ]);
+    ];
 
-    // Combine header and monochrome pixel data
-    const commandPacket = new Uint8Array(header.length + monoData.length);
-    commandPacket.set(header, 0);
-    commandPacket.set(monoData, header.length);
+    const payload = new Uint8Array(header.length + monoData.length + 6);
+    payload.set(header, 0);
+    payload.set(monoData, header.length);
+    payload.set([0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A], header.length + monoData.length); // trailing feed
 
-    return commandPacket;
-  }
-
-  /**
-   * Helper to print rendered Arabic text directly.
-   * @param text The input Arabic text to render and print.
-   * @param fontSize Optional font size (default: 24).
-   * @param lineHeight Optional line height (default: 32).
-   */
-  public async printArabicText(
-    text: string,
-    fontSize: number = 24,
-    lineHeight: number = 32
-  ): Promise<void> {
-    const bitmapCommand = this.renderArabicToBitmap(text, fontSize, lineHeight);
-    await this.send(bitmapCommand);
-  }
-
-  /**
-   * Multi-line aware word wrapping function.
-   * Splits text into individual words, measures them, and returns array of lines.
-   */
-  private wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-    const paragraphs = text.split('\n');
-    const lines: string[] = [];
-
-    for (const paragraph of paragraphs) {
-      if (paragraph.trim() === '') {
-        lines.push('');
-        continue;
-      }
-
-      const words = paragraph.split(/\s+/);
-      let currentLine = '';
-
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const metrics = ctx.measureText(testLine);
-        
-        if (metrics.width > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = testLine;
-        }
-      }
-
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-    }
-
-    return lines;
+    return payload;
   }
 }

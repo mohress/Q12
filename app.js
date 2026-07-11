@@ -2,6 +2,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
+import { BLEPrinterDriver } from './BLEPrinterDriver.ts';
 
 // Global Element Mappings and Safety Fallbacks to Reconcile index.html & app.js
 const MAPPINGS_DICTIONARY = {
@@ -7759,246 +7760,35 @@ async function executePrintJob(saleId) {
 
   showToast(currentLanguage === 'ar' ? 'جاري توليد الصورة والطباعة الرسومية...' : 'Generating high-contrast bitmap for ESC/POS printing...', 'hourglass_empty');
 
-  // --- PIXEL-PERFECT HTML2CANVAS ELEMENT CAPTURE & CONVERSION ---
-  const is58mm = printerPaperWidth === '58';
-  const canvasWidth = is58mm ? 384 : 576; // Exact target ESC/POS printable pixel width
-  const designWidth = is58mm ? 326 : 456; // The CSS max-width of our on-screen receipt preview
-
   const container = document.getElementById('receipt-paper');
   if (!container) {
     showToast(currentLanguage === 'ar' ? 'فشل العثور على معاينة الفاتورة!' : 'Failed to find invoice preview!', 'error', true);
     return;
   }
 
-  // To solve horizontal shifting, offsets, and margins in html2canvas (especially for centered/RTL layouts),
-  // we temporarily clone the element, place it at absolute (0,0) with reset margin/padding, and render the clone.
-  const clone = container.cloneNode(true);
-  clone.style.position = 'fixed';
-  clone.style.left = '0';
-  clone.style.top = '0';
-  clone.style.margin = '0';
-  clone.style.padding = '4px 2px';
-  clone.style.boxSizing = 'border-box';
-  clone.style.width = is58mm ? '326px' : '456px';
-  clone.style.maxWidth = is58mm ? '326px' : '456px';
-  clone.style.zIndex = '-9999';
-  clone.style.backgroundColor = '#FFFFFF';
-  clone.style.transform = 'none';
+  // Build the unified configuration for BLEPrinterDriver
+  const config = {
+    type: activeWebBluetoothCharacteristic ? 'web_ble' : (isCordovaSerialActive ? 'classic' : (bleConnectedDeviceId ? 'ble' : 'mock')),
+    webBluetoothCharacteristic: activeWebBluetoothCharacteristic,
+    deviceId: bleConnectedDeviceId,
+    writeServiceUUID: bleWriteServiceUUID,
+    writeCharUUID: bleWriteCharUUID,
+    paperWidth: printerPaperWidth === '80' ? '80' : '58',
+    pacingDelayMs: 15, // Highly stable 15ms pacing delay for low-end devices
+    chunkSize: 20
+  };
 
-  // Deep clone does not copy canvas contents (e.g. the QR code), so we manually copy them now.
-  const originalCanvases = container.querySelectorAll('canvas');
-  const clonedCanvases = clone.querySelectorAll('canvas');
-  originalCanvases.forEach((origCanvas, i) => {
-    const destCanvas = clonedCanvases[i];
-    if (destCanvas) {
-      destCanvas.width = origCanvas.width;
-      destCanvas.height = origCanvas.height;
-      const destCtx = destCanvas.getContext('2d');
-      destCtx.drawImage(origCanvas, 0, 0);
-    }
-  });
-
-  document.body.appendChild(clone);
-
-  // Calculate high quality scale factor
-  const renderScale = canvasWidth / designWidth;
-
-  const html2canvasFn = window.html2canvas || html2canvas;
-  let rawCanvas;
   try {
-    rawCanvas = await html2canvasFn(clone, {
-      scale: renderScale,
-      width: designWidth,
-      windowWidth: designWidth,
-      backgroundColor: '#FFFFFF',
-      logging: false,
-      useCORS: true,
-      allowTaint: true,
-      delay: 80 // Stable pause to ensure QR code and webfonts are completely drawn
-    });
-  } catch (canvasErr) {
-    console.error('html2canvas rendering failed:', canvasErr);
-    showToast(currentLanguage === 'ar' ? 'فشل توليد صورة الفاتورة للطباعة' : 'Failed to generate invoice image for printing', 'error', true);
-    document.body.removeChild(clone);
-    return;
-  } finally {
-    if (document.body.contains(clone)) {
-      document.body.removeChild(clone);
+    const success = await BLEPrinterDriver.printHTMLElement(container, config);
+
+    if (success) {
+      playSound('success');
+      showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة الرسومية بنجاح!' : 'Hardware raster print job dispatched successfully!', 'print');
+    } else {
+      showToast(currentLanguage === 'ar' ? 'فشل إرسال كود الطباعة إلى الطابعة الموصولة' : 'Failed to write data to active printer port', 'error', true);
     }
-  }
-
-  // Create an exact-sized canvas to prevent any rounding/alignment discrepancies
-  const finalCanvas = document.createElement('canvas');
-  finalCanvas.width = canvasWidth;
-  const finalHeight = Math.round(rawCanvas.height * (canvasWidth / rawCanvas.width));
-  finalCanvas.height = finalHeight;
-
-  const finalCtx = finalCanvas.getContext('2d');
-  finalCtx.fillStyle = '#FFFFFF';
-  finalCtx.fillRect(0, 0, canvasWidth, finalHeight);
-  finalCtx.drawImage(rawCanvas, 0, 0, canvasWidth, finalHeight);
-
-  // Convert canvas graphics into ESC/POS monochrome bitmap in safe vertical bands.
-  // This is 100% compatible with ultra-cheap, low-end Chinese BLE/Classic Bluetooth thermal printers (like PT-210, MPT-II, Xprinter, Zjiang, etc.).
-  // By splitting the image into small bands of 40 pixels high, we prevent the printer's tiny receive buffer from overflowing and printing garbage or making crazy noises.
-  const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
-  const pixels = imgData.data;
-  const escposCommands = [];
-  
-  // 1. Initialize printer (ESC @)
-  escposCommands.push(0x1B, 0x40);
-
-  const bandHeight = 40;
-  const totalBands = Math.ceil(finalHeight / bandHeight);
-  const widthBytes = canvasWidth / 8;
-
-  for (let b = 0; b < totalBands; b++) {
-    const startY = b * bandHeight;
-    const currentBandHeight = Math.min(bandHeight, finalHeight - startY);
-
-    // GS v 0 0 command header for this band
-    escposCommands.push(0x1D, 0x76, 0x30, 0x00);
-    escposCommands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (horizontal bytes)
-    escposCommands.push(currentBandHeight & 0xFF, (currentBandHeight >> 8) & 0xFF); // yL, yH (vertical height)
-
-    // Append this band's raster bytes
-    for (let y = startY; y < startY + currentBandHeight; y++) {
-      for (let xByte = 0; xByte < widthBytes; xByte++) {
-        let byteVal = 0;
-        for (let bit = 0; bit < 8; bit++) {
-          const x = xByte * 8 + bit;
-          let isBlack = 0; // Default white
-          if (x < canvasWidth) {
-            const idx = (y * canvasWidth + x) * 4;
-            const r = pixels[idx];
-            const g = pixels[idx + 1];
-            const b = pixels[idx + 2];
-            const a = pixels[idx + 3];
-
-            if (a > 128) {
-              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-              if (gray < 200) {
-                isBlack = 1; // Black pixel
-              }
-            }
-          }
-          byteVal = (byteVal << 1) | isBlack;
-        }
-        escposCommands.push(byteVal);
-      }
-    }
-  }
-
-  // Feed paper (6 lines) for safe manual tear-off (No cutter command to prevent low-end printer firmware crashes/freezes)
-  escposCommands.push(0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A);
-
-  // Convert array to binary package
-  const payloadBytes = new Uint8Array(escposCommands);
-
-  // --- ASYNC CHUNKED BLE PACKETS WRITE (20 BYTES WITH SAFE 5MS DELAY FOR LOW-END HARDWARE) ---
-  let isWriteSuccess = false;
-
-  if (activeWebBluetoothCharacteristic) {
-    try {
-      const chunkSize = 20;
-      for (let i = 0; i < payloadBytes.length; i += chunkSize) {
-        const chunk = payloadBytes.slice(i, i + chunkSize);
-        
-        // Create an exact-sized ArrayBuffer and copy chunk data
-        const cleanBuffer = new ArrayBuffer(chunk.length);
-        new Uint8Array(cleanBuffer).set(chunk);
-        
-        if (typeof activeWebBluetoothCharacteristic.writeValueWithoutResponse === 'function') {
-          await activeWebBluetoothCharacteristic.writeValueWithoutResponse(cleanBuffer);
-        } else if (typeof activeWebBluetoothCharacteristic.writeValueWithResponse === 'function') {
-          await activeWebBluetoothCharacteristic.writeValueWithResponse(cleanBuffer);
-        } else {
-          await activeWebBluetoothCharacteristic.writeValue(cleanBuffer);
-        }
-        await new Promise(resolve => setTimeout(resolve, 5)); // Reliable 5ms pacing delay
-      }
-      isWriteSuccess = true;
-    } catch (err) {
-      console.error('WebBT print failure:', err);
-      isWriteSuccess = false;
-    }
-  } else if (typeof window.bluetoothSerial !== 'undefined' && isCordovaSerialActive) {
-    // 2. Send via Classic Bluetooth Serial SPP with pacing to prevent physical buffer floods
-    try {
-      await new Promise((resolve, reject) => {
-        const chunkSize = 128;
-        let offset = 0;
-        
-        function sendNextSerialChunk() {
-          if (offset >= payloadBytes.length) {
-            resolve();
-            return;
-          }
-          const chunk = payloadBytes.slice(offset, offset + chunkSize);
-          window.bluetoothSerial.write(chunk, function() {
-            offset += chunkSize;
-            setTimeout(sendNextSerialChunk, 35); // 35ms pacing delay for stable classic serial printing
-          }, function(err) {
-            reject(err);
-          });
-        }
-        
-        sendNextSerialChunk();
-      });
-      isWriteSuccess = true;
-    } catch (err) {
-      console.error('Classic serial print failure:', err);
-      isWriteSuccess = false;
-    }
-  } else if (typeof window.ble !== 'undefined' && bleConnectedDeviceId && bleWriteServiceUUID && bleWriteCharUUID) {
-    try {
-      await new Promise((resolve, reject) => {
-        const chunkSize = 20;
-        let offset = 0;
-        
-        function sendNextBleChunk() {
-          if (offset >= payloadBytes.length) {
-            resolve();
-            return;
-          }
-          const chunk = payloadBytes.slice(offset, offset + chunkSize);
-          
-          // Create an exact-sized ArrayBuffer and copy chunk data
-          const cleanBuffer = new ArrayBuffer(chunk.length);
-          new Uint8Array(cleanBuffer).set(chunk);
-          
-          window.ble.writeWithoutResponse(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, cleanBuffer, function() {
-            offset += chunkSize;
-            setTimeout(sendNextBleChunk, 5); // Safe 5ms pacing delay for BLE central transfers
-          }, function(err) {
-            // Fallback to write with response if writeWithoutResponse fails
-            window.ble.write(bleConnectedDeviceId, bleWriteServiceUUID, bleWriteCharUUID, cleanBuffer, function() {
-              offset += chunkSize;
-              setTimeout(sendNextBleChunk, 5);
-            }, function(writeErr) {
-              console.error('BLE Central write failure on chunk:', writeErr);
-              reject(writeErr);
-            });
-          });
-        }
-        
-        sendNextBleChunk();
-      });
-      isWriteSuccess = true;
-    } catch (err) {
-      console.error('Cordova BLE print failure:', err);
-      isWriteSuccess = false;
-    }
-  } else {
-    // Mock simulation mode
-    isWriteSuccess = true;
-  }
-
-  // Finalize UI state flow
-  if (isWriteSuccess) {
-    playSound('success');
-    showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة الرسومية بنجاح!' : 'Hardware raster print job dispatched successfully!', 'print');
-  } else {
+  } catch (err) {
+    console.error('Unified print failure:', err);
     showToast(currentLanguage === 'ar' ? 'فشل إرسال كود الطباعة إلى الطابعة الموصولة' : 'Failed to write data to active printer port', 'error', true);
   }
 
