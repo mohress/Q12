@@ -41,22 +41,59 @@ export class BLEPrinterDriver {
 
     console.log(`[BLEPrinterDriver] Printing HTML Element. Target width: ${canvasWidth}px, Pacing delay: ${pacingDelay}ms`);
 
+    // 1. Create a safe clone of the element positioned off-screen to prevent layout shift and capture accurately
+    const clone = element.cloneNode(true) as HTMLElement;
+    clone.style.position = 'fixed';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.margin = '0';
+    clone.style.padding = '6px 4px';
+    clone.style.boxSizing = 'border-box';
+    clone.style.width = `${designWidth}px`;
+    clone.style.maxWidth = `${designWidth}px`;
+    clone.style.zIndex = '-9999';
+    clone.style.backgroundColor = '#FFFFFF';
+    clone.style.transform = 'none';
+
+    // Copy canvas data (like generated QR Codes) manually to the cloned element
+    const originalCanvases = element.querySelectorAll('canvas');
+    const clonedCanvases = clone.querySelectorAll('canvas');
+    originalCanvases.forEach((origCanvas, i) => {
+      const destCanvas = clonedCanvases[i] as HTMLCanvasElement;
+      if (destCanvas) {
+        destCanvas.width = origCanvas.width;
+        destCanvas.height = origCanvas.height;
+        const destCtx = destCanvas.getContext('2d');
+        if (destCtx) {
+          destCtx.drawImage(origCanvas, 0, 0);
+        }
+      }
+    });
+
+    document.body.appendChild(clone);
+
     let rawCanvas: HTMLCanvasElement;
     try {
-      // Calculate dynamic scale factor based on actual visible DOM element width
-      const elementWidth = element.offsetWidth || designWidth;
-      const scaleFactor = canvasWidth / elementWidth;
-
-      rawCanvas = await html2canvas(element, {
+      const scaleFactor = canvasWidth / designWidth;
+      rawCanvas = await html2canvas(clone, {
         scale: scaleFactor,
+        width: designWidth,
+        windowWidth: designWidth,
         backgroundColor: '#FFFFFF',
         logging: false,
         useCORS: true,
         allowTaint: true
       } as any);
     } catch (err) {
-      console.error('[BLEPrinterDriver] html2canvas direct capture failed:', err);
+      console.error('[BLEPrinterDriver] html2canvas clone capture failed:', err);
+      if (document.body.contains(clone)) {
+        document.body.removeChild(clone);
+      }
       return false;
+    } finally {
+      if (document.body.contains(clone)) {
+        document.body.removeChild(clone);
+      }
     }
 
     // 2. Map captured dimensions onto the final exact target canvas (ensures solid white flat background)
