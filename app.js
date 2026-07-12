@@ -10801,7 +10801,20 @@ async function startApp() {
     document.getElementById('btn-import-db').addEventListener('click', triggerImportDatabase);
     document.getElementById('db-import-file-input').addEventListener('change', importDatabaseFromJSON);
 
-    // 17. Bind printer action execution
+    // 17. Bind printer action execution and diagnostics listener
+    window.addEventListener('print-diagnostics-updated', renderPrintDiagnostics);
+    
+    const btnClearDiagLogs = document.getElementById('btn-clear-diagnostic-logs');
+    if (btnClearDiagLogs) {
+      btnClearDiagLogs.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.PrintDiagnostics) {
+          window.PrintDiagnostics.clear();
+          renderPrintDiagnostics();
+        }
+      });
+    }
+
     document.getElementById('btn-execute-print').addEventListener('click', (e) => {
       playSound('print');
       const saleId = parseInt(e.target.closest('button').dataset.id);
@@ -11282,6 +11295,108 @@ function updateKeypadDisplay() {}
 function handleKeypadPress(key) {}
 function closeCustomKeypad(revert = false) {}
 function saveKeypadValue() {}
+
+/**
+ * Renders the state of the Smart Printing Diagnostic system in the UI.
+ * Handles localization (Arabic/English), custom icons, dynamic progress bars,
+ * and colored conclusion cards with helpful suggestions depending on the failure step.
+ */
+function renderPrintDiagnostics() {
+  const stepsContainer = document.getElementById('diagnostic-steps-container');
+  const conclusionHeading = document.getElementById('diagnostic-conclusion-heading');
+  const conclusionDesc = document.getElementById('diagnostic-conclusion-desc');
+  const conclusionContainer = document.getElementById('diagnostic-conclusion-container');
+  const conclusionIcon = document.getElementById('diagnostic-conclusion-icon');
+
+  if (!stepsContainer || typeof window.PrintDiagnostics === 'undefined') return;
+
+  const steps = window.PrintDiagnostics.getSteps();
+  const conclusion = window.PrintDiagnostics.getConclusion();
+
+  // 1. Render conclusion card with color coding matching severity
+  if (conclusionHeading && conclusionDesc && conclusionContainer) {
+    conclusionHeading.innerText = currentLanguage === 'ar' ? conclusion.titleAr : conclusion.titleEn;
+    conclusionDesc.innerText = currentLanguage === 'ar' ? conclusion.descAr : conclusion.descEn;
+    
+    conclusionContainer.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    if (conclusion.severity === 'success') {
+      conclusionContainer.style.backgroundColor = 'rgba(82, 183, 136, 0.08)';
+      conclusionContainer.style.borderColor = 'rgba(82, 183, 136, 0.2)';
+      conclusionContainer.style.color = '#2d6a4f';
+      if (conclusionIcon) conclusionIcon.innerText = 'check_circle';
+    } else if (conclusion.severity === 'danger') {
+      conclusionContainer.style.backgroundColor = 'rgba(230, 57, 70, 0.08)';
+      conclusionContainer.style.borderColor = 'rgba(230, 57, 70, 0.2)';
+      conclusionContainer.style.color = '#e63946';
+      if (conclusionIcon) conclusionIcon.innerText = 'error';
+    } else if (conclusion.severity === 'warning') {
+      conclusionContainer.style.backgroundColor = 'rgba(255, 159, 28, 0.08)';
+      conclusionContainer.style.borderColor = 'rgba(255, 159, 28, 0.2)';
+      conclusionContainer.style.color = '#ff9f1c';
+      if (conclusionIcon) conclusionIcon.innerText = 'warning';
+    } else { // info / pending
+      conclusionContainer.style.backgroundColor = 'rgba(2, 132, 199, 0.05)';
+      conclusionContainer.style.borderColor = 'rgba(2, 132, 199, 0.1)';
+      conclusionContainer.style.color = '#0284c7';
+      if (conclusionIcon) conclusionIcon.innerText = 'analytics';
+    }
+  }
+
+  // 2. Render steps or a message if there are no steps yet
+  if (steps.length === 0) {
+    stepsContainer.innerHTML = `
+      <div style="text-align: center; color: #94a3b8; font-size: 11px; padding: 12px 0;">
+        ${currentLanguage === 'ar' ? 'لم يتم تشغيل أمر طباعة بعد للتحليل.' : 'No print job triggered for analysis yet.'}
+      </div>
+    `;
+    return;
+  }
+
+  stepsContainer.innerHTML = '';
+  steps.forEach(step => {
+    const stepEl = document.createElement('div');
+    stepEl.className = `diagnostic-step-item ${step.status}`;
+    
+    let iconName = 'hourglass_empty';
+    if (step.status === 'success') iconName = 'check_circle';
+    if (step.status === 'failed') iconName = 'cancel';
+    if (step.status === 'warning') iconName = 'warning';
+    if (step.status === 'running') iconName = 'sync';
+
+    const nameText = currentLanguage === 'ar' ? step.nameAr : step.nameEn;
+    const msgText = currentLanguage === 'ar' ? step.messageAr : step.messageEn;
+
+    let progressBarHtml = '';
+    // If transmit_payload is active, render the real-time progress bar with chunk info
+    if (step.id === 'transmit_payload' && step.details) {
+      const percentage = step.details.percentage || 0;
+      progressBarHtml = `
+        <div class="diag-progress-bar-bg" style="margin-top: 6px;">
+          <div class="diag-progress-bar-fill" style="width: ${percentage}%"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #64748b; margin-top: 3px; font-family: monospace;">
+          <span>${percentage}%</span>
+          <span>${step.details.sentBytes || 0} / ${step.details.totalBytes || 0} B</span>
+        </div>
+      `;
+    }
+
+    stepEl.innerHTML = `
+      <div class="diagnostic-step-icon ${step.status}">
+        <span class="material-icons-round" style="font-size: 14px;">${iconName}</span>
+      </div>
+      <div class="diagnostic-step-text" style="width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <span class="diagnostic-step-name">${nameText}</span>
+          <span class="diagnostic-step-time" style="font-family: monospace; font-size: 9px; color: #94a3b8;">${step.timestamp}</span>
+        </div>
+        <span class="diagnostic-step-msg" style="word-break: break-word;">${msgText}</span>
+        ${progressBarHtml}
+      </div>
+    `;
+    stepsContainer.appendChild(stepEl);
+  });
+}
 
 // Cordova / Native platform back-button binding for Capacitor hybrid environments
 document.addEventListener('deviceready', () => {

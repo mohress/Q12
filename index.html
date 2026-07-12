@@ -574,6 +574,38 @@
           </div>
         </div>
 
+        <!-- Advanced Bluetooth Printing Diagnostic Panel (نظام تحليل وتشخيص الطباعة المتقدم) -->
+        <div class="premium-card printer-diagnostics-card" id="printer-diagnostics-panel" style="border: 1.5px dashed rgba(66, 135, 245, 0.3); background-color: #fafcff; gap: 14px; margin-top: 12px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 8px; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="material-icons-round" style="color: #0284c7; font-size: 20px; animation: pulse 2s infinite;">analytics</span>
+              <div>
+                <h3 style="font-size: 13px; font-weight: 700; color: #0284c7; margin: 0;">محلل ومُشخّص الطباعة الذكي</h3>
+                <p style="font-size: 10px; color: #64748b; margin: 0;">تتبع حي ومباشر لأوامر واتصال الطابعة من البداية</p>
+              </div>
+            </div>
+            <button class="btn-secondary" id="btn-clear-diagnostic-logs" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); background-color: #fff; cursor: pointer; color: #64748b;">تصفير السجل</button>
+          </div>
+
+          <!-- Dynamic Live Conclusion Card -->
+          <div id="diagnostic-conclusion-container" style="width: 100%; border-radius: 6px; padding: 10px 12px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; background-color: rgba(2, 132, 199, 0.05); border: 1px solid rgba(2, 132, 199, 0.1); color: #0284c7;">
+            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700;" id="diagnostic-conclusion-title">
+              <span class="material-icons-round" style="font-size: 16px;" id="diagnostic-conclusion-icon">info</span>
+              <span id="diagnostic-conclusion-heading">مُحلل الطباعة جاهز</span>
+            </div>
+            <p id="diagnostic-conclusion-desc" style="margin: 0; line-height: 1.4; color: #475569;">
+              اضغط على زر الطباعة في الفاتورة لبدء التحليل الفوري وتحديد المشاكل لاسلكياً أو برمجياً.
+            </p>
+          </div>
+
+          <!-- Diagnostic Trace Steps Container -->
+          <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;" id="diagnostic-steps-container">
+            <div style="text-align: center; color: #94a3b8; font-size: 11px; padding: 12px 0;">
+              لم يتم تشغيل أمر طباعة بعد للتحليل.
+            </div>
+          </div>
+        </div>
+
         <!-- Office Info Form -->
         <div class="premium-card" style="gap: 14px;">
           <h3 id="txt-office-settings-title" style="font-size: 14px; font-weight: 700; color: var(--color-primary); border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">معلومات العلوة</h3>

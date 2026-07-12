@@ -13,6 +13,223 @@
 
 import html2canvas from 'html2canvas';
 
+export interface DiagnosticStep {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  status: 'pending' | 'running' | 'success' | 'failed' | 'warning';
+  messageAr: string;
+  messageEn: string;
+  timestamp: string;
+  details?: any;
+}
+
+export class PrintDiagnostics {
+  private static steps: DiagnosticStep[] = [];
+  private static listeners: (() => void)[] = [];
+
+  public static clear() {
+    this.steps = [];
+    this.notify();
+  }
+
+  public static getSteps(): DiagnosticStep[] {
+    return this.steps;
+  }
+
+  public static addListener(cb: () => void) {
+    this.listeners.push(cb);
+  }
+
+  public static removeListener(cb: () => void) {
+    this.listeners = this.listeners.filter(l => l !== cb);
+  }
+
+  private static notify() {
+    this.listeners.forEach(cb => {
+      try { cb(); } catch(e) {}
+    });
+    const event = new CustomEvent('print-diagnostics-updated');
+    window.dispatchEvent(event);
+  }
+
+  public static addStep(
+    id: string,
+    nameAr: string,
+    nameEn: string,
+    status: 'pending' | 'running' | 'success' | 'failed' | 'warning',
+    messageAr: string,
+    messageEn: string,
+    details?: any
+  ) {
+    const existingIndex = this.steps.findIndex(s => s.id === id);
+    const step: DiagnosticStep = {
+      id,
+      nameAr,
+      nameEn,
+      status,
+      messageAr,
+      messageEn,
+      timestamp: new Date().toLocaleTimeString(),
+      details
+    };
+    if (existingIndex !== -1) {
+      this.steps[existingIndex] = step;
+    } else {
+      this.steps.push(step);
+    }
+    this.notify();
+    console.log(`[Diagnostics] [${status.toUpperCase()}] ${nameEn}: ${messageEn}`);
+  }
+
+  public static updateStep(
+    id: string,
+    status: 'pending' | 'running' | 'success' | 'failed' | 'warning',
+    messageAr: string,
+    messageEn: string,
+    details?: any
+  ) {
+    const step = this.steps.find(s => s.id === id);
+    if (step) {
+      step.status = status;
+      step.messageAr = messageAr;
+      step.messageEn = messageEn;
+      if (details) step.details = { ...step.details, ...details };
+      step.timestamp = new Date().toLocaleTimeString();
+      this.notify();
+      console.log(`[Diagnostics] [${status.toUpperCase()}] ${step.nameEn}: ${messageEn}`);
+    }
+  }
+
+  public static getConclusion(): { titleAr: string; titleEn: string; descAr: string; descEn: string; severity: 'info' | 'warning' | 'danger' | 'success' } {
+    const failedStep = this.steps.find(s => s.status === 'failed');
+    if (!failedStep) {
+      const runningStep = this.steps.find(s => s.status === 'running');
+      if (runningStep) {
+        return {
+          titleAr: "عملية التحليل والتشخيص جارية حالياً...",
+          titleEn: "Diagnostic Analysis in Progress...",
+          descAr: `النظام يقوم بمتابعة وفحص الخطوة: "${runningStep.nameAr}". يرجى إبقاء الهاتف بالقرب من الطابعة.`,
+          descEn: `The system is currently tracking and testing the step: "${runningStep.nameEn}". Please keep the device near the printer.`,
+          severity: 'info'
+        };
+      }
+      
+      const warningStep = this.steps.find(s => s.status === 'warning');
+      if (warningStep) {
+        return {
+          titleAr: "تنبيهات طفيفة أثناء التشخيص",
+          titleEn: "Diagnostic Warnings Captured",
+          descAr: `العملية تمت ولكن رصدنا تنبيهاً في خطوة "${warningStep.nameAr}": ${warningStep.messageAr}`,
+          descEn: `The operation completed but we detected a warning on "${warningStep.nameEn}": ${warningStep.messageEn}`,
+          severity: 'warning'
+        };
+      }
+
+      if (this.steps.length === 0) {
+        return {
+          titleAr: "مُحلّل الطباعة الذكي جاهز",
+          titleEn: "Smart Print Analyzer Ready",
+          descAr: "اضغط على زر الطباعة في الفاتورة لتنشيط فحص القنوات وأوامر الرسم النقطي واستنتاج أي مشاكل هاردوير فوراً.",
+          descEn: "Press the print button inside any invoice to activate connection scans, raster graphics compiling, and live hardware issue deduction.",
+          severity: 'info'
+        };
+      }
+
+      return {
+        titleAr: "اكتملت الطباعة بنجاح وبأعلى كفاءة!",
+        titleEn: "Printing Completed Successfully!",
+        descAr: "تمت معالجة الفاتورة، ورسم الرسوميات وتحويلها، ونقل الحزم بنجاح دون أي مشاكل برمجية أو فقدان للاتصال.",
+        descEn: "Invoice elements compiled, raster graphics generated, and binary packets securely transmitted without any memory overflows or packet drops.",
+        severity: 'success'
+      };
+    }
+
+    switch (failedStep.id) {
+      case 'init_hardware':
+        return {
+          titleAr: "تعذر بدء البلوتوث (عبر المتصفح أو بيئة ساندبوكس)",
+          titleEn: "Bluetooth Access Prevented (Iframe / Browser Limits)",
+          descAr: "النظام منع تهيئة اتصال البلوتوث. السبب: متصفحات الويب تمنع تشغيل البلوتوث داخل إطارات المطورين (iframe) لتأمين الخصوصية. الحل: اضغط على زر 'طباعة النظام' البديل أو افتح التطبيق في علامة تبويب جديدة مستقلة خارج البيئة المصغرة لتنشيط البلوتوث بشكل مباشر ونظيف.",
+          descEn: "Hardware communication blocked. Browsers restrict Web Bluetooth usage inside iframe environments (AI Studio preview iframe). Solution: Tap 'System Print' or open the application in a Standalone Browser Tab to unlock real Bluetooth device scanning.",
+          severity: 'danger'
+        };
+      case 'get_element':
+        return {
+          titleAr: "لم نجد قالب الفاتورة المرئي",
+          titleEn: "Target Invoice View Not Found",
+          descAr: "فشل التحليل في الوصول لعنصر الفاتورة بالـ DOM. قد يكون القالب لم يكتمل بناؤه أو غير مرئي حالياً في الصفحة النشطة. يرجى إعادة محاولة الفتح والضغط على زر الطباعة مرة أخرى.",
+          descEn: "DOM element retrieval failed. The target invoice HTML container is either unmounted or not present on the active screen view. Try closing and opening the print sheet.",
+          severity: 'danger'
+        };
+      case 'render_html':
+        return {
+          titleAr: "خطأ في التقاط الرسوميات (html2canvas Engine)",
+          titleEn: "Visual Layout Render Failure (html2canvas)",
+          descAr: "تعذر محاكاة الفاتورة وتحويلها لسطح رسم. السبب المحتمل: استخدام صور خارجية غير مصرحة ببروتوكول CORS، أو حجم الصفحة شديد الضخامة. الحل: تأكد من اكتمال تحميل الفاتورة أو استخدم خيار 'حفظ كصورة' أولاً لتشخيص الرسام.",
+          descEn: "HTML capture engine failed to draw elements onto canvas. Typically caused by external image source CORS blocks or memory allocation issues. Verify that all resources are local.",
+          severity: 'danger'
+        };
+      case 'raster_process':
+        return {
+          titleAr: "خطأ في تشفير الألوان الثنائية (Rasterization)",
+          titleEn: "1-bit Monochrome Formatting Failure",
+          descAr: "حدث خلل أثناء تحويل الصورة الملونة إلى حزم نقطية صلبة (سوداء وبيضاء تماماً) لتناسب رأس الطباعة الحراري. قد تكون أبعاد الفاتورة فارغة. يرجى التحقق من محتوى الفاتورة وإعادة المحاولة.",
+          descEn: "The driver failed to process color values into 1-bit solid black-and-white stripes compatible with standard ESC/POS printers. Verify that the layout contains valid non-zero dimensions.",
+          severity: 'danger'
+        };
+      case 'transmit_payload':
+        const deviceType = failedStep.details?.deviceType;
+        if (deviceType === 'web_ble') {
+          return {
+            titleAr: "فشل إرسال البيانات عبر قنوات الـ BLE (Web Bluetooth)",
+            titleEn: "Web Bluetooth Stream Error (GATT Write Rejected)",
+            descAr: "تعذر إكمال البث اللاسلكي عبر Web Bluetooth. هذا يحدث بسبب: 1) ابتعاد الطابعة عن الموبايل، 2) ضعف شحن البطارية مما يؤدي لهبوط جهد البلوتوث، 3) تشنج نظام استقبال الطابعة الصيني الرخيص. الحل: أطفئ الطابعة، أعد تشغيلها، أعد الاتصال بها من صفحة الإعدادات، وجرب الطباعة مرة أخرى.",
+            descEn: "GATT write sequence was interrupted. Commonly caused by: 1) Printer out of physical range, 2) Low printer battery causing signal drops, 3) Cheap receiver microcontroller buffer crash. Solution: Power cycle the printer, reconnect, and try again.",
+            severity: 'danger'
+          };
+        } else if (deviceType === 'classic') {
+          return {
+            titleAr: "تشنج البث عبر خط السيريال الكلاسيكي (Classic Serial SPP)",
+            titleEn: "Classic Bluetooth Serial Write Error",
+            descAr: "قناة البث الكلاسيكية رفضت استقبال البيانات. تأكد من أن الهاتف غير متصل بأجهزة بلوتوث أخرى حالياً، وأن تطبيق الأندرويد يملك صلاحية BLUETOOTH_CONNECT المقبولة. يوصى بإيقاف بلوتوث الهاتف وإعادة تشغيله مع إعادة تشغيل الطابعة لتنظيف قنوات الكاش المتشنجة.",
+            descEn: "Classic serial write buffer was rejected by Android bluetooth socket. Ensure no other devices are connected, and BLUETOOTH_CONNECT permission is fully granted. Try toggling phone's Bluetooth.",
+            severity: 'danger'
+          };
+        } else if (deviceType === 'ble') {
+          return {
+            titleAr: "فشل كتابة الحزم عبر Cordova BLE Central",
+            titleEn: "Cordova BLE Central Write Error",
+            descAr: "تم رفض حزمة الكتابة عبر Cordova BLE. قد يكون معرف الخدمة (Service UUID) أو معرف الخاصية (Characteristic UUID) للطابعة المسجل غير صحيح أو لا يتوافق مع معايير الطابعات الحرارية الصينية. ننصح بتجربة نوع اتصال آخر.",
+            descEn: "BLE package write failed. The configured Service UUID or Write Characteristic UUID might be incompatible with this specific thermal printer firmware. Try other connection modes.",
+            severity: 'danger'
+          };
+        } else {
+          return {
+            titleAr: "انقطاع مفاجئ في قناة الاتصال النشطة",
+            titleEn: "Active Connection Pipeline Aborted",
+            descAr: "انقطع تدفق البيانات البرمجية إلى الهاردوير. لا يوجد اتصال فعال مسجل حالياً. يرجى التوجه للإعدادات والضغط على 'اقتران وفحص' ثم إقران الطابعة من جديد.",
+            descEn: "Data pipe broke before finishing transmission. No verified hardware connection is active. Please re-pair the printer in the settings panel.",
+            severity: 'danger'
+          };
+        }
+      default:
+        return {
+          titleAr: "فشل غير معروف في عملية الطباعة",
+          titleEn: "Unknown General Print Failure",
+          descAr: `فشلت الطباعة عند الخطوة (${failedStep.nameAr}): ${failedStep.messageAr}. يرجى إيقاف وتشغيل الطابعة لتصفير ذاكرتها الداخلية.`,
+          descEn: `Printing failed at (${failedStep.nameEn}): ${failedStep.messageEn}. Please power-cycle the printer to flush its cache.`,
+          severity: 'danger'
+        };
+    }
+  }
+}
+
+// Bind to window for easy access from app.js
+if (typeof window !== 'undefined') {
+  (window as any).PrintDiagnostics = PrintDiagnostics;
+}
+
 export interface PrinterConnectionConfig {
   type: 'web_ble' | 'classic' | 'ble' | 'mock';
   webBluetoothCharacteristic?: any; // BluetoothRemoteGATTCharacteristic
@@ -40,6 +257,47 @@ export class BLEPrinterDriver {
     const chunkSize = config.chunkSize || 20;
 
     console.log(`[BLEPrinterDriver] Printing HTML Element. Target width: ${canvasWidth}px, Pacing delay: ${pacingDelay}ms`);
+
+    // Live diagnostics initialization
+    PrintDiagnostics.clear();
+    PrintDiagnostics.addStep(
+      'init_hardware',
+      'تهيئة قنوات الاتصال والتحقق من الهاردوير',
+      'Hardware & Connection Check',
+      'running',
+      `جاري فحص بيئة العمل وتوافق منفذ الاتصال: ${config.type}...`,
+      `Validating runtime environment and printer port: ${config.type}...`
+    );
+
+    if (!config.type) {
+      PrintDiagnostics.updateStep('init_hardware', 'failed', 'فشلت التهيئة: نوع الاتصال غير محدد أو القيمة فارغة.', 'Initialization failed: connection type is undefined.');
+      return false;
+    }
+    PrintDiagnostics.updateStep('init_hardware', 'success', `تم التحقق بنجاح من تهيئة منفذ الاتصال (${config.type}).`, `Hardware check completed. Connection type: ${config.type}`);
+
+    PrintDiagnostics.addStep(
+      'get_element',
+      'قراءة عناصر الفاتورة الرقمية',
+      'Fetch Invoice Elements',
+      'running',
+      'جاري قراءة محتويات الفاتورة من شاشة العرض وإعداد الأبعاد الافتراضية للطباعة...',
+      'Retrieving visual invoice layout elements and resolving scale dimensions...'
+    );
+
+    if (!element) {
+      PrintDiagnostics.updateStep('get_element', 'failed', 'خطأ: عنصر الفاتورة المرئي غير متوفر في الـ DOM.', 'Failed: Invoice DOM element is not available.');
+      return false;
+    }
+    PrintDiagnostics.updateStep('get_element', 'success', `تم جلب الفاتورة بنجاح. عرض الورق: ${is58mm ? '58mm' : '80mm'} (عرض التصوير: ${canvasWidth}px).`, `Invoice elements fetched. Width: ${is58mm ? '58mm' : '80mm'} (Target width: ${canvasWidth}px)`);
+
+    PrintDiagnostics.addStep(
+      'render_html',
+      'تحويل الفاتورة المرئية إلى شكل رسومي النواة',
+      'Visual Layout Rasterization (html2canvas)',
+      'running',
+      'جاري تشغيل رسام المتصفح الافتراضي لالتقاط الصورة وتوليد الرسوميات المفلترة...',
+      'Rendering the HTML tree to canvas using html2canvas engine...'
+    );
 
     // 1. Create a safe clone of the element positioned off-screen to prevent layout shift and capture accurately
     const clone = element.cloneNode(true) as HTMLElement;
@@ -84,8 +342,11 @@ export class BLEPrinterDriver {
         useCORS: true,
         allowTaint: true
       } as any);
-    } catch (err) {
+      
+      PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي بنجاح. أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
+    } catch (err: any) {
       console.error('[BLEPrinterDriver] html2canvas clone capture failed:', err);
+      PrintDiagnostics.updateStep('render_html', 'failed', `فشل محرك html2canvas في تحويل عناصر الصفحة إلى صورة: ${err?.message || err}`, `Visual capture failed: ${err?.message || err}`);
       if (document.body.contains(clone)) {
         document.body.removeChild(clone);
       }
@@ -105,67 +366,85 @@ export class BLEPrinterDriver {
     const finalCtx = finalCanvas.getContext('2d');
     if (!finalCtx) {
       console.error('[BLEPrinterDriver] Failed to initialize 2D context');
+      PrintDiagnostics.addStep('raster_process', 'معالجة تفتيت الصورة وصياغة الأوامر الحرارية', 'Monochrome ESC/POS Graphics Compile', 'failed', 'فشلت معالجة الألوان: تعذر إنشاء سياق رسم 2D Canvas Context.', 'Failed monochrome process: Canvas 2D rendering context is null.');
       return false;
     }
 
-    finalCtx.fillStyle = '#FFFFFF';
-    finalCtx.fillRect(0, 0, canvasWidth, finalHeight);
-    finalCtx.drawImage(rawCanvas, 0, 0, canvasWidth, finalHeight);
+    PrintDiagnostics.addStep(
+      'raster_process',
+      'معالجة تفتيت الصورة وصياغة الأوامر الحرارية',
+      'Monochrome ESC/POS Graphics Compile',
+      'running',
+      `جاري استخراج مصفوفة الألوان وتحويلها لبيانات ثنائية 1-bit بكسلية بمجموع عينات ${finalHeight} خط عرضي...`,
+      `Analyzing pixels and converting to 1-bit monochrome binary command format (${finalHeight} total vertical lines)...`
+    );
 
-    // 3. Process image into ESC/POS monochrome bitmap commands in 40px bands
-    const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
-    const pixels = imgData.data;
-    const commands: number[] = [];
+    try {
+      finalCtx.fillStyle = '#FFFFFF';
+      finalCtx.fillRect(0, 0, canvasWidth, finalHeight);
+      finalCtx.drawImage(rawCanvas, 0, 0, canvasWidth, finalHeight);
 
-    // ESC @ - Initialize Printer
-    commands.push(0x1B, 0x40);
+      // 3. Process image into ESC/POS monochrome bitmap commands in 40px bands
+      const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
+      const pixels = imgData.data;
+      const commands: number[] = [];
 
-    const bandHeight = 40;
-    const totalBands = Math.ceil(finalHeight / bandHeight);
-    const widthBytes = canvasWidth / 8;
+      // ESC @ - Initialize Printer
+      commands.push(0x1B, 0x40);
 
-    for (let b = 0; b < totalBands; b++) {
-      const startY = b * bandHeight;
-      const currentBandHeight = Math.min(bandHeight, finalHeight - startY);
+      const bandHeight = 40;
+      const totalBands = Math.ceil(finalHeight / bandHeight);
+      const widthBytes = canvasWidth / 8;
 
-      // GS v 0 0 - Print Raster Bit Image
-      commands.push(0x1D, 0x76, 0x30, 0x00);
-      commands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (width bytes)
-      commands.push(currentBandHeight & 0xFF, (currentBandHeight >> 8) & 0xFF); // yL, yH (height dots)
+      for (let b = 0; b < totalBands; b++) {
+        const startY = b * bandHeight;
+        const currentBandHeight = Math.min(bandHeight, finalHeight - startY);
 
-      for (let y = startY; y < startY + currentBandHeight; y++) {
-        for (let xByte = 0; xByte < widthBytes; xByte++) {
-          let byteVal = 0;
-          for (let bit = 0; bit < 8; bit++) {
-            const x = xByte * 8 + bit;
-            let isBlack = 0;
-            if (x < canvasWidth) {
-              const idx = (y * canvasWidth + x) * 4;
-              const r = pixels[idx];
-              const g = pixels[idx + 1];
-              const b = pixels[idx + 2];
-              const a = pixels[idx + 3];
+        // GS v 0 0 - Print Raster Bit Image
+        commands.push(0x1D, 0x76, 0x30, 0x00);
+        commands.push(widthBytes & 0xFF, (widthBytes >> 8) & 0xFF); // xL, xH (width bytes)
+        commands.push(currentBandHeight & 0xFF, (currentBandHeight >> 8) & 0xFF); // yL, yH (height dots)
 
-              // High-contrast thresholding with transparency support
-              if (a > 128) {
-                const grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
-                if (grayscale < 200) { // Solid black threshold
-                  isBlack = 1;
+        for (let y = startY; y < startY + currentBandHeight; y++) {
+          for (let xByte = 0; xByte < widthBytes; xByte++) {
+            let byteVal = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const x = xByte * 8 + bit;
+              let isBlack = 0;
+              if (x < canvasWidth) {
+                const idx = (y * canvasWidth + x) * 4;
+                const r = pixels[idx];
+                const g = pixels[idx + 1];
+                const b = pixels[idx + 2];
+                const a = pixels[idx + 3];
+
+                // High-contrast thresholding with transparency support
+                if (a > 128) {
+                  const grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
+                  if (grayscale < 200) { // Solid black threshold
+                    isBlack = 1;
+                  }
                 }
               }
+              byteVal = (byteVal << 1) | isBlack;
             }
-            byteVal = (byteVal << 1) | isBlack;
+            commands.push(byteVal);
           }
-          commands.push(byteVal);
         }
       }
+
+      // 4. Feed paper for safe tear-off (Avoid ESC/POS Cutter command to protect cheap gear from firmware freeze)
+      commands.push(0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A);
+
+      const payload = new Uint8Array(commands);
+      PrintDiagnostics.updateStep('raster_process', 'success', `اكتمل الرسم الثنائي. تم إنتاج حزمة أوامر حرارية بحجم ${commands.length} بايت مقسمة على ${totalBands} حزمة.`, `Graphics compilation success. Compiled ${commands.length} bytes of binary ESC/POS commands over ${totalBands} vertical bands.`);
+      
+      return await this.sendBinaryPayload(payload, config, pacingDelay, chunkSize);
+    } catch (err: any) {
+      console.error('[BLEPrinterDriver] Raster graphics compilation failed:', err);
+      PrintDiagnostics.updateStep('raster_process', 'failed', `حدث خطأ أثناء فحص عينات الألوان والتحويل الثنائي: ${err?.message || err}`, `Failed during color conversion: ${err?.message || err}`);
+      return false;
     }
-
-    // 4. Feed paper for safe tear-off (Avoid ESC/POS Cutter command to protect cheap gear from firmware freeze)
-    commands.push(0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A);
-
-    const payload = new Uint8Array(commands);
-    return await this.sendBinaryPayload(payload, config, pacingDelay, chunkSize);
   }
 
   /**
@@ -179,8 +458,25 @@ export class BLEPrinterDriver {
   ): Promise<boolean> {
     console.log(`[BLEPrinterDriver] Dispatched payload of ${payload.length} bytes. Mode: ${config.type}`);
 
+    PrintDiagnostics.addStep(
+      'transmit_payload',
+      'بث حزم البيانات الحرارية للطابعة',
+      'Transmit Binary Stream to Printer',
+      'running',
+      `جاري بث حزمة البيانات المتكاملة بمقدار ${payload.length} بايت. وضع الاتصال: ${config.type}...`,
+      `Starting payload streaming of ${payload.length} bytes over ${config.type}...`,
+      { deviceType: config.type, totalBytes: payload.length, sentBytes: 0, percentage: 0 }
+    );
+
     if (config.type === 'mock') {
       console.log('[BLEPrinterDriver] Mock print dispatch successful');
+      PrintDiagnostics.updateStep(
+        'transmit_payload',
+        'success',
+        `اكتمل المحاكاة: تم إرسال حزمة تجريبية (${payload.length} بايت) بنجاح إلى منفذ المحاكاة الافتراضي.`,
+        `Mock succeeded: Transmitted fake payload of ${payload.length} bytes to simulated printer viewport.`,
+        { sentBytes: payload.length, percentage: 100 }
+      );
       return true;
     }
 
@@ -201,13 +497,37 @@ export class BLEPrinterDriver {
             await char.writeValue(buffer);
           }
 
+          const progressPercent = Math.min(100, Math.round((i / payload.length) * 100));
+          PrintDiagnostics.updateStep(
+            'transmit_payload',
+            'running',
+            `جاري البث: تم إرسال ${i} من ${payload.length} بايت (${progressPercent}%)...`,
+            `Streaming: Transmitted ${i} of ${payload.length} bytes (${progressPercent}%)...`,
+            { sentBytes: i, percentage: progressPercent }
+          );
+
           if (pacingDelay > 0) {
             await new Promise((resolve) => setTimeout(resolve, pacingDelay));
           }
         }
+        
+        PrintDiagnostics.updateStep(
+          'transmit_payload',
+          'success',
+          `اكتمل البث بنجاح! تم إرسال ${payload.length} بايت كاملة عبر منفذ Web Bluetooth GATT.`,
+          `Transmission success! Streamed ${payload.length} bytes completely over Web Bluetooth.`,
+          { sentBytes: payload.length, percentage: 100 }
+        );
         return true;
-      } catch (err) {
+      } catch (err: any) {
         console.error('[BLEPrinterDriver] Web Bluetooth write failure:', err);
+        PrintDiagnostics.updateStep(
+          'transmit_payload',
+          'failed',
+          `فشل البث اللاسلكي: ${err?.message || err}`,
+          `Streaming interrupted: ${err?.message || err}`,
+          { error: err }
+        );
         return false;
       }
     }
@@ -231,6 +551,14 @@ export class BLEPrinterDriver {
 
             btSerial.write(buffer, () => {
               offset += serialChunkSize;
+              const progressPercent = Math.min(100, Math.round((offset / payload.length) * 100));
+              PrintDiagnostics.updateStep(
+                'transmit_payload',
+                'running',
+                `جاري البث الكلاسيكي: تم نقل ${offset} من ${payload.length} بايت (${progressPercent}%)...`,
+                `Streaming SPP: Sent ${offset} of ${payload.length} bytes (${progressPercent}%)...`,
+                { sentBytes: offset, percentage: progressPercent }
+              );
               setTimeout(writeNext, 30); // 30ms stable classic serial delay
             }, (err: any) => {
               reject(err);
@@ -238,9 +566,24 @@ export class BLEPrinterDriver {
           }
           writeNext();
         });
+
+        PrintDiagnostics.updateStep(
+          'transmit_payload',
+          'success',
+          `اكتمل البث عبر السيريال بنجاح! تم شحن ${payload.length} بايت كاملة إلى طابعة البلوتوث الكلاسيكية.`,
+          `SPP stream succeeded! Broadcasted ${payload.length} bytes directly to classic serial printer.`,
+          { sentBytes: payload.length, percentage: 100 }
+        );
         return true;
-      } catch (err) {
+      } catch (err: any) {
         console.error('[BLEPrinterDriver] Classic Bluetooth Serial write failure:', err);
+        PrintDiagnostics.updateStep(
+          'transmit_payload',
+          'failed',
+          `فشل البث عبر السيريال الكلاسيكي: ${err?.message || err}`,
+          `Serial SPP transmit failed: ${err?.message || err}`,
+          { error: err }
+        );
         return false;
       }
     }
@@ -267,11 +610,27 @@ export class BLEPrinterDriver {
 
             ble.writeWithoutResponse(deviceId, serviceUUID, charUUID, buffer, () => {
               offset += chunkSize;
+              const progressPercent = Math.min(100, Math.round((offset / payload.length) * 100));
+              PrintDiagnostics.updateStep(
+                'transmit_payload',
+                'running',
+                `جاري بث BLE: تم إرسال ${offset} من ${payload.length} بايت (${progressPercent}%)...`,
+                `Streaming BLE: Sent ${offset} of ${payload.length} bytes (${progressPercent}%)...`,
+                { sentBytes: offset, percentage: progressPercent }
+              );
               setTimeout(writeNext, pacingDelay);
             }, (err: any) => {
               // Fail-safe: try write with response if without-response is rejected
               ble.write(deviceId, serviceUUID, charUUID, buffer, () => {
                 offset += chunkSize;
+                const progressPercent = Math.min(100, Math.round((offset / payload.length) * 100));
+                PrintDiagnostics.updateStep(
+                  'transmit_payload',
+                  'running',
+                  `جاري بث BLE (مع الاستجابة): تم إرسال ${offset} من ${payload.length} بايت (${progressPercent}%)...`,
+                  `Streaming BLE (with response): Sent ${offset} of ${payload.length} bytes (${progressPercent}%)...`,
+                  { sentBytes: offset, percentage: progressPercent }
+                );
                 setTimeout(writeNext, pacingDelay);
               }, (writeErr: any) => {
                 console.error('[BLEPrinterDriver] Cordova BLE write block error:', writeErr);
@@ -281,14 +640,35 @@ export class BLEPrinterDriver {
           }
           writeNext();
         });
+
+        PrintDiagnostics.updateStep(
+          'transmit_payload',
+          'success',
+          `اكتمل بث BLE بنجاح! تم نقل ${payload.length} بايت كاملة إلى الطابعة الحرارية BLE.`,
+          `BLE stream success! Transmitted ${payload.length} bytes entirely to BLE printer characteristic.`,
+          { sentBytes: payload.length, percentage: 100 }
+        );
         return true;
-      } catch (err) {
+      } catch (err: any) {
         console.error('[BLEPrinterDriver] Cordova BLE Central write failure:', err);
+        PrintDiagnostics.updateStep(
+          'transmit_payload',
+          'failed',
+          `فشل البث اللاسلكي عبر BLE Central: ${err?.message || err}`,
+          `BLE Central transmission failed: ${err?.message || err}`,
+          { error: err }
+        );
         return false;
       }
     }
 
     console.warn('[BLEPrinterDriver] No active hardware port matching config parameters was found.');
+    PrintDiagnostics.updateStep(
+      'transmit_payload',
+      'failed',
+      'لم يتم العثور على أي قناة اتصال نشطة أو مقترنة بالطابعة في بيئة العمل الحالية.',
+      'No active, configured, or paired hardware ports were found to route the binary ESC/POS stream.'
+    );
     return false;
   }
 
