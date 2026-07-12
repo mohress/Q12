@@ -7774,8 +7774,8 @@ async function executePrintJob(saleId) {
     writeServiceUUID: bleWriteServiceUUID,
     writeCharUUID: bleWriteCharUUID,
     paperWidth: printerPaperWidth === '80' ? '80' : '58',
-    pacingDelayMs: 15, // Highly stable 15ms pacing delay for low-end devices
-    chunkSize: 20
+    pacingDelayMs: 5, // Highly optimized ultra-fast 5ms pacing delay
+    chunkSize: 128 // Fast 128-byte chunks for high-speed BLE throughput
   };
 
   try {
@@ -11562,7 +11562,7 @@ function runDeepEnvironmentDiagnostics() {
     // 4. Update pacing and timing metrics
     const diagValTiming = document.getElementById('diag-val-timing');
     const diagPillTiming = document.getElementById('diag-pill-timing');
-    if (diagValTiming) diagValTiming.innerText = `15ms Pacing`;
+    if (diagValTiming) diagValTiming.innerText = `5ms Pacing`;
     if (diagPillTiming) {
       diagPillTiming.className = 'diagnostic-bento-status info';
       diagPillTiming.innerText = currentLanguage === 'ar' ? 'مستقر' : 'Stable';
