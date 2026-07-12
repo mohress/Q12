@@ -27,9 +27,16 @@ export interface DiagnosticStep {
 export class PrintDiagnostics {
   private static steps: DiagnosticStep[] = [];
   private static listeners: (() => void)[] = [];
+  private static customConclusion: { titleAr: string; titleEn: string; descAr: string; descEn: string; severity: 'info' | 'warning' | 'danger' | 'success' } | null = null;
 
   public static clear() {
     this.steps = [];
+    this.customConclusion = null;
+    this.notify();
+  }
+
+  public static setConclusion(conclusion: { titleAr: string; titleEn: string; descAr: string; descEn: string; severity: 'info' | 'warning' | 'danger' | 'success' }) {
+    this.customConclusion = conclusion;
     this.notify();
   }
 
@@ -102,6 +109,9 @@ export class PrintDiagnostics {
   }
 
   public static getConclusion(): { titleAr: string; titleEn: string; descAr: string; descEn: string; severity: 'info' | 'warning' | 'danger' | 'success' } {
+    if (this.customConclusion) {
+      return this.customConclusion;
+    }
     const failedStep = this.steps.find(s => s.status === 'failed');
     if (!failedStep) {
       const runningStep = this.steps.find(s => s.status === 'running');

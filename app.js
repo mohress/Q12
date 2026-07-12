@@ -11308,6 +11308,34 @@ function closeCustomKeypad(revert = false) {}
 function saveKeypadValue() {}
 
 /**
+ * Calculates and logs IndexedDB storage size and quota using browser Storage Estimate APIs.
+ * Ensures the app's persistent data footprint remains healthy and secure offline.
+ */
+async function calculateDatabaseSize() {
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const estimate = await navigator.storage.estimate();
+      const usedBytes = estimate.usage || 0;
+      const totalBytes = estimate.quota || 0;
+      const percentage = totalBytes > 0 ? ((usedBytes / totalBytes) * 100).toFixed(4) : 0;
+      
+      const usedKB = (usedBytes / 1024).toFixed(2);
+      const usedMB = (usedBytes / (1024 * 1024)).toFixed(2);
+      
+      console.log(`[Database Size Check] Used: ${usedKB} KB (${usedMB} MB) of ${ (totalBytes / (1024 * 1024 * 1024)).toFixed(1) } GB (${percentage}% of quota used).`);
+      
+      // Update any dynamically injected UI info labels if present
+      const sizeBadge = document.getElementById('setting-db-size-badge');
+      if (sizeBadge) {
+        sizeBadge.innerText = `${usedKB} KB`;
+      }
+    }
+  } catch (err) {
+    console.warn('[Database Size Check Error]', err);
+  }
+}
+
+/**
  * Renders the state of the Smart Printing Diagnostic system in the UI.
  * Handles localization (Arabic/English), custom icons, dynamic progress bars,
  * and colored conclusion cards with helpful suggestions depending on the failure step.
