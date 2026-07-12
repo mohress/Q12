@@ -41,61 +41,25 @@ export class BLEPrinterDriver {
 
     console.log(`[BLEPrinterDriver] Printing HTML Element. Target width: ${canvasWidth}px, Pacing delay: ${pacingDelay}ms`);
 
-    // 1. Create a safe clone of the element positioned off-screen to prevent layout shift and capture accurately
-    const clone = element.cloneNode(true) as HTMLElement;
-    clone.style.position = 'fixed';
-    clone.style.left = '0';
-    clone.style.top = '0';
-    clone.style.margin = '0';
-    clone.style.padding = '6px 4px';
-    clone.style.boxSizing = 'border-box';
-    clone.style.width = `${designWidth}px`;
-    clone.style.maxWidth = `${designWidth}px`;
-    clone.style.zIndex = '-9999';
-    clone.style.backgroundColor = '#FFFFFF';
-    clone.style.transform = 'none';
-
-    // Copy canvas data (like generated QR Codes) manually to the cloned element
-    const originalCanvases = element.querySelectorAll('canvas');
-    const clonedCanvases = clone.querySelectorAll('canvas');
-    originalCanvases.forEach((origCanvas, i) => {
-      const destCanvas = clonedCanvases[i] as HTMLCanvasElement;
-      if (destCanvas) {
-        destCanvas.width = origCanvas.width;
-        destCanvas.height = origCanvas.height;
-        const destCtx = destCanvas.getContext('2d');
-        if (destCtx) {
-          destCtx.drawImage(origCanvas, 0, 0);
-        }
-      }
-    });
-
-    document.body.appendChild(clone);
-
     let rawCanvas: HTMLCanvasElement;
     try {
-      const scaleFactor = canvasWidth / designWidth;
-      rawCanvas = await html2canvas(clone, {
+      // Calculate dynamic scale factor based on actual visible DOM element width
+      const elementWidth = element.offsetWidth || designWidth;
+      const scaleFactor = canvasWidth / elementWidth;
+
+      rawCanvas = await html2canvas(element, {
         scale: scaleFactor,
-        width: designWidth,
-        windowWidth: designWidth,
         backgroundColor: '#FFFFFF',
         logging: false,
         useCORS: true,
-        allowTaint: true,
-        delay: 100 // Extra breathing room to ensure fonts/images render perfectly
+        allowTaint: true
       } as any);
     } catch (err) {
-      console.error('[BLEPrinterDriver] html2canvas capture failed:', err);
-      document.body.removeChild(clone);
+      console.error('[BLEPrinterDriver] html2canvas direct capture failed:', err);
       return false;
-    } finally {
-      if (document.body.contains(clone)) {
-        document.body.removeChild(clone);
-      }
     }
 
-    // 2. Map captured dimensions onto the final exact target canvas
+    // 2. Map captured dimensions onto the final exact target canvas (ensures solid white flat background)
     const finalCanvas = document.createElement('canvas');
     finalCanvas.width = canvasWidth;
     const finalHeight = Math.round(rawCanvas.height * (canvasWidth / rawCanvas.width));
@@ -148,7 +112,7 @@ export class BLEPrinterDriver {
               // High-contrast thresholding with transparency support
               if (a > 128) {
                 const grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
-                if (grayscale < 195) { // Threshold for rich solid blacks
+                if (grayscale < 200) { // Solid black threshold
                   isBlack = 1;
                 }
               }
@@ -225,7 +189,10 @@ export class BLEPrinterDriver {
               return;
             }
             const chunk = payload.slice(offset, offset + serialChunkSize);
-            btSerial.write(chunk, () => {
+            const buffer = new ArrayBuffer(chunk.length);
+            new Uint8Array(buffer).set(chunk);
+
+            btSerial.write(buffer, () => {
               offset += serialChunkSize;
               setTimeout(writeNext, 30); // 30ms stable classic serial delay
             }, (err: any) => {
