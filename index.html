@@ -575,33 +575,115 @@
         </div>
 
         <!-- Advanced Bluetooth Printing Diagnostic Panel (نظام تحليل وتشخيص الطباعة المتقدم) -->
-        <div class="premium-card printer-diagnostics-card" id="printer-diagnostics-panel" style="border: 1.5px dashed rgba(66, 135, 245, 0.3); background-color: #fafcff; gap: 14px; margin-top: 12px; display: flex; flex-direction: column;">
-          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 8px; width: 100%;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="material-icons-round" style="color: #0284c7; font-size: 20px; animation: pulse 2s infinite;">analytics</span>
+        <div class="premium-card printer-diagnostics-card" id="printer-diagnostics-panel" style="border: 1.5px solid #0284c7; background-color: #fbfdff; gap: 14px; margin-top: 12px; display: flex; flex-direction: column; overflow: hidden;">
+          
+          <!-- Diagnostics Header -->
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid rgba(2, 132, 199, 0.1); padding-bottom: 12px; width: 100%; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="material-icons-round" style="color: #0284c7; font-size: 24px; animation: pulse 2.5s infinite;">analytics</span>
               <div>
-                <h3 style="font-size: 13px; font-weight: 700; color: #0284c7; margin: 0;">محلل ومُشخّص الطباعة الذكي</h3>
-                <p style="font-size: 10px; color: #64748b; margin: 0;">تتبع حي ومباشر لأوامر واتصال الطابعة من البداية</p>
+                <h3 style="font-size: 14px; font-weight: 800; color: #0284c7; margin: 0; display: flex; align-items: center; gap: 6px;">
+                  نظام تحليل وتشخيص الطباعة المتقدم
+                </h3>
+                <p style="font-size: 10.5px; color: #475569; margin: 0; font-weight: 500;">
+                  محلل ذكي متكامل لتتبع قنوات الهاردوير، معالجة الرسوميات، وكشف قيود الـ Sandbox فوراً
+                </p>
               </div>
             </div>
-            <button class="btn-secondary" id="btn-clear-diagnostic-logs" style="font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); background-color: #fff; cursor: pointer; color: #64748b;">تصفير السجل</button>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button class="btn-primary" id="btn-run-deep-diagnostics" style="font-size: 10.5px; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; gap: 4px; background-color: #0284c7; border: none; cursor: pointer; color: #fff; font-weight: 700;">
+                <span class="material-icons-round" style="font-size: 13px;">biotech</span>
+                <span>فحص شامل للهاردوير والبيئة</span>
+              </button>
+              <button class="btn-secondary" id="btn-clear-diagnostic-logs" style="font-size: 10px; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.12); background-color: #fff; cursor: pointer; color: #64748b; font-weight: 600;">تصفير السجل</button>
+            </div>
+          </div>
+
+          <!-- Real-Time Metrics Bento Grid -->
+          <div class="diagnostic-bento-grid">
+            <!-- 1. Sandbox & Iframe constraints status -->
+            <div class="diagnostic-bento-card" id="diag-card-sandbox">
+              <span class="diagnostic-bento-title">
+                <span class="material-icons-round" style="font-size: 10px; color: #64748b;">shield</span>
+                بيئة العمل والخصوصية
+              </span>
+              <div class="diagnostic-bento-value" id="diag-val-sandbox">جاري الفحص...</div>
+              <span class="diagnostic-bento-status info" id="diag-pill-sandbox">فحص أولي</span>
+            </div>
+
+            <!-- 2. Web Bluetooth API Status -->
+            <div class="diagnostic-bento-card" id="diag-card-bluetooth">
+              <span class="diagnostic-bento-title">
+                <span class="material-icons-round" style="font-size: 10px; color: #64748b;">settings_bluetooth</span>
+                دعم البلوتوث بالمتصفح
+              </span>
+              <div class="diagnostic-bento-value" id="diag-val-bluetooth">جاري الفحص...</div>
+              <span class="diagnostic-bento-status info" id="diag-pill-bluetooth">فحص أولي</span>
+            </div>
+
+            <!-- 3. Port Selected -->
+            <div class="diagnostic-bento-card" id="diag-card-port">
+              <span class="diagnostic-bento-title">
+                <span class="material-icons-round" style="font-size: 10px; color: #64748b;">lan</span>
+                قناة الاتصال المحددة
+              </span>
+              <div class="diagnostic-bento-value" id="diag-val-port" style="text-transform: uppercase;">MOCK</div>
+              <span class="diagnostic-bento-status info" id="diag-pill-port">غير نشط</span>
+            </div>
+
+            <!-- 4. Pacing and Band Width -->
+            <div class="diagnostic-bento-card" id="diag-card-timing">
+              <span class="diagnostic-bento-title">
+                <span class="material-icons-round" style="font-size: 10px; color: #64748b;">speed</span>
+                معدل النبض وتفتيت الحزم
+              </span>
+              <div class="diagnostic-bento-value" id="diag-val-timing">20ms Pacing</div>
+              <span class="diagnostic-bento-status info" id="diag-pill-timing">مستقر</span>
+            </div>
+          </div>
+
+          <!-- Sandbox/Iframe Restrictions Interactive Alert Card (Hidden by default unless iframe is detected) -->
+          <div id="iframe-restriction-warning-card" style="display: none; background-color: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 12px; padding: 12px 14px; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: start; gap: 10px;">
+              <span class="material-icons-round" style="color: #e11d48; font-size: 22px;">gavel</span>
+              <div style="flex-grow: 1;">
+                <h4 style="font-size: 12px; font-weight: 800; color: #9f1239; margin: 0 0 3px 0;">تم رصد قيود الـ Sandbox للمتصفح! (Web Bluetooth Iframe Block)</h4>
+                <p style="font-size: 11px; color: #4c0519; margin: 0; line-height: 1.5;">
+                  أنت تتصفح التطبيق حالياً من داخل <strong>إطار معزول (AI Studio Preview Iframe)</strong>. متصفحات الويب (Chrome/Edge) تمنع تشغيل البلوتوث تماماً داخل الأطر الفرعية لحماية أمان هاتفك. لتفعيل الطباعة والربط الحقيقي، يرجى فتح التطبيق في علامة تبويب جديدة مستقلة لتجاوز الحظر فوراً:
+                </p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; border-top: 1px solid #fecdd3; padding-top: 8px; margin-top: 4px;">
+              <button class="btn-secondary" id="btn-copy-standalone-link" style="font-size: 10.5px; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(0,0,0,0.1); background-color: #fff; cursor: pointer; color: #475569; font-weight: 700;">
+                <span class="material-icons-round" style="font-size: 13px;">content_copy</span>
+                <span>نسخ الرابط المباشر للتطبيق</span>
+              </button>
+              <a id="lnk-open-standalone" href="#" target="_blank" class="btn-primary" style="font-size: 10.5px; padding: 4px 10px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 4px; background-color: #e11d48; border: none; cursor: pointer; color: #fff; font-weight: 700;">
+                <span class="material-icons-round" style="font-size: 13px;">open_in_new</span>
+                <span>فتح في علامة تبويب جديدة</span>
+              </a>
+            </div>
           </div>
 
           <!-- Dynamic Live Conclusion Card -->
-          <div id="diagnostic-conclusion-container" style="width: 100%; border-radius: 6px; padding: 10px 12px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; background-color: rgba(2, 132, 199, 0.05); border: 1px solid rgba(2, 132, 199, 0.1); color: #0284c7;">
-            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700;" id="diagnostic-conclusion-title">
-              <span class="material-icons-round" style="font-size: 16px;" id="diagnostic-conclusion-icon">info</span>
-              <span id="diagnostic-conclusion-heading">مُحلل الطباعة جاهز</span>
+          <div id="diagnostic-conclusion-container" style="width: 100%; border-radius: 12px; padding: 12px 14px; font-size: 11.5px; display: flex; flex-direction: column; gap: 6px; background-color: rgba(2, 132, 199, 0.05); border: 1.5px solid rgba(2, 132, 199, 0.15); color: #0284c7; box-shadow: inset 0 1px 3px rgba(2,132,199,0.02);">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 800;" id="diagnostic-conclusion-title">
+                <span class="material-icons-round" style="font-size: 18px;" id="diagnostic-conclusion-icon">info</span>
+                <span id="diagnostic-conclusion-heading">مُشخص الطباعة جاهز للتحليل</span>
+              </div>
+              <span id="diagnostic-time-badge" style="font-family: monospace; font-size: 9px; opacity: 0.8;">--:--:--</span>
             </div>
-            <p id="diagnostic-conclusion-desc" style="margin: 0; line-height: 1.4; color: #475569;">
-              اضغط على زر الطباعة في الفاتورة لبدء التحليل الفوري وتحديد المشاكل لاسلكياً أو برمجياً.
+            <p id="diagnostic-conclusion-desc" style="margin: 0; line-height: 1.5; color: #334155; font-weight: 500;">
+              اضغط على زر الطباعة في الفاتورة أو اضغط على زر "فحص شامل للهاردوير والبيئة" أعلاه لبدء فحص القنوات، وتحليل عينات الألوان والرموز الثنائية وحساب الذاكرة المؤقتة.
             </p>
           </div>
 
           <!-- Diagnostic Trace Steps Container -->
           <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;" id="diagnostic-steps-container">
-            <div style="text-align: center; color: #94a3b8; font-size: 11px; padding: 12px 0;">
-              لم يتم تشغيل أمر طباعة بعد للتحليل.
+            <div style="text-align: center; color: #94a3b8; font-size: 11px; padding: 16px 0; border: 1px dashed rgba(0,0,0,0.05); border-radius: 8px;">
+              <span class="material-icons-round" style="font-size: 28px; color: #cbd5e1; display: block; margin-bottom: 4px;">hourglass_empty</span>
+              لم يتم تشغيل فحص أو أمر طباعة بعد للتحليل. اضغط على زر الفحص أعلاه لإجراء الفحص الذاتي.
             </div>
           </div>
         </div>
