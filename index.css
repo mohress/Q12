@@ -400,25 +400,21 @@ body.keyboard-open .bottom-nav {
 @keyframes blurReveal {
   0% {
     opacity: 0;
-    filter: blur(5px);
-    transform: scale(0.98) translate3d(0, 6px, 0);
+    transform: translate3d(0, 8px, 0);
   }
   100% {
     opacity: 1;
-    filter: blur(0px);
-    transform: scale(1) translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes blurRevealSection {
   0% {
     opacity: 0;
-    filter: blur(4px);
-    transform: translate3d(0, 4px, 0);
+    transform: translate3d(0, 6px, 0);
   }
   100% {
     opacity: 1;
-    filter: blur(0px);
     transform: translate3d(0, 0, 0);
   }
 }
@@ -3776,6 +3772,19 @@ div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3)
 
 .diagnostic-expandable-btn:hover {
   color: #0369a1;
+}
+
+/* Accessibility and performance override: Disable all animations and transitions */
+body.no-animations,
+body.no-animations * {
+  animation: none !important;
+  transition: none !important;
+  animation-duration: 0s !important;
+  transition-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+  will-change: auto !important;
 }
 
 

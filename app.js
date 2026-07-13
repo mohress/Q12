@@ -349,7 +349,7 @@ function renderAppLogs() {
 
   container.innerHTML = logs.map(log => {
     const d = new Date(log.timestamp);
-    const timeStr = d.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const timeStr = forceEnglishDigits(d.toLocaleTimeString('ar-IQ-u-nu-latn', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     const actionText = currentLanguage === 'ar' ? log.actionAr : log.actionEn;
     const amountText = log.amount > 0 ? ` +${formatVal(log.amount)} د.ع` : '';
     const amountColor = log.amount > 0 ? 'var(--color-success)' : 'var(--color-text-muted)';
@@ -608,17 +608,11 @@ function updateHeaderDate() {
   if (!dayEl || !dateEl) return;
   const today = new Date();
   const dayOptions = { weekday: 'long' };
-  const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
   
-  let locale = currentLanguage === 'ar' ? 'ar-IQ' : 'en-US';
-  if (numeralSystem === 'en' && currentLanguage === 'ar') {
-    locale = 'ar-IQ-u-nu-latn';
-  } else if (numeralSystem === 'ar' && currentLanguage === 'en') {
-    locale = 'en-US-u-nu-arab';
-  }
+  let locale = currentLanguage === 'ar' ? 'ar-IQ-u-nu-latn' : 'en-US';
   
-  dayEl.textContent = today.toLocaleDateString(locale, dayOptions);
-  dateEl.textContent = formatCustomDate(today);
+  dayEl.textContent = forceEnglishDigits(today.toLocaleDateString(locale, dayOptions));
+  dateEl.textContent = forceEnglishDigits(formatCustomDate(today));
 }
 
 // AutoComplete caches
@@ -687,6 +681,10 @@ const translations = {
     txtNumeralDesc: "التبديل بين الأرقام الهندية (١٢٣) والإنجليزية (123) في كل شاشات وفواتير التطبيق.",
     txtNotifTitle: "الإشعارات والنظام",
     txtNotifDesc: "تفعيل التنبيهات الصوتية المباشرة عند اكتمال بيع محصول أو استلام سداد.",
+    txtFullscreenTitle: "وضع ملء الشاشة الكامل (Immersive Mode)",
+    txtFullscreenDesc: "إخفاء شريط الإشعارات العلوي وأشرطة التنقل السفلية تلقائياً لتوفير مساحة رؤية كاملة.",
+    txtMotionTitle: "تأثيرات الحركة والانتقالات (Animations)",
+    txtMotionDesc: "تفعيل الانتقالات والحركات التجميلية بين الشاشات. قم بإلغائها لتحقيق أقصى سرعة واستجابة فورية.",
     txtPrinterTitle: "إعدادات طابعة الفواتير (Bluetooth BLE)",
     printerStatusText: "الطابعة غير متصلة",
     lblPaperWidth: "عرض ورق الطباعة",
@@ -797,6 +795,10 @@ const translations = {
     txtNumeralDesc: "Switch between Arabic-Indic numerals (١٢٣) and Western numerals (123) globally.",
     txtNotifTitle: "System Notifications",
     txtNotifDesc: "Enable dynamic audio alert prompts when product sells 100% or payments settle.",
+    txtFullscreenTitle: "Immersive Fullscreen Mode",
+    txtFullscreenDesc: "Automatically hide the top notification status bar and bottom navigation bars for a distraction-free, complete viewing space.",
+    txtMotionTitle: "Motion & UI Animations",
+    txtMotionDesc: "Enable screen-sliding transitions and decorative animations. Turn off for maximum performance and instant UI response.",
     txtPrinterTitle: "Printer Configuration (Bluetooth BLE)",
     printerStatusText: "Printer Disconnected",
     lblPaperWidth: "Receipt Paper Width",
@@ -855,6 +857,17 @@ const translations = {
 // ==============================================
 // 2. NUMBER FORMATTER HELPER
 // ==============================================
+function forceEnglishDigits(str) {
+  if (str === undefined || str === null) return '';
+  const valStr = str.toString();
+  const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  const enNums = ['0','1','2','3','4','5','6','7','8','9'];
+  return valStr.split('').map(char => {
+    const idx = arNums.indexOf(char);
+    return idx !== -1 ? enNums[idx] : char;
+  }).join('');
+}
+
 function formatVal(number, isCurrency = false) {
   if (number === undefined || number === null) return '';
   
@@ -864,7 +877,7 @@ function formatVal(number, isCurrency = false) {
   
   if (isNumeric) {
     const num = Number(number);
-    valStr = num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    valStr = num.toLocaleString('en-US', { maximumFractionDigits: 2 });
     if (isCurrency) {
       valStr += ' ' + translations[currentLanguage].currencyAbbr;
     }
@@ -872,15 +885,7 @@ function formatVal(number, isCurrency = false) {
     valStr = number.toString();
   }
 
-  if (numeralSystem === 'ar') {
-    const enNums = ['0','1','2','3','4','5','6','7','8','9', ','];
-    const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', '،'];
-    return valStr.split('').map(char => {
-      const idx = enNums.indexOf(char);
-      return idx !== -1 ? arNums[idx] : char;
-    }).join('');
-  }
-  return valStr;
+  return forceEnglishDigits(valStr);
 }
 
 function formatCustomDate(dateVal, includeTime = false) {
@@ -906,15 +911,7 @@ function formatCustomDate(dateVal, includeTime = false) {
     valStr = `\u200E${dateStr}, \u200E${timeStr}`;
   }
   
-  if (numeralSystem === 'ar') {
-    const enNums = ['0','1','2','3','4','5','6','7','8','9'];
-    const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
-    return valStr.split('').map(char => {
-      const idx = enNums.indexOf(char);
-      return idx !== -1 ? arNums[idx] : char;
-    }).join('');
-  }
-  return valStr;
+  return forceEnglishDigits(valStr);
 }
 
 function parseNumberInput(str) {
@@ -4882,7 +4879,7 @@ async function renderPortersList() {
               ${currentLanguage === 'ar' ? 'لا توجد مبيعات أو مستحقات حمالين لهذا اليوم حتى الآن.' : 'No sales or porter dues for this day yet.'}
             </p>
           ` : dayPayouts.sort((a,b) => b.created_at - a.created_at).map(p => {
-              const timeStr = new Date(p.created_at).toLocaleTimeString(currentLanguage === 'ar' ? 'ar-IQ' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+              const timeStr = forceEnglishDigits(new Date(p.created_at).toLocaleTimeString(currentLanguage === 'ar' ? 'ar-IQ-u-nu-latn' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
               const statusBadge = p.is_paid 
                 ? `<span style="font-size: 9.5px; color: var(--color-success); font-weight: 700;">✅ ${currentLanguage === 'ar' ? 'تم الصرف' : 'Paid'}</span>` 
                 : `<span style="font-size: 9.5px; color: var(--color-warning); font-weight: 700;">⏳ معلق</span>`;
@@ -8656,6 +8653,16 @@ function applyBilingualTranslations() {
   document.getElementById('lbl-sound-title').textContent = t.txtNotifTitle;
   document.getElementById('lbl-sound-desc').textContent = t.txtNotifDesc;
 
+  const elFullscreenTitle = document.getElementById('txt-fullscreen-title');
+  if (elFullscreenTitle) elFullscreenTitle.textContent = t.txtFullscreenTitle;
+  const elFullscreenDesc = document.getElementById('txt-fullscreen-desc');
+  if (elFullscreenDesc) elFullscreenDesc.textContent = t.txtFullscreenDesc;
+
+  const elMotionTitle = document.getElementById('txt-motion-title');
+  if (elMotionTitle) elMotionTitle.textContent = t.txtMotionTitle;
+  const elMotionDesc = document.getElementById('txt-motion-desc');
+  if (elMotionDesc) elMotionDesc.textContent = t.txtMotionDesc;
+
   document.getElementById('lbl-printer-title').textContent = t.txtPrinterTitle;
   document.getElementById('lbl-paper-width-title').textContent = t.lblPaperWidth;
   document.getElementById('btn-scan-printer').textContent = t.btnScanPrinter;
@@ -9573,7 +9580,7 @@ async function exportFullYearToExcel() {
         { 'البيان': 'إجمالي المصروفات (التشغيلية والشخصية)', 'القيمة': totalExpensesVal, 'الوحدة': 'ج.م' },
         { 'البيان': 'إجمالي الخسائر والتالف من البضائع', 'القيمة': totalLossesVal, 'الوحدة': 'ج.م' },
         { 'البيان': 'صافي أرباح الوكالة الختامية (العمولة - المصاريف والخسائر)', 'القيمة': netAgencyProfit, 'الوحدة': 'ج.م' },
-        { 'البيان': 'تاريخ ووقت التصدير', 'القيمة': new Date().toLocaleString('ar-EG'), 'الوحدة': '-' }
+        { 'البيان': 'تاريخ ووقت التصدير', 'القيمة': forceEnglishDigits(new Date().toLocaleString('ar-EG-u-nu-latn')), 'الوحدة': '-' }
       ];
     } else {
       summarySheetData = [
@@ -9590,7 +9597,7 @@ async function exportFullYearToExcel() {
         { 'Metric': 'Total Business & Personal Expenses', 'Value': totalExpensesVal, 'Unit': 'EGP' },
         { 'Metric': 'Total Crop Losses & Damages', 'Value': totalLossesVal, 'Unit': 'EGP' },
         { 'Metric': 'Net Agency Brokerage Profit (Commissions - Expenses - Losses)', 'Value': netAgencyProfit, 'Unit': 'EGP' },
-        { 'Metric': 'Export Date', 'Value': new Date().toLocaleString(), 'Unit': '-' }
+        { 'Metric': 'Export Date', 'Value': forceEnglishDigits(new Date().toLocaleString('en-US')), 'Unit': '-' }
       ];
     }
     
@@ -9599,7 +9606,7 @@ async function exportFullYearToExcel() {
       const cust = customerMap.get(s.customer_id);
       const custName = s.customer_name || (cust ? cust.name : '-');
       const custPhone = s.customer_phone || (cust ? cust.phone : '-');
-      const dateFormatted = new Date(s.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+      const dateFormatted = forceEnglishDigits(new Date(s.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
       const pmText = s.payment_type === 'cash' ? (currentLanguage === 'ar' ? 'نقدي' : 'Cash') : (currentLanguage === 'ar' ? 'آجل' : 'Debt');
       
       const sItems = yearSaleItems.filter(it => it.sale_invoice_id === s.id);
@@ -9629,7 +9636,7 @@ async function exportFullYearToExcel() {
           'تكلفة الأكياس (ج.م)': s.bags_cost || 0,
           'المبلغ الإجمالي الكلي للفاتورة (ج.م)': s.total_amount || 0,
           'حالة سداد الفاتورة': payStatus,
-          'تاريخ التسجيل بالكامل': new Date(s.created_at).toLocaleString('ar-EG')
+          'تاريخ التسجيل بالكامل': forceEnglishDigits(new Date(s.created_at).toLocaleString('ar-EG-u-nu-latn'))
         };
       } else {
         return {
@@ -9645,7 +9652,7 @@ async function exportFullYearToExcel() {
           'Bags Cost (EGP)': s.bags_cost || 0,
           'Grand Total Amount (EGP)': s.total_amount || 0,
           'Settlement Status': payStatus,
-          'Created At': new Date(s.created_at).toLocaleString()
+          'Created At': forceEnglishDigits(new Date(s.created_at).toLocaleString('en-US'))
         };
       }
     });
@@ -9693,7 +9700,7 @@ async function exportFullYearToExcel() {
     const importSheetData = yearImports.map(imp => {
       const farmer = farmerMap.get(imp.farmer_id);
       const farmerName = imp.farmer_name || (farmer ? farmer.name : '-');
-      const dateFormatted = new Date(imp.created_at || imp.invoice_date).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+      const dateFormatted = forceEnglishDigits(new Date(imp.created_at || imp.invoice_date).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
       const statusText = imp.is_settled ? (currentLanguage === 'ar' ? 'تم تصفيتها ومسواة' : 'Settled & Closed') : (currentLanguage === 'ar' ? 'قيد البيع / نشطة' : 'Active');
       
       const itemsOfImp = yearImportItems.filter(it => it.invoice_id === imp.id);
@@ -9745,7 +9752,7 @@ async function exportFullYearToExcel() {
           'المتبقي غير مصروف للمزارع (ج.م)': totalUnpaidDuesToFarmer,
           'حالة المبيعات للشحنة': percentSoldText,
           'حالة تصفية الحساب بالشركة': statusText,
-          'تاريخ الإنشاء بالكامل': new Date(imp.created_at).toLocaleString('ar-EG')
+          'تاريخ الإنشاء بالكامل': forceEnglishDigits(new Date(imp.created_at).toLocaleString('ar-EG-u-nu-latn'))
         };
       } else {
         return {
@@ -9764,7 +9771,7 @@ async function exportFullYearToExcel() {
           'Pending to Farmer (EGP)': totalUnpaidDuesToFarmer,
           'Sales Status': percentSoldText,
           'Settlement Status': statusText,
-          'Created At': new Date(imp.created_at).toLocaleString()
+          'Created At': forceEnglishDigits(new Date(imp.created_at).toLocaleString('en-US'))
         };
       }
     });
@@ -9830,7 +9837,7 @@ async function exportFullYearToExcel() {
     
     // 6. المصروفات (Expenses)
     const expensesSheetData = yearExpenses.map(exp => {
-      const dateFormatted = new Date(exp.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+      const dateFormatted = forceEnglishDigits(new Date(exp.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
       
       if (currentLanguage === 'ar') {
         return {
@@ -9853,7 +9860,7 @@ async function exportFullYearToExcel() {
     
     // 7. الخسائر والتالف (Losses & Damages)
     const lossesSheetData = yearLosses.map(l => {
-      const dateFormatted = new Date(l.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+      const dateFormatted = forceEnglishDigits(new Date(l.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
       
       if (currentLanguage === 'ar') {
         return {
@@ -9889,8 +9896,8 @@ async function exportFullYearToExcel() {
       const sItems = yearSaleItems.filter(it => it.sale_invoice_id === d.sale_invoice_id);
       const itemsDetailStr = sItems.map(it => `${it.crop_type} (${it.box_count} صندوق/كيس)`).join('، ');
       
-      const dateFormatted = new Date(sInvoice ? sInvoice.created_at : (d.created_at || d.due_date - 5 * 24 * 60 * 60 * 1000)).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
-      const dueFormatted = new Date(d.due_date).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+      const dateFormatted = forceEnglishDigits(new Date(sInvoice ? sInvoice.created_at : (d.created_at || d.due_date - 5 * 24 * 60 * 60 * 1000)).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
+      const dueFormatted = forceEnglishDigits(new Date(d.due_date).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
       const statusText = d.is_paid ? (currentLanguage === 'ar' ? 'مسدد بالكامل' : 'Paid & Settled') : (currentLanguage === 'ar' ? 'غير مسدد (نشط)' : 'Unpaid Debt');
       
       if (currentLanguage === 'ar') {
@@ -9928,7 +9935,7 @@ async function exportFullYearToExcel() {
     const duesSheetData = yearFarmerDues.map(fd => {
       const farmer = farmerMap.get(fd.farmer_id);
       const farmerName = fd.farmer_name || (farmer ? farmer.name : '-');
-      const dateFormatted = new Date(fd.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+      const dateFormatted = forceEnglishDigits(new Date(fd.created_at).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
       const statusText = fd.is_paid ? (currentLanguage === 'ar' ? 'مسدد بالكامل' : 'Paid & Disbursed') : (currentLanguage === 'ar' ? 'قيد الانتظار / بالذمة' : 'Pending Payment');
       
       if (currentLanguage === 'ar') {
@@ -9968,7 +9975,7 @@ async function exportFullYearToExcel() {
     
     // 10. أجور الشيالين (Porter Payouts)
     const porterSheetData = yearPorterPayouts.map(p => {
-      const dateFormatted = new Date(p.created_at || p.date).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+      const dateFormatted = forceEnglishDigits(new Date(p.created_at || p.date).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US'));
       const statusText = p.is_paid ? (currentLanguage === 'ar' ? 'مسدد بالكامل' : 'Paid') : (currentLanguage === 'ar' ? 'غير مسدد' : 'Unpaid');
       
       if (currentLanguage === 'ar') {
@@ -10490,6 +10497,24 @@ async function startApp() {
       localStorage.setItem('alwa_sound', soundEnabled ? 'true' : 'false');
     });
 
+    const fullscreenToggle = document.getElementById('setting-fullscreen-toggle');
+    if (fullscreenToggle) {
+      fullscreenToggle.addEventListener('change', async (e) => {
+        isImmersiveFullscreenEnabled = e.target.checked;
+        localStorage.setItem('alwa_immersive_fullscreen', isImmersiveFullscreenEnabled ? 'true' : 'false');
+        await applyFullscreenPreference();
+      });
+    }
+
+    const motionToggle = document.getElementById('setting-motion-toggle');
+    if (motionToggle) {
+      motionToggle.addEventListener('change', (e) => {
+        isMotionAnimationsEnabled = e.target.checked;
+        localStorage.setItem('alwa_animations_enabled', isMotionAnimationsEnabled ? 'true' : 'false');
+        applyAnimationsPreference();
+      });
+    }
+
     // 10. Bind bottom sheet open triggers
     document.getElementById('btn-trigger-new-import').addEventListener('click', () => openBottomSheet('sheet-new-import'));
     document.getElementById('btn-trigger-new-sale').addEventListener('click', () => openBottomSheet('sheet-new-sale'));
@@ -10772,8 +10797,8 @@ async function startApp() {
       const phoneNo = localStorage.getItem('alwa_office_phone') || '';
       
       const now = new Date();
-      const dateString = now.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      const timeString = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+      const dateString = forceEnglishDigits(now.toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+      const timeString = forceEnglishDigits(now.toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }));
 
       const container = document.getElementById('receipt-paper');
       if (!container) return;
@@ -10915,13 +10940,31 @@ async function startApp() {
     }
 
     // 19. Initialize settings preferences
-    const numSystemValue = localStorage.getItem('alwa_numeral_system') || 'en';
-    numeralSystem = numSystemValue;
+    numeralSystem = 'en';
+    localStorage.setItem('alwa_numeral_system', 'en');
     document.getElementById('setting-numeral-system').value = numeralSystem;
 
     const storedSound = localStorage.getItem('alwa_sound') || 'true';
     soundEnabled = storedSound === 'true';
     document.getElementById('setting-sound-alerts').checked = soundEnabled;
+
+    // Load and set Immersive Fullscreen preference
+    const storedFullscreen = localStorage.getItem('alwa_immersive_fullscreen') !== 'false'; // defaults to true
+    isImmersiveFullscreenEnabled = storedFullscreen;
+    const elFullscreenToggle = document.getElementById('setting-fullscreen-toggle');
+    if (elFullscreenToggle) {
+      elFullscreenToggle.checked = isImmersiveFullscreenEnabled;
+    }
+    applyFullscreenPreference();
+
+    // Load and set Motion preference
+    const storedAnimations = localStorage.getItem('alwa_animations_enabled') !== 'false'; // defaults to true
+    isMotionAnimationsEnabled = storedAnimations;
+    const elMotionToggle = document.getElementById('setting-motion-toggle');
+    if (elMotionToggle) {
+      elMotionToggle.checked = isMotionAnimationsEnabled;
+    }
+    applyAnimationsPreference();
 
     // Initialize & Bind Accessibility Controls (Accessibility / Visually Impaired Mode)
     applyAccessibilityPreferences();
@@ -11739,15 +11782,28 @@ function runDeepEnvironmentDiagnostics() {
   }, 1000);
 }
 
+let isImmersiveFullscreenEnabled = localStorage.getItem('alwa_immersive_fullscreen') !== 'false'; // Defaults to true
+let isMotionAnimationsEnabled = localStorage.getItem('alwa_animations_enabled') !== 'false'; // Defaults to true
+
+// Helper to update body class for animations
+function applyAnimationsPreference() {
+  if (isMotionAnimationsEnabled) {
+    document.body.classList.remove('no-animations');
+  } else {
+    document.body.classList.add('no-animations');
+  }
+}
+
 // Helper to request full-screen immersive mode (hiding both top status bar and bottom navigation buttons)
 async function enterImmersiveFullscreen() {
+  if (!isImmersiveFullscreenEnabled) return;
   try {
     const docEl = document.documentElement;
     const requestFS = docEl.requestFullscreen || 
                       docEl.webkitRequestFullscreen || 
                       docEl.mozRequestFullScreen || 
                       docEl.msRequestFullscreen;
-    if (requestFS) {
+    if (requestFS && !document.fullscreenElement) {
       await requestFS.call(docEl);
     }
   } catch (err) {
@@ -11755,19 +11811,52 @@ async function enterImmersiveFullscreen() {
   }
 }
 
+// Helper to exit full-screen mode
+async function exitImmersiveFullscreen() {
+  try {
+    const exitFS = document.exitFullscreen || 
+                   document.webkitExitFullscreen || 
+                   document.mozCancelFullScreen || 
+                   document.msExitFullscreen;
+    if (exitFS && document.fullscreenElement) {
+      await exitFS.call(document);
+    }
+  } catch (err) {
+    console.warn('Exit fullscreen failed:', err);
+  }
+}
+
+// Function to update native status bar and web fullscreen based on current preference
+async function applyFullscreenPreference() {
+  if (isImmersiveFullscreenEnabled) {
+    // Hide native status bar if on mobile
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await StatusBar.hide();
+      } catch (e) {
+        console.warn('StatusBar.hide failed:', e);
+      }
+    }
+    await enterImmersiveFullscreen();
+  } else {
+    // Show native status bar if on mobile
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await StatusBar.show();
+        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: '#1B4332' });
+      } catch (e) {
+        console.warn('StatusBar.show failed:', e);
+      }
+    }
+    await exitImmersiveFullscreen();
+  }
+}
+
 // Cordova / Native platform back-button binding for Capacitor hybrid environments
 document.addEventListener('deviceready', () => {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      // Hide the native status bar completely
-      StatusBar.hide().catch(e => console.warn('StatusBar.hide failed:', e));
-    } catch (e) {
-      console.warn('StatusBar plugin is not available:', e);
-    }
-  }
-  
-  // Trigger immersive fullscreen on deviceready
-  enterImmersiveFullscreen();
+  // Apply fullscreen preferences initially
+  applyFullscreenPreference();
 
   // Handle native hardware backbutton by executing history back
   document.addEventListener('backbutton', (e) => {
@@ -11778,13 +11867,18 @@ document.addEventListener('deviceready', () => {
 
 // Bind touch and click events to ensure immersive fullscreen triggers on first user interaction
 const handleFirstInteraction = () => {
-  enterImmersiveFullscreen();
+  if (isImmersiveFullscreenEnabled) {
+    enterImmersiveFullscreen();
+  }
 };
 document.addEventListener('click', handleFirstInteraction, { passive: true });
 document.addEventListener('touchstart', handleFirstInteraction, { passive: true });
 
 window.addEventListener('DOMContentLoaded', () => {
+  applyAnimationsPreference();
   startApp();
-  // Try to go fullscreen immediately
-  enterImmersiveFullscreen();
+  // Try to go fullscreen immediately if enabled
+  if (isImmersiveFullscreenEnabled) {
+    enterImmersiveFullscreen();
+  }
 });
