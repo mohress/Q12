@@ -2390,15 +2390,15 @@ async function addSaleCropRow() {
           <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...'}" required style="padding-right: 42px;">
         </div>
       </div>
-    </div>
 
-    <div class="form-group">
-      <label class="sale-unit-price-label">
-        <span>${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)'}</span>
-      </label>
-      <div style="position: relative;">
-        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">payments</span>
-        <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required style="padding-right: 42px;">
+      <div class="form-group" style="flex: 1; min-width: 0;">
+        <label class="sale-unit-price-label">
+          <span>${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)'}</span>
+        </label>
+        <div style="position: relative;">
+          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">payments</span>
+          <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required style="padding-right: 42px;">
+        </div>
       </div>
     </div>
 
@@ -11185,7 +11185,8 @@ function dummyKeypadOldCode() {
 
   const isInSaleSheet = inputElement.closest('#sheet-new-sale') !== null;
   const isInImportSheet = inputElement.closest('#sheet-new-import') !== null;
-  const isMobile = window.innerWidth < 768;
+  const isLandscape = window.innerWidth > window.innerHeight;
+  const isMobile = window.innerWidth < 768 && !isLandscape;
   isSidebarKeypadActive = (isInSaleSheet || isInImportSheet) && !isMobile;
 
   if (isSidebarKeypadActive) {
