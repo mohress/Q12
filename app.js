@@ -11805,7 +11805,7 @@ async function enterImmersiveFullscreen() {
                       docEl.mozRequestFullScreen || 
                       docEl.msRequestFullscreen;
     if (requestFS && !document.fullscreenElement) {
-      await requestFS.call(docEl);
+      await requestFS.call(docEl, { navigationUI: 'hide' });
     }
   } catch (err) {
     console.warn('Immersive fullscreen request deferred (waiting for user gesture):', err);

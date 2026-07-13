@@ -3787,6 +3787,71 @@ body.no-animations * {
   will-change: auto !important;
 }
 
+/* ==========================================================================
+   🖥️ PREMIUM 10-INCH TABLET & LANDSCAPE MODE FULL-SCREEN OPTIMIZATIONS
+   ========================================================================== */
+@media (orientation: landscape) or (min-width: 900px) {
+  /* Lift all width constraints to let the application go full-bleed */
+  .app-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    padding-bottom: 100px !important;
+  }
+
+  /* Increase padding for screen content to layout elements beautifully */
+  .screen-content {
+    padding: 0 12px 100px 12px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Expand Cards grids to 3 balanced columns to fill the screen space nicely */
+  .cards-grid-layout {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  /* Ensure archive lists display with 2 columns on wide screens rather than a single stretched card */
+  #archive-sales-list, #archive-imports-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Widen bottom navigation bar for comfortable touch targets on 10" tablet */
+  .bottom-nav {
+    max-width: 700px !important;
+    width: calc(100% - 48px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  /* Style statistics top grid to occupy the wide space proportionally */
+  .stats-top-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* Let the quick actions buttons sit in a 2-column or full row layout */
+  .summary-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Beautifully balance the bottom sheet sheets on wide viewports */
+  #sheet-new-import,
+  #sheet-new-sale {
+    width: 98% !important;
+    max-width: 1280px !important;
+    border-radius: 28px 28px 0 0 !important;
+  }
+}
+
+
 
 
 
