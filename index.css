@@ -791,10 +791,11 @@ body.sheet-open {
 
 /* Dynamic Add Item Row */
 .dynamic-row {
-  border: 1px dashed rgba(27, 67, 50, 0.25);
+  border: 1.5px solid rgba(82, 183, 136, 0.22);
   border-radius: 16px;
-  padding: 14px;
-  background-color: rgba(255,255,255,0.5);
+  padding: 16px 16px 16px 48px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.02);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -815,27 +816,38 @@ body.sheet-open {
 
 .delete-row-btn {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  background: transparent;
+  top: 50%;
+  transform: translateY(-50%);
+  right: auto;
+  left: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: none;
-  color: var(--color-danger);
   cursor: pointer;
-  font-size: 14px;
-  padding: 4px;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .delete-row-btn:hover {
-  transform: scale(1.1);
+  transform: translateY(-50%) scale(1.1);
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .dynamic-row-header {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--color-primary-light);
   display: flex;
   justify-content: space-between;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+  padding-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 /* Dropdown list fields */
@@ -3346,87 +3358,7 @@ div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3)
     width: 100% !important;
   }
 
-  /* Compact dynamic crop row grid for Import sheet */
-  #import-items-container .dynamic-row {
-    display: grid !important;
-    grid-template-columns: 1.8fr 1fr 1fr !important;
-    gap: 12px !important;
-    padding: 16px 16px 16px 48px !important;
-    background: #ffffff !important;
-    border: 1.5px solid rgba(82, 183, 136, 0.22) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.02) !important;
-    position: relative !important;
-  }
 
-  #import-items-container .dynamic-row > div[style*="display: flex"] {
-    display: contents !important;
-  }
-
-  #import-items-container .dynamic-row-header {
-    grid-column: 1 / -1 !important;
-    border-bottom: 1px dashed rgba(0, 0, 0, 0.05) !important;
-    padding-bottom: 6px !important;
-    margin-bottom: 2px !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-  }
-
-  /* Compact dynamic crop row grid for Sale sheet */
-  #sale-items-container .dynamic-row {
-    display: grid !important;
-    grid-template-columns: 1.8fr 1fr 1fr 1.2fr !important;
-    gap: 12px !important;
-    padding: 16px 16px 16px 48px !important;
-    background: #ffffff !important;
-    border: 1.5px solid rgba(82, 183, 136, 0.22) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.02) !important;
-    position: relative !important;
-  }
-
-  #sale-items-container .dynamic-row > div[style*="display: flex"]:not(.porter-options-row) {
-    display: contents !important;
-  }
-
-  #sale-items-container .dynamic-row-header {
-    grid-column: 1 / -1 !important;
-    border-bottom: 1px dashed rgba(0, 0, 0, 0.05) !important;
-    padding-bottom: 6px !important;
-    margin-bottom: 2px !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-  }
-
-  #sale-items-container .sale-porter-rate-container {
-    grid-column: 1 / -1 !important;
-    margin-top: 4px !important;
-    padding-top: 10px !important;
-    border-top: 1px dashed rgba(0, 0, 0, 0.05) !important;
-  }
-
-  /* Absolute position for delete button in rows */
-  .dynamic-row .delete-row-btn {
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    right: auto !important;
-    left: 12px !important;
-    width: 30px !important;
-    height: 30px !important;
-    border-radius: 50% !important;
-    background: rgba(239, 68, 68, 0.08) !important;
-    color: #dc2626 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-    border: none !important;
-  }
-
-  .dynamic-row .delete-row-btn:hover {
-    transform: translateY(-50%) scale(1.1) !important;
-    background: rgba(239, 68, 68, 0.15) !important;
-  }
 
   /* Grid layout for premium calculation card on tablet landscape */
   #sheet-new-sale .premium-card {

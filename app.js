@@ -7766,16 +7766,59 @@ async function executePrintJob(saleId) {
     return;
   }
 
+  // Detect if this is an older Android version, low-end budget hardware, or Amazon Fire OS device
+  const ua = navigator.userAgent || '';
+  const isAndroid = /android/i.test(ua);
+  const isSilk = /silk/i.test(ua); // Amazon Kindle Fire browsers use Silk
+  const isFireOS = /fire/i.test(ua) || /kftt/i.test(ua) || /kfot/i.test(ua) || /kfsowi/i.test(ua) || /kfjwa/i.test(ua) || /kfjwi/i.test(ua) || /kfapwa/i.test(ua) || /kfapwi/i.test(ua) || /kfthwa/i.test(ua) || /kfthwi/i.test(ua) || /kfarwi/i.test(ua) || /kfaswi/i.test(ua) || /kfsawa/i.test(ua) || /kservices/i.test(ua) || /kfgwi/i.test(ua) || /kfsuwi/i.test(ua) || /kfaauwi/i.test(ua) || /kfonwi/i.test(ua);
+
+  let isOlderOrFireDevice = isSilk || isFireOS;
+  if (isAndroid) {
+    const match = ua.match(/Android\s+([0-9]+)/i);
+    if (match) {
+      const version = parseInt(match[1], 10);
+      if (version <= 10) {
+        isOlderOrFireDevice = true;
+      }
+    }
+  }
+
+  // Determine active port type
+  const connectionType = activeWebBluetoothCharacteristic ? 'web_ble' : (isCordovaSerialActive ? 'classic' : (bleConnectedDeviceId ? 'ble' : 'mock'));
+
+  let pacingDelayMs = 5;
+  let chunkSize = 128;
+
+  if (connectionType === 'classic') {
+    if (isOlderOrFireDevice) {
+      pacingDelayMs = 25;   // 25ms delay to prevent buffer overflow on budget hardware or Fire OS SPP stream
+      chunkSize = 512;      // 512-byte safe block size for older hardware serial buffers
+    } else {
+      pacingDelayMs = 5;    // Ultra-fast 5ms delay
+      chunkSize = 4096;     // 4KB blocks for modern Android with advanced flow control
+    }
+  } else if (connectionType === 'ble' || connectionType === 'web_ble') {
+    if (isOlderOrFireDevice) {
+      pacingDelayMs = 20;   // 20ms pacing delay gives the Fire OS BLE stack and printer microcontrollers time to process lines
+      chunkSize = 20;       // Strictly 20 bytes (the standard BLE MTU user data payload) to prevent silent package drops
+    } else {
+      pacingDelayMs = 5;    // Fast 5ms pacing delay
+      chunkSize = 128;      // 128-byte chunk for fast modern BLE transmission
+    }
+  }
+
+  console.log(`[Printer] Adaptive Profile Selected -> connectionType: ${connectionType}, isOlderOrFireDevice: ${isOlderOrFireDevice}, pacingDelayMs: ${pacingDelayMs}ms, chunkSize: ${chunkSize} bytes`);
+
   // Build the unified configuration for BLEPrinterDriver
   const config = {
-    type: activeWebBluetoothCharacteristic ? 'web_ble' : (isCordovaSerialActive ? 'classic' : (bleConnectedDeviceId ? 'ble' : 'mock')),
+    type: connectionType,
     webBluetoothCharacteristic: activeWebBluetoothCharacteristic,
     deviceId: bleConnectedDeviceId,
     writeServiceUUID: bleWriteServiceUUID,
     writeCharUUID: bleWriteCharUUID,
     paperWidth: printerPaperWidth === '80' ? '80' : '58',
-    pacingDelayMs: 5, // Highly optimized ultra-fast 5ms pacing delay
-    chunkSize: 128 // Fast 128-byte chunks for high-speed BLE throughput
+    pacingDelayMs: pacingDelayMs,
+    chunkSize: chunkSize
   };
 
   try {
@@ -11696,13 +11739,36 @@ function runDeepEnvironmentDiagnostics() {
   }, 1000);
 }
 
+// Helper to request full-screen immersive mode (hiding both top status bar and bottom navigation buttons)
+async function enterImmersiveFullscreen() {
+  try {
+    const docEl = document.documentElement;
+    const requestFS = docEl.requestFullscreen || 
+                      docEl.webkitRequestFullscreen || 
+                      docEl.mozRequestFullScreen || 
+                      docEl.msRequestFullscreen;
+    if (requestFS) {
+      await requestFS.call(docEl);
+    }
+  } catch (err) {
+    console.warn('Immersive fullscreen request deferred (waiting for user gesture):', err);
+  }
+}
+
 // Cordova / Native platform back-button binding for Capacitor hybrid environments
 document.addEventListener('deviceready', () => {
   if (Capacitor.isNativePlatform()) {
-    StatusBar.setStyle({ style: Style.Dark });
-    StatusBar.setBackgroundColor({ color: '#1B4332' });
+    try {
+      // Hide the native status bar completely
+      StatusBar.hide().catch(e => console.warn('StatusBar.hide failed:', e));
+    } catch (e) {
+      console.warn('StatusBar plugin is not available:', e);
+    }
   }
   
+  // Trigger immersive fullscreen on deviceready
+  enterImmersiveFullscreen();
+
   // Handle native hardware backbutton by executing history back
   document.addEventListener('backbutton', (e) => {
     e.preventDefault();
@@ -11710,4 +11776,15 @@ document.addEventListener('deviceready', () => {
   }, false);
 }, false);
 
-window.addEventListener('DOMContentLoaded', startApp);
+// Bind touch and click events to ensure immersive fullscreen triggers on first user interaction
+const handleFirstInteraction = () => {
+  enterImmersiveFullscreen();
+};
+document.addEventListener('click', handleFirstInteraction, { passive: true });
+document.addEventListener('touchstart', handleFirstInteraction, { passive: true });
+
+window.addEventListener('DOMContentLoaded', () => {
+  startApp();
+  // Try to go fullscreen immediately
+  enterImmersiveFullscreen();
+});

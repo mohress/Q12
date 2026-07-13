@@ -547,7 +547,7 @@ export class BLEPrinterDriver {
       try {
         const btSerial = (window as any).bluetoothSerial;
         await new Promise<void>((resolve, reject) => {
-          const serialChunkSize = 4096; // Classic Bluetooth can take larger chunks comfortably for high-speed printing
+          const serialChunkSize = config.chunkSize || 4096; // Adaptive serial chunk size
           let offset = 0;
 
           function writeNext() {
@@ -569,7 +569,7 @@ export class BLEPrinterDriver {
                 `Streaming SPP: Sent ${offset} of ${payload.length} bytes (${progressPercent}%)...`,
                 { sentBytes: offset, percentage: progressPercent }
               );
-              setTimeout(writeNext, 5); // 5ms super-fast classic serial delay
+              setTimeout(writeNext, pacingDelay); // Adaptive pacing delay
             }, (err: any) => {
               reject(err);
             });
