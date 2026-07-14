@@ -18,49 +18,11 @@
   <!-- Visual JavaScript error diagnostic tracker -->
   <script>
     window.onerror = function(message, source, lineno, colno, error) {
-      var div = document.getElementById('runtime-error-overlay');
-      if (!div) {
-        div = document.createElement('div');
-        div.id = 'runtime-error-overlay';
-        div.style.position = 'fixed';
-        div.style.top = '0';
-        div.style.left = '0';
-        div.style.right = '0';
-        div.style.background = '#E63946';
-        div.style.color = 'white';
-        div.style.padding = '16px';
-        div.style.zIndex = '999999';
-        div.style.fontWeight = 'bold';
-        div.style.fontFamily = 'sans-serif';
-        div.style.fontSize = '13px';
-        div.style.wordBreak = 'break-all';
-        div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        document.body.appendChild(div);
-      }
-      div.innerText = 'Runtime Error: ' + message + ' (' + source + ':' + lineno + ')';
+      console.error('Runtime Error:', message, 'at', source, 'line', lineno);
       return false;
     };
     window.onunhandledrejection = function(event) {
-      var div = document.getElementById('promise-rejection-overlay');
-      if (!div) {
-        div = document.createElement('div');
-        div.id = 'promise-rejection-overlay';
-        div.style.position = 'fixed';
-        div.style.top = '60px';
-        div.style.left = '0';
-        div.style.right = '0';
-        div.style.background = '#FF9F1C';
-        div.style.color = 'white';
-        div.style.padding = '16px';
-        div.style.zIndex = '999999';
-        div.style.fontWeight = 'bold';
-        div.style.fontFamily = 'sans-serif';
-        div.style.fontSize = '13px';
-        div.style.wordBreak = 'break-all';
-        div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-        document.body.appendChild(div);
-      }
-      div.innerText = 'Promise Rejection: ' + (event.reason ? (event.reason.message || event.reason) : 'Unknown');
+      console.error('Promise Rejection:', event.reason);
     };
   </script>
 </head>
@@ -598,7 +560,7 @@
             </div>
             <div class="form-group">
               <label id="lbl-office-cashier">اسم المحاسب (بالإنجليزي حصراً)</label>
-              <input type="text" class="form-input" id="setting-office-cashier" value="Cashier One" placeholder="e.g. Accountant Name">
+              <input type="text" class="form-input" id="setting-office-cashier" value="Ahmed" placeholder="e.g. Accountant Name">
             </div>
           </div>
           <button class="btn-primary" id="btn-save-office-settings" style="padding: 10px; font-size: 12px;">حفظ المعلومات</button>
@@ -1066,25 +1028,7 @@
 
             <!-- Column 2: Invoice Options & Dynamic Calculations -->
             <div class="sheet-desktop-side-col">
-              <!-- Real-time Balance calculation details -->
-              <div class="premium-card" style="background-color: rgba(27,67,50,0.05); border: 1px solid rgba(27,67,50,0.1); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
-                  <span id="lbl-subtotal" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع أسعار البضاعة:</span>
-                  <span id="val-subtotal" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
-                  <span id="lbl-commission-7" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع العمولات (7%):</span>
-                  <span id="val-commission-7" style="font-weight: 700; color: var(--color-primary-light); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 13px;">
-                  <span id="lbl-carrying-total" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">مجموع الحمالية:</span>
-                  <span id="val-carrying-total" style="font-weight: 700; white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-                </div>
-                <div style="border-top: 1px dashed rgba(27,67,50,0.15); margin-top: 4px; padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; font-size: 14px; font-weight: 700;">
-                  <span id="lbl-total-calc" style="flex: 1; min-width: 0; line-height: 1.4; text-align: right;">المبلغ الإجمالي المستحق:</span>
-                  <span id="val-total-calc" style="color: var(--color-primary); white-space: nowrap; flex-shrink: 0; text-align: left;">0 دينار</span>
-                </div>
-              </div>
+
 
               <button class="btn-primary" id="btn-submit-sale" style="margin-top: auto; width: 100%;">إصدار الفاتورة وحساب الأرباح</button>
             </div>

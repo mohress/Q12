@@ -1,8 +1,52 @@
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 import { BLEPrinterDriver } from './BLEPrinterDriver.ts';
+
+// Check if localStorage is accessible, if not, patch window.localStorage with an in-memory mock to prevent top-level reference crashes
+try {
+  const testKey = '__storage_test__';
+  window.localStorage.setItem(testKey, testKey);
+  window.localStorage.removeItem(testKey);
+} catch (e) {
+  console.warn('Native localStorage is disabled or restricted. Activating in-memory fallback storage.');
+  let safeStorage = {};
+  const mockStorage = {
+    getItem(key) { return Object.prototype.hasOwnProperty.call(safeStorage, key) ? safeStorage[key] : null; },
+    setItem(key, value) { safeStorage[key] = String(value); },
+    removeItem(key) { delete safeStorage[key]; },
+    clear() { safeStorage = {}; },
+    key(index) { return Object.keys(safeStorage)[index] || null; },
+    get length() { return Object.keys(safeStorage).length; }
+  };
+  try {
+    Object.defineProperty(window, 'localStorage', {
+      value: mockStorage,
+      writable: true,
+      configurable: true
+    });
+  } catch (err) {
+    console.error('Failed to redefine window.localStorage:', err);
+  }
+}
+
+// Safely wrap Storage.prototype.setItem to prevent QuotaExceededError or security block crashes across the entire app
+try {
+  if (typeof Storage !== 'undefined' && Storage.prototype) {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, value) {
+      try {
+        originalSetItem.call(this, key, value);
+      } catch (e) {
+        console.warn(`Storage.setItem failed for key "${key}" (possibly quota exceeded or disabled):`, e);
+      }
+    };
+  }
+} catch (err) {
+  console.error('Failed to patch Storage.prototype.setItem:', err);
+}
 
 // Global Element Mappings and Safety Fallbacks to Reconcile index.html & app.js
 const MAPPINGS_DICTIONARY = {
@@ -170,7 +214,7 @@ let officeName = localStorage.getItem('alwa_office_name') || 'علوة الغا�
 let officeOwner = localStorage.getItem('alwa_office_owner') || 'أبو أحمد';
 let officePhone = localStorage.getItem('alwa_office_phone') || '07701234567';
 let officeLocation = localStorage.getItem('alwa_office_location') || 'جمهورية العراق';
-let officeCashier = localStorage.getItem('alwa_office_cashier') || 'John Doe';
+let officeCashier = localStorage.getItem('alwa_office_cashier') || 'Ahmed';
 let officeChangesCount = parseInt(localStorage.getItem('alwa_office_changes_count') || '0');
 
 // BLE Central state (cordova-plugin-ble-central)
@@ -309,8 +353,12 @@ function logAppEvent(actionAr, actionEn, amount = 0) {
     timestamp: Date.now()
   });
 
-  // Save back to localStorage
-  localStorage.setItem('alwa_app_logs', JSON.stringify(logs));
+  // Save back to localStorage safely
+  try {
+    localStorage.setItem('alwa_app_logs', JSON.stringify(logs));
+  } catch (e) {
+    console.warn('Failed to save app logs to localStorage:', e);
+  }
   
   // Render logs immediately
   renderAppLogs();
@@ -368,9 +416,9 @@ function renderAppLogs() {
 
 // Common fruits & vegetables dictionary with icons
 const CROP_SUGGESTIONS = [
-  { primaryAr: "طماطم", synonymsAr: ["طماطة", "بندورة"], nameEn: "Tomato", icon: "🍅" },
+  { primaryAr: "طماطة", synonymsAr: ["طماطم", "بندورة"], nameEn: "Tomato", icon: "🍅" },
   { primaryAr: "خيار", synonymsAr: [], nameEn: "Cucumber", icon: "🥒" },
-  { primaryAr: "بطاطس", synonymsAr: ["بتيتة", "بطاطا"], nameEn: "Potato", icon: "🥔" },
+  { primaryAr: "بطاطا", synonymsAr: ["بتيتة", "بطاطس", "البطاطا", "البطاطس"], nameEn: "Potato", icon: "🥔" },
   { primaryAr: "بصل", synonymsAr: [], nameEn: "Onion", icon: "🧅" },
   { primaryAr: "ثوم", synonymsAr: [], nameEn: "Garlic", icon: "🧄" },
   { primaryAr: "باذنجان", synonymsAr: ["بيتنجان"], nameEn: "Eggplant", icon: "🍆" },
@@ -508,7 +556,11 @@ function saveCustomCrop(cropName, measureType) {
     if (stored) customCrops = JSON.parse(stored);
   } catch(e) { /* ignore */ }
   customCrops.push(newCrop);
-  localStorage.setItem('alwa_custom_crops', JSON.stringify(customCrops));
+  try {
+    localStorage.setItem('alwa_custom_crops', JSON.stringify(customCrops));
+  } catch (e) {
+    console.warn('Failed to save custom crops to localStorage:', e);
+  }
 }
 
 // Check if that specific import invoice item reaches 100% sold
@@ -722,7 +774,7 @@ const translations = {
     lblExpenseAmount: "المبلغ المستقطع",
     btnSubmitExpense: "حفظ المصروف وتحديث الخزنة",
     sheetLossTitle: "تسجيل الخسائر والتلفيات",
-    lblLossSubject: "سبب الخسارة (مثل: تلف صندوق طماطم، نقصان بيع)",
+    lblLossSubject: "سبب الخسارة (مثل: تلف صندوق طماطة، نقصان بيع)",
     lblLossAmount: "قيمة الخسارة المسجلة",
     btnSubmitLoss: "تسجيل خسارة وتعديل الأرباح",
     sheetPrintPreviewTitle: "معاينة الفاتورة الحرارية",
@@ -927,75 +979,114 @@ function parseNumberInput(str) {
 // ==============================================
 // 3. DATABASE INITIALIZATION (INDEXEDDB - ROOM SIMULATION)
 // ==============================================
+let isInMemoryFallback = false;
+const memoryDB = {
+  farmers: [],
+  import_invoices: [],
+  import_items: [],
+  customers: [],
+  sale_invoices: [],
+  sale_items: [],
+  debts: [],
+  farmer_dues: [],
+  daily_expenses: [],
+  personal_expenses: [],
+  losses: [],
+  settings: [],
+  porter_payouts: [],
+  safe_adjustments: [],
+  stat_archives: []
+};
+
 const DB_NAME = 'AlwaAccountsRoomDatabase';
 const DB_VERSION = 4;
 
 function initDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+  return new Promise((resolve) => {
+    if (typeof indexedDB === 'undefined') {
+      console.warn('IndexedDB is not supported on this device. Falling back to In-Memory mode.');
+      isInMemoryFallback = true;
+      resolve(null);
+      return;
+    }
 
-    request.onerror = (e) => reject('Database opening error: ' + e.target.errorCode);
-    
-    request.onupgradeneeded = (e) => {
-      const dbInstance = e.target.result;
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onerror = (e) => {
+        console.warn('Database opening error, falling back to In-Memory:', e);
+        isInMemoryFallback = true;
+        resolve(null);
+      };
       
-      if (!dbInstance.objectStoreNames.contains('farmers')) {
-        dbInstance.createObjectStore('farmers', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('import_invoices')) {
-        dbInstance.createObjectStore('import_invoices', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('import_items')) {
-        dbInstance.createObjectStore('import_items', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('customers')) {
-        dbInstance.createObjectStore('customers', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('sale_invoices')) {
-        dbInstance.createObjectStore('sale_invoices', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('sale_items')) {
-        dbInstance.createObjectStore('sale_items', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('debts')) {
-        dbInstance.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('farmer_dues')) {
-        dbInstance.createObjectStore('farmer_dues', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('daily_expenses')) {
-        dbInstance.createObjectStore('daily_expenses', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('personal_expenses')) {
-        dbInstance.createObjectStore('personal_expenses', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('losses')) {
-        dbInstance.createObjectStore('losses', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('settings')) {
-        const settingsStore = dbInstance.createObjectStore('settings', { keyPath: 'key' });
-        settingsStore.put({ key: 'numeral_system', value: 'en' });
-        settingsStore.put({ key: 'sound_alerts', value: 'true' });
-      }
-      if (!dbInstance.objectStoreNames.contains('porter_payouts')) {
-        dbInstance.createObjectStore('porter_payouts', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('safe_adjustments')) {
-        dbInstance.createObjectStore('safe_adjustments', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!dbInstance.objectStoreNames.contains('stat_archives')) {
-        dbInstance.createObjectStore('stat_archives', { keyPath: 'id', autoIncrement: true });
-      }
-    };
+      request.onupgradeneeded = (e) => {
+        const dbInstance = e.target.result;
+        
+        if (!dbInstance.objectStoreNames.contains('farmers')) {
+          dbInstance.createObjectStore('farmers', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('import_invoices')) {
+          dbInstance.createObjectStore('import_invoices', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('import_items')) {
+          dbInstance.createObjectStore('import_items', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('customers')) {
+          dbInstance.createObjectStore('customers', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('sale_invoices')) {
+          dbInstance.createObjectStore('sale_invoices', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('sale_items')) {
+          dbInstance.createObjectStore('sale_items', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('debts')) {
+          dbInstance.createObjectStore('debts', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('farmer_dues')) {
+          dbInstance.createObjectStore('farmer_dues', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('daily_expenses')) {
+          dbInstance.createObjectStore('daily_expenses', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('personal_expenses')) {
+          dbInstance.createObjectStore('personal_expenses', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('losses')) {
+          dbInstance.createObjectStore('losses', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('settings')) {
+          const settingsStore = dbInstance.createObjectStore('settings', { keyPath: 'key' });
+          settingsStore.put({ key: 'numeral_system', value: 'en' });
+          settingsStore.put({ key: 'sound_alerts', value: 'true' });
+        }
+        if (!dbInstance.objectStoreNames.contains('porter_payouts')) {
+          dbInstance.createObjectStore('porter_payouts', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('safe_adjustments')) {
+          dbInstance.createObjectStore('safe_adjustments', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!dbInstance.objectStoreNames.contains('stat_archives')) {
+          dbInstance.createObjectStore('stat_archives', { keyPath: 'id', autoIncrement: true });
+        }
+      };
 
-    request.onsuccess = (e) => {
-      db = e.target.result;
-      resolve(db);
-    };
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        resolve(db);
+      };
+    } catch (err) {
+      console.warn('Error opening IndexedDB, falling back to In-Memory mode:', err);
+      isInMemoryFallback = true;
+      resolve(null);
+    }
   });
 }
 
 function dbGetAll(storeName) {
+  if (isInMemoryFallback) {
+    return Promise.resolve(JSON.parse(JSON.stringify(memoryDB[storeName] || [])));
+  }
   if (dbCache[storeName]) {
     // Return a deep copy to prevent mutation of the cached array
     return Promise.resolve(JSON.parse(JSON.stringify(dbCache[storeName])));
@@ -1021,6 +1112,11 @@ function dbGetAll(storeName) {
 }
 
 function dbGet(storeName, id) {
+  if (isInMemoryFallback) {
+    const list = memoryDB[storeName] || [];
+    const item = list.find(it => it.id === id);
+    return Promise.resolve(item ? JSON.parse(JSON.stringify(item)) : null);
+  }
   if (dbCache[storeName]) {
     const item = dbCache[storeName].find(it => it.id === id);
     if (item) {
@@ -1046,6 +1142,13 @@ function dbGet(storeName, id) {
 
 function dbAdd(storeName, obj) {
   invalidateDbCache(storeName);
+  if (isInMemoryFallback) {
+    const list = memoryDB[storeName] || [];
+    const newId = list.reduce((max, item) => (item.id && typeof item.id === 'number' ? Math.max(max, item.id) : max), 0) + 1;
+    const itemWithId = { ...obj, id: obj.id || newId };
+    list.push(itemWithId);
+    return Promise.resolve(itemWithId.id);
+  }
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -1065,6 +1168,16 @@ function dbAdd(storeName, obj) {
 
 function dbPut(storeName, obj) {
   invalidateDbCache(storeName);
+  if (isInMemoryFallback) {
+    const list = memoryDB[storeName] || [];
+    const index = list.findIndex(item => item.id === obj.id || (obj.key && item.key === obj.key));
+    if (index !== -1) {
+      list[index] = { ...list[index], ...obj };
+    } else {
+      list.push(obj);
+    }
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -1084,6 +1197,14 @@ function dbPut(storeName, obj) {
 
 function dbDelete(storeName, id) {
   invalidateDbCache(storeName);
+  if (isInMemoryFallback) {
+    const list = memoryDB[storeName] || [];
+    const index = list.findIndex(item => item.id === id);
+    if (index !== -1) {
+      list.splice(index, 1);
+    }
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
     try {
       if (!db) {
@@ -1800,7 +1921,7 @@ function addImportCropRow() {
       <label>${currentLanguage === 'ar' ? 'نوع المحصول' : 'Crop Type'}</label>
       <div style="position: relative;">
         <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">eco</span>
-        <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'مثل: طماطم، بطاطس...' : 'e.g. Tomato, Potato...'}" required autocomplete="off" style="padding-right: 42px;">
+        <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'مثل: طماطة، بطاطا...' : 'e.g. Tomato, Potato...'}" required autocomplete="off" style="padding-right: 42px;">
         <div class="crop-autocomplete-dropdown autocomplete-dropdown"></div>
       </div>
     </div>
@@ -2383,21 +2504,21 @@ async function addSaleCropRow() {
 
       <div class="form-group sale-box-count-container" style="flex: 1; min-width: 0;">
         <label class="sale-box-count-label">
-          <span>${currentLanguage === 'ar' ? 'عدد الصناديق المباعة' : 'Number of Boxes Sold'}</span>
+          <span>${currentLanguage === 'ar' ? 'عدد' : 'Number of Boxes Sold'}</span>
         </label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
-          <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...'}" required style="padding-right: 42px;">
+          <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'عدد' : 'Count'}" required style="padding-right: 42px;">
         </div>
       </div>
 
       <div class="form-group" style="flex: 1; min-width: 0;">
         <label class="sale-unit-price-label">
-          <span>${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)'}</span>
+          <span>${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد' : 'Sale Price per Kg'}</span>
         </label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">payments</span>
-          <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'أدخل السعر...' : 'Enter unit price...'}" required style="padding-right: 42px;">
+          <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'السعر' : 'Price'}" required style="padding-right: 42px;">
         </div>
       </div>
     </div>
@@ -2509,27 +2630,27 @@ async function addSaleCropRow() {
       boxInput.setAttribute('max', remBoxes);
       remainingLabel.textContent = currentLanguage === 'ar' ? `المتبقي: ${formatVal(remBoxes)} قطعة` : `Remaining: ${formatVal(remBoxes)} قطعة`;
       
-      unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للقطعة الواحدة (دينار)' : 'Sale Price per Piece (IQD)';
-      unitPriceInput.placeholder = currentLanguage === 'ar' ? 'أدخل سعر القطعة الواحدة...' : 'Enter price per piece...';
+      unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للقطعة الواحدة' : 'Sale Price per Piece';
+      unitPriceInput.placeholder = currentLanguage === 'ar' ? 'السعر' : 'Price';
 
       if (boxCountLabel) {
-        boxCountLabel.textContent = currentLanguage === 'ar' ? 'عدد القطع المباعة' : 'Number of Pieces Sold';
+        boxCountLabel.textContent = currentLanguage === 'ar' ? 'عدد' : 'Number of Pieces Sold';
       }
       if (boxCountInput) {
-        boxCountInput.placeholder = currentLanguage === 'ar' ? 'أدخل عدد القطع...' : 'Pieces count...';
+        boxCountInput.placeholder = currentLanguage === 'ar' ? 'عدد' : 'Count';
       }
     } else {
       weightInput.closest('.form-group').style.display = 'block';
       weightInput.setAttribute('max', remWeight);
       
-      unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)' : 'Sale Price per Kg (IQD)';
-      unitPriceInput.placeholder = currentLanguage === 'ar' ? 'أدخل سعر الكيلو الواحد...' : 'Enter price per Kg...';
+      unitPriceLabel.textContent = currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد' : 'Sale Price per Kg';
+      unitPriceInput.placeholder = currentLanguage === 'ar' ? 'السعر' : 'Price';
 
       if (boxCountLabel) {
-        boxCountLabel.textContent = currentLanguage === 'ar' ? 'عدد الصناديق المباعة' : 'Number of Boxes Sold';
+        boxCountLabel.textContent = currentLanguage === 'ar' ? 'عدد' : 'Number of Boxes Sold';
       }
       if (boxCountInput) {
-        boxCountInput.placeholder = currentLanguage === 'ar' ? 'أدخل عدد الصناديق...' : 'Boxes count...';
+        boxCountInput.placeholder = currentLanguage === 'ar' ? 'عدد' : 'Count';
       }
 
       if (isWatermelonOrMelon(cropType)) {
@@ -3233,7 +3354,7 @@ async function renderDebtsList() {
     if (!customer) continue;
 
     const saleInvoice = allSaleInvoices.find(s => s.id === debt.sale_invoice_id);
-    const orderId = saleInvoice?.order_id || ('ALW-' + String(debt.sale_invoice_id).padStart(3, '0'));
+    const orderId = (saleInvoice && saleInvoice.order_id) || ('ALW-' + String(debt.sale_invoice_id).padStart(3, '0'));
     const items = allSaleItems.filter(it => it.sale_invoice_id === debt.sale_invoice_id);
     const itemNamesStr = items.map(it => it.crop_type).join('، ');
 
@@ -3893,7 +4014,8 @@ async function printCropSalesAudit(farmerId, crop) {
       `;
     }
 
-    const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
+    const customerObj = (saleInvoice && cachedCustomers) ? cachedCustomers.find(c => c.id === saleInvoice.customer_id) : null;
+    const isLoss = (item.sold_price === 0) || (customerObj && customerObj.name === 'تالف');
     const displayPrice = isLoss ? (currentLanguage === 'ar' ? 'تلف' : 'Loss') : formatVal(unitPrice);
 
     return `
@@ -4109,7 +4231,8 @@ async function showSalesAuditSheet(farmerId, crop) {
           }
         }
 
-        const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
+        const customerObj = (saleInvoice && cachedCustomers) ? cachedCustomers.find(c => c.id === saleInvoice.customer_id) : null;
+        const isLoss = (item.sold_price === 0) || (customerObj && customerObj.name === 'تالف');
 
         let rateText = '';
         if (isLoss) {
@@ -4634,7 +4757,8 @@ async function printDailySalesAudit(cropSales) {
       `;
     }
 
-    const isLoss = (item.sold_price === 0) || (saleInvoice && cachedCustomers && cachedCustomers.find(c => c.id === saleInvoice.customer_id)?.name === 'تالف');
+    const customerObj = (saleInvoice && cachedCustomers) ? cachedCustomers.find(c => c.id === saleInvoice.customer_id) : null;
+    const isLoss = (item.sold_price === 0) || (customerObj && customerObj.name === 'تالف');
     const displayPrice = isLoss ? (currentLanguage === 'ar' ? 'تلف' : 'Loss') : formatVal(unitPrice);
 
     return `
@@ -9217,7 +9341,11 @@ async function checkAndApplyMonthlyRollover() {
     }
   }
   
-  localStorage.setItem('alwa_last_rollover_month', currentMonthKey);
+  try {
+    localStorage.setItem('alwa_last_rollover_month', currentMonthKey);
+  } catch (e) {
+    console.warn('Failed to save last rollover month to localStorage:', e);
+  }
 }
 
 async function printDailyInventoryList() {
@@ -9891,7 +10019,7 @@ async function exportFullYearToExcel() {
       const custAddress = cust ? (cust.address || '-') : '-';
       
       const sInvoice = yearSales.find(s => s.id === d.sale_invoice_id);
-      const orderId = sInvoice?.order_id || ('ALW-' + String(d.sale_invoice_id).padStart(3, '0'));
+      const orderId = (sInvoice && sInvoice.order_id) || ('ALW-' + String(d.sale_invoice_id).padStart(3, '0'));
       
       const sItems = yearSaleItems.filter(it => it.sale_invoice_id === d.sale_invoice_id);
       const itemsDetailStr = sItems.map(it => `${it.crop_type} (${it.box_count} صندوق/كيس)`).join('، ');
@@ -10339,9 +10467,17 @@ async function checkMandatoryNewYearRollover() {
     
     if (oldestYear < currentYear) {
       lastRolledOverYear = oldestYear.toString();
-      localStorage.setItem('alwa_last_rolled_over_year', lastRolledOverYear);
+      try {
+        localStorage.setItem('alwa_last_rolled_over_year', lastRolledOverYear);
+      } catch (e) {
+        console.warn('Failed to save last rolled over year to localStorage:', e);
+      }
     } else {
-      localStorage.setItem('alwa_last_rolled_over_year', currentYear.toString());
+      try {
+        localStorage.setItem('alwa_last_rolled_over_year', currentYear.toString());
+      } catch (e) {
+        console.warn('Failed to save last rolled over year to localStorage:', e);
+      }
       return;
     }
   }
@@ -10371,7 +10507,11 @@ async function checkMandatoryNewYearRollover() {
         try {
           showToast(currentLanguage === 'ar' ? 'جاري ترحيل الحسابات وتصدير النسخة الاحتياطية...' : 'Rolling over accounts and exporting backup...', 'hourglass_empty');
           await executeNewYearRollover();
-          localStorage.setItem('alwa_last_rolled_over_year', currentYear.toString());
+          try {
+            localStorage.setItem('alwa_last_rolled_over_year', currentYear.toString());
+          } catch (e) {
+            console.warn('Failed to save last rolled over year to localStorage:', e);
+          }
           break;
         } catch (err) {
           console.error(err);
@@ -11118,7 +11258,18 @@ async function startApp() {
 
   } catch (err) {
     console.error('Fatal initialization error:', err);
-    showToast('خطأ أثناء بدء تشغيل نظام علوة للمحاسبة', 'warning', true);
+    
+    // Safety net: Always hide splash screen to prevent stuck loading indicator
+    const splash = document.getElementById('app-splash-screen');
+    if (splash) {
+      splash.classList.add('hide');
+      setTimeout(() => splash.remove(), 600);
+    }
+    
+    // Set default view active so the app remains responsive
+    updateUIActiveTab('screen-import');
+    
+    showToast(currentLanguage === 'ar' ? 'حدث خطأ أثناء بدء تشغيل النظام، تم التحميل الاحتياطي' : 'Error starting the system, loaded with safety backup', 'warning', true);
   }
 }
 
@@ -11151,7 +11302,7 @@ function dummyKeypadOldCode() {
     titleText = isAr ? 'الوزن المباع (كغم)' : 'Sold Weight (Kg)';
     suffixText = isAr ? 'كغم' : 'Kg';
   } else if (inputElement.classList.contains('sale-box-count')) {
-    titleText = isAr ? 'عدد الصناديق المباعة' : 'Number of Boxes Sold';
+    titleText = isAr ? 'عدد' : 'Number of Boxes Sold';
     suffixText = isAr ? 'صندوق' : 'box';
   } else if (inputElement.classList.contains('sale-crop-unit-price')) {
     titleText = isAr ? 'سعر البيع للكيلو الواحد' : 'Sale Price per Kg';
@@ -11864,6 +12015,19 @@ document.addEventListener('deviceready', () => {
     e.preventDefault();
     window.history.back();
   }, false);
+
+  // Register Capacitor App backButton listener to block default exit action
+  try {
+    App.addListener('backButton', (data) => {
+      if (data.canGoBack) {
+        window.history.back();
+      } else {
+        console.log('App backButton event intercepted. Default exit action blocked.');
+      }
+    });
+  } catch (err) {
+    console.warn('Failed to bind App.addListener backButton:', err);
+  }
 }, false);
 
 // Bind touch and click events to ensure immersive fullscreen triggers on first user interaction
@@ -11874,6 +12038,20 @@ const handleFirstInteraction = () => {
 };
 document.addEventListener('click', handleFirstInteraction, { passive: true });
 document.addEventListener('touchstart', handleFirstInteraction, { passive: true });
+
+// Re-apply fullscreen preference on app resume (screen on/unlock), visibility change, or window focus
+const reapplyFullscreen = async () => {
+  if (isImmersiveFullscreenEnabled) {
+    await applyFullscreenPreference();
+  }
+};
+document.addEventListener('resume', reapplyFullscreen, false);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    reapplyFullscreen();
+  }
+});
+window.addEventListener('focus', reapplyFullscreen, false);
 
 window.addEventListener('DOMContentLoaded', () => {
   applyAnimationsPreference();

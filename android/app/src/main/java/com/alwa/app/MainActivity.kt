@@ -12,9 +12,23 @@ class MainActivity : BridgeActivity() {
         super.onCreate(savedInstanceState)
         
         // Setup listener for system UI changes to hide the navigation/gesture bar when status bar is hidden
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if ((visibility and View.SYSTEM_UI_FLAG_FULLSCREEN) != 0) {
-                hideNavigationBar()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.decorView.setOnApplyWindowInsetsListener { view, insets ->
+                val statusBarVisible = insets.isVisible(WindowInsets.Type.statusBars())
+                val navigationBarVisible = insets.isVisible(WindowInsets.Type.navigationBars())
+                
+                // If status bar is hidden but navigation bar is still visible, hide navigation bar
+                if (!statusBarVisible && navigationBarVisible) {
+                    hideNavigationBar()
+                }
+                view.onApplyWindowInsets(insets)
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+                if ((visibility and View.SYSTEM_UI_FLAG_FULLSCREEN) != 0) {
+                    hideNavigationBar()
+                }
             }
         }
     }
