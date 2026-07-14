@@ -5,11 +5,28 @@ import android.os.Build
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.content.Context
+import android.app.admin.DevicePolicyManager
+import android.util.Log
 import com.getcapacitor.BridgeActivity
 
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // LockTask Mode (Device Owner Kiosk Mode) Setup
+        try {
+            val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            if (dpm.isDeviceOwnerApp(packageName)) {
+                // Pin the app screen natively in kiosk/lock task mode
+                startLockTask()
+                Log.i("MainActivity", "Successfully started LockTask mode (Kiosk Mode).")
+            } else {
+                Log.i("MainActivity", "App is not the device owner. To set it, run: adb shell dpm set-device-owner com.alwa.app/.MyDeviceAdminReceiver")
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error starting LockTask mode: ${e.message}")
+        }
         
         // Setup listener for system UI changes to hide the navigation/gesture bar when status bar is hidden
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
