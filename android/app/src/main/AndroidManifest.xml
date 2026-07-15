@@ -46,6 +46,7 @@
                 android:resource="@xml/device_admin" />
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <action android:name="com.alwa.app.ACTION_SHUTDOWN" />
             </intent-filter>
         </receiver>
     </application>

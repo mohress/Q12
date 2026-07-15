@@ -645,6 +645,32 @@
             <span class="slider"></span>
           </label>
         </div>
+ 
+        <!-- Daily Auto-Shutdown Settings -->
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <span class="settings-item-title" id="txt-shutdown-title">إيقاف التشغيل التلقائي اليومي (Daily Auto-Shutdown)</span>
+            <span class="settings-item-desc" id="txt-shutdown-desc">إيقاف تشغيل أو إعادة تشغيل الجهاز تلقائياً كل يوم في وقت محدد لحماية عمر البطارية.</span>
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+              <input type="time" id="setting-shutdown-time" class="form-input" style="padding: 4px 8px; font-size: 12px; width: auto; margin: 0; background-color: var(--color-bg); border: 1px solid var(--color-border); border-radius: 4px;" value="23:00">
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-shutdown-toggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Emergency Android Settings -->
+        <div class="settings-item" id="emergency-settings-container">
+          <div class="settings-item-info">
+            <span class="settings-item-title" id="txt-emergency-title" style="color: var(--color-danger); font-weight: 700;">إعدادات نظام أندرويد للطوارئ (Android Settings)</span>
+            <span class="settings-item-desc" id="txt-emergency-desc">الخروج المؤقت من وضع الكشك وفتح إعدادات النظام اللوحية (يتطلب الرمز السري 0026).</span>
+          </div>
+          <button id="btn-emergency-settings" class="btn-primary" style="padding: 6px 12px; font-size: 11px; background-color: var(--color-danger); color: white; border: none; box-shadow: none;">
+            فتح الإعدادات
+          </button>
+        </div>
 
 
 

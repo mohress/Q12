@@ -27,6 +27,14 @@ class MainActivity : BridgeActivity() {
         } catch (e: Exception) {
             Log.e("MainActivity", "Error starting LockTask mode: ${e.message}")
         }
+
+        // Ensure the daily auto-shutdown/reboot alarm is correctly registered
+        try {
+            ShutdownScheduler.updateAlarm(this)
+            Log.i("MainActivity", "Daily auto-shutdown scheduler initialized.")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to initialize shutdown scheduler: ${e.message}")
+        }
         
         // Setup listener for system UI changes to hide the navigation/gesture bar when status bar is hidden
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
