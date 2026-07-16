@@ -1,11 +1,8 @@
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { App } from '@capacitor/app';
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 import { BLEPrinterDriver } from './BLEPrinterDriver.ts';
-
-const KioskPlugin = registerPlugin('KioskPlugin');
 
 // Check if localStorage is accessible, if not, patch window.localStorage with an in-memory mock to prevent top-level reference crashes
 try {
@@ -8151,7 +8148,7 @@ function saveOfficeInfo() {
 // ==============================================
 // 14. DIALOGS & POPUPS
 // ==============================================
-function openPasscodeDialog(correctPasscode, successCallback, customTitle = null, customMessage = null) {
+function openPasscodeDialog(correctPasscode, successCallback) {
   const dialog = document.getElementById('custom-prompt-dialog');
   if (!dialog) return;
   const title = document.getElementById('prompt-title');
@@ -8161,10 +8158,10 @@ function openPasscodeDialog(correctPasscode, successCallback, customTitle = null
   const confirmBtn = document.getElementById('btn-prompt-ok');
 
   if (title) {
-    title.textContent = customTitle || (currentLanguage === 'ar' ? 'تعديل اسم العلوة' : 'Modify Alwa Name');
+    title.textContent = currentLanguage === 'ar' ? 'تعديل اسم العلوة' : 'Modify Alwa Name';
   }
   if (message) {
-    message.textContent = customMessage || (currentLanguage === 'ar' ? 'أدخل الرمز السري المكون من 4 أرقام لتعديل الاسم:' : 'Enter 4-digit passcode to modify name:');
+    message.textContent = currentLanguage === 'ar' ? 'أدخل الرمز السري المكون من 4 أرقام لتعديل الاسم:' : 'Enter 4-digit passcode to modify name:';
   }
 
   input.value = '';
@@ -8788,28 +8785,6 @@ function applyBilingualTranslations() {
   if (elMotionTitle) elMotionTitle.textContent = t.txtMotionTitle;
   const elMotionDesc = document.getElementById('txt-motion-desc');
   if (elMotionDesc) elMotionDesc.textContent = t.txtMotionDesc;
-
-  const elEmergencyTitle = document.getElementById('txt-emergency-title');
-  if (elEmergencyTitle) {
-    elEmergencyTitle.textContent = currentLanguage === 'ar' ? 'إعدادات نظام أندرويد للطوارئ (Android Settings)' : 'Emergency Android Settings';
-  }
-  const elEmergencyDesc = document.getElementById('txt-emergency-desc');
-  if (elEmergencyDesc) {
-    elEmergencyDesc.textContent = currentLanguage === 'ar' ? 'الخروج المؤقت من وضع الكشك وفتح إعدادات النظام اللوحية (يتطلب الرمز السري 0026).' : 'Temporarily exit kiosk mode and open tablet system settings (requires passcode 0026).';
-  }
-  const elEmergencyBtn = document.getElementById('btn-emergency-settings');
-  if (elEmergencyBtn) {
-    elEmergencyBtn.textContent = currentLanguage === 'ar' ? 'فتح الإعدادات' : 'Open Settings';
-  }
-
-  const elShutdownTitle = document.getElementById('txt-shutdown-title');
-  if (elShutdownTitle) {
-    elShutdownTitle.textContent = currentLanguage === 'ar' ? 'إيقاف التشغيل التلقائي اليومي (Daily Auto-Shutdown)' : 'Daily Auto-Shutdown';
-  }
-  const elShutdownDesc = document.getElementById('txt-shutdown-desc');
-  if (elShutdownDesc) {
-    elShutdownDesc.textContent = currentLanguage === 'ar' ? 'إيقاف تشغيل أو إعادة تشغيل الجهاز تلقائياً كل يوم في وقت محدد لحماية عمر البطارية.' : 'Temporarily power off or restart the device automatically every day at a specific time to preserve battery life.';
-  }
 
   document.getElementById('lbl-printer-title').textContent = t.txtPrinterTitle;
   document.getElementById('lbl-paper-width-title').textContent = t.lblPaperWidth;
@@ -10679,31 +10654,6 @@ async function startApp() {
       });
     }
 
-    const shutdownToggle = document.getElementById('setting-shutdown-toggle');
-    const shutdownTimeInput = document.getElementById('setting-shutdown-time');
-
-    async function saveShutdownPreferences() {
-      const isEnabled = shutdownToggle ? shutdownToggle.checked : false;
-      const scheduledTime = shutdownTimeInput ? shutdownTimeInput.value : '23:00';
-      
-      localStorage.setItem('alwa_shutdown_enabled', isEnabled ? 'true' : 'false');
-      localStorage.setItem('alwa_shutdown_time', scheduledTime);
-
-      try {
-        await KioskPlugin.setShutdownSchedule({ enabled: isEnabled, time: scheduledTime });
-        console.log('Saved shutdown preference natively:', isEnabled, scheduledTime);
-      } catch (err) {
-        console.warn('Failed to save shutdown preference natively:', err);
-      }
-    }
-
-    if (shutdownToggle) {
-      shutdownToggle.addEventListener('change', saveShutdownPreferences);
-    }
-    if (shutdownTimeInput) {
-      shutdownTimeInput.addEventListener('change', saveShutdownPreferences);
-    }
-
     // 10. Bind bottom sheet open triggers
     document.getElementById('btn-trigger-new-import').addEventListener('click', () => openBottomSheet('sheet-new-import'));
     document.getElementById('btn-trigger-new-sale').addEventListener('click', () => openBottomSheet('sheet-new-sale'));
@@ -11128,24 +11078,6 @@ async function startApp() {
       });
     }
 
-    const btnEmergencySettings = document.getElementById('btn-emergency-settings');
-    if (btnEmergencySettings) {
-      btnEmergencySettings.addEventListener('click', () => {
-        const titleText = currentLanguage === 'ar' ? 'رمز حماية النظام للطوارئ' : 'Emergency System Passcode';
-        const msgText = currentLanguage === 'ar' ? 'الرجاء إدخال الرمز السري للطوارئ (0026) لفك القفل وفتح إعدادات أندرويد:' : 'Please enter emergency passcode (0026) to unlock and open Android settings:';
-        openPasscodeDialog('0026', async () => {
-          try {
-            showToast(currentLanguage === 'ar' ? 'جاري فك قفل الشاشة وفتح إعدادات أندرويد...' : 'Unlocking kiosk mode and opening Android settings...', 'lock_open');
-            // Call stopLockTask on native side and open settings
-            await KioskPlugin.exitKioskAndOpenSettings();
-          } catch (err) {
-            console.error('Failed to trigger native exitKioskAndOpenSettings:', err);
-            showToast(currentLanguage === 'ar' ? 'فشل فتح الإعدادات: تأكد من تشغيل التطبيق على تابلت أندرويد.' : 'Failed to open settings: Ensure the app is running on an Android tablet.', 'warning', true);
-          }
-        }, titleText, msgText);
-      });
-    }
-
     // 19. Initialize settings preferences
     numeralSystem = 'en';
     localStorage.setItem('alwa_numeral_system', 'en');
@@ -11172,39 +11104,6 @@ async function startApp() {
       elMotionToggle.checked = isMotionAnimationsEnabled;
     }
     applyAnimationsPreference();
-
-    // Load and set Daily Auto-Shutdown preference
-    try {
-      KioskPlugin.getShutdownSchedule().then((schedule) => {
-        const elShutdownToggle = document.getElementById('setting-shutdown-toggle');
-        const elShutdownTime = document.getElementById('setting-shutdown-time');
-        if (elShutdownToggle) {
-          elShutdownToggle.checked = schedule.enabled;
-        }
-        if (elShutdownTime) {
-          elShutdownTime.value = schedule.time || '23:00';
-        }
-      }).catch((err) => {
-        console.warn('Failed to fetch native shutdown schedule on start:', err);
-        fallbackLocalShutdownSettings();
-      });
-    } catch (err) {
-      console.warn('Native KioskPlugin.getShutdownSchedule not supported:', err);
-      fallbackLocalShutdownSettings();
-    }
-
-    function fallbackLocalShutdownSettings() {
-      const storedEnabled = localStorage.getItem('alwa_shutdown_enabled') === 'true';
-      const storedTime = localStorage.getItem('alwa_shutdown_time') || '23:00';
-      const elShutdownToggle = document.getElementById('setting-shutdown-toggle');
-      const elShutdownTime = document.getElementById('setting-shutdown-time');
-      if (elShutdownToggle) {
-        elShutdownToggle.checked = storedEnabled;
-      }
-      if (elShutdownTime) {
-        elShutdownTime.value = storedTime;
-      }
-    }
 
     // Initialize & Bind Accessibility Controls (Accessibility / Visually Impaired Mode)
     applyAccessibilityPreferences();
@@ -12115,19 +12014,6 @@ document.addEventListener('deviceready', () => {
     e.preventDefault();
     window.history.back();
   }, false);
-
-  // Register Capacitor App backButton listener to block default exit action
-  try {
-    App.addListener('backButton', (data) => {
-      if (data.canGoBack) {
-        window.history.back();
-      } else {
-        console.log('App backButton event intercepted. Default exit action blocked.');
-      }
-    });
-  } catch (err) {
-    console.warn('Failed to bind App.addListener backButton:', err);
-  }
 }, false);
 
 // Bind touch and click events to ensure immersive fullscreen triggers on first user interaction
