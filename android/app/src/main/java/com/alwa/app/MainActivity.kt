@@ -12,11 +12,34 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.widget.Toast
 import com.getcapacitor.BridgeActivity
+import android.webkit.WebView
+import android.os.Handler
+import android.os.Looper
 
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // Check WebView availability during early boot (Direct Boot)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                if (WebView.getCurrentWebViewPackage() == null) {
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        recreate()
+                    }, 2000)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        // Auto-Lock / Lock Task Mode
+        try {
+            startLockTask()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         // Setup listener for system UI changes to hide the navigation/gesture bar when status bar is hidden
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.decorView.setOnApplyWindowInsetsListener { view, insets ->
@@ -43,6 +66,28 @@ class MainActivity : BridgeActivity() {
             setAsDefaultLauncher()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        
+        // Auto-Lock / Lock Task Mode
+        try {
+            startLockTask()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // Check if WebView became available after initial launch when bridge is null
+        if (bridge == null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (WebView.getCurrentWebViewPackage() != null) {
+                    recreate()
+                }
+            } else {
+                recreate()
+            }
         }
     }
 

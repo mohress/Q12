@@ -1016,9 +1016,15 @@ body.sheet-open {
 }
 
 .debt-status-tag.ok {
-  background-color: rgba(82, 183, 136, 0.12);
-  color: var(--color-success);
-  border: 1px solid rgba(82, 183, 136, 0.2);
+  background-color: #d8f3dc;
+  color: #1b4332;
+  border: 1.5px solid rgba(45, 106, 79, 0.22);
+}
+
+.debt-status-tag.unpaid {
+  background-color: #d8f3dc;
+  color: #1b4332;
+  border: 1.5px solid rgba(45, 106, 79, 0.22);
 }
 
 .debt-status-tag.paid {
@@ -3293,7 +3299,7 @@ div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3)
   }
 
   .form-input {
-    padding: 12px 16px !important;
+    padding: 12px 16px;
     font-size: 13px !important;
     border-radius: 12px !important;
     border: 1.5px solid rgba(0, 0, 0, 0.1) !important;
@@ -3481,6 +3487,253 @@ div:nth-of-type(1) > div#sheet-print-preview:nth-of-type(7) > div:nth-of-type(3)
     border-bottom: 1.5px solid rgba(0, 0, 0, 0.08) !important;
     border-bottom-left-radius: 20px !important;
     box-shadow: -4px 4px 12px rgba(0,0,0,0.01) !important;
+  }
+
+  /* Compact top-aligned layout for New Sale and New Import Sheets in landscape orientation */
+  @media (orientation: landscape) {
+    #sheet-new-sale,
+    #sheet-new-import {
+      top: 0 !important;
+      bottom: auto !important;
+      height: 56vh !important;
+      max-height: 56vh !important;
+      border-radius: 0 0 24px 24px !important;
+      transform: translate3d(-50%, -100%, 0) !important;
+      transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    }
+    
+    #sheet-new-sale.open,
+    #sheet-new-import.open {
+      transform: translate3d(-50%, 0, 0) !important;
+    }
+    
+    #sheet-new-sale .bottom-sheet-body,
+    #sheet-new-import .bottom-sheet-body {
+      height: calc(56vh - 60px) !important;
+      max-height: calc(56vh - 60px) !important;
+      padding: 12px 18px !important;
+      gap: 0 !important;
+      overflow: hidden !important;
+    }
+
+    /* Compact form fields inside sheets */
+    #sheet-new-sale .form-group,
+    #sheet-new-import .form-group {
+      gap: 2px !important;
+      margin-bottom: 6px !important;
+    }
+
+    #sheet-new-sale .form-group label,
+    #sheet-new-import .form-group label {
+      font-size: 11px !important;
+      margin-bottom: 2px !important;
+      gap: 4px !important;
+    }
+
+    #sheet-new-sale .form-group label span.material-icons-round,
+    #sheet-new-import .form-group label span.material-icons-round {
+      font-size: 14px !important;
+    }
+
+    #sheet-new-sale .form-input,
+    #sheet-new-import .form-input {
+      padding: 8px 12px !important;
+      font-size: 12px !important;
+      border-radius: 8px !important;
+      height: 36px !important;
+    }
+    
+    /* Adjust icon spacing inside inputs */
+    #sheet-new-sale .form-group div > span.material-icons-round,
+    #sheet-new-import .form-group div > span.material-icons-round {
+      font-size: 16px !important;
+      right: 10px !important;
+    }
+    
+    #sheet-new-sale .form-input[style*="padding-right: 42px"],
+    #sheet-new-import .form-input[style*="padding-right: 42px"] {
+      padding-right: 32px !important;
+    }
+
+    #sheet-new-sale input#sale-customer-name,
+    #sheet-new-sale input#sale-customer-phone,
+    #sheet-new-sale input#sale-customer-address,
+    #sheet-new-sale input#sale-bags-cost,
+    #sheet-new-import input#import-farmer-name,
+    #sheet-new-import input#import-vehicle-type {
+      padding-right: 32px !important;
+    }
+
+    /* Squeeze the crops list container */
+    #sale-items-container,
+    #import-items-container {
+      gap: 6px !important;
+    }
+
+    /* Extremely compact dynamic row */
+    #sheet-new-sale .dynamic-row,
+    #sheet-new-import .dynamic-row {
+      padding: 8px 8px 8px 36px !important;
+      border-radius: 12px !important;
+      gap: 6px !important;
+      border-width: 1px !important;
+      background-color: #fafdfc !important;
+    }
+
+    #sheet-new-sale .dynamic-row-header,
+    #sheet-new-import .dynamic-row-header {
+      font-size: 11px !important;
+      padding-bottom: 4px !important;
+      margin-bottom: 0 !important;
+    }
+
+    #sheet-new-sale .delete-row-btn,
+    #sheet-new-import .delete-row-btn {
+      left: 6px !important;
+      width: 24px !important;
+      height: 24px !important;
+    }
+
+    #sheet-new-sale .delete-row-btn span.material-icons-round,
+    #sheet-new-import .delete-row-btn span.material-icons-round {
+      font-size: 14px !important;
+    }
+
+    /* Make row inputs horizontal inline */
+    #sheet-new-sale .dynamic-row > div[style*="display: flex"],
+    #sheet-new-import .dynamic-row > div[style*="display: flex"] {
+      gap: 8px !important;
+    }
+
+    /* Compact Porter Options */
+    #sheet-new-sale .porter-options-row,
+    #sheet-new-import .porter-options-row {
+      margin-top: 2px !important;
+      margin-bottom: 2px !important;
+      gap: 4px !important;
+    }
+
+    #sheet-new-sale .porter-opt-btn,
+    #sheet-new-import .porter-opt-btn {
+      padding: 4px 6px !important;
+      font-size: 10px !important;
+      border-radius: 6px !important;
+    }
+
+    #sheet-new-sale .sale-porter-rate-container,
+    #sheet-new-import .sale-porter-rate-container {
+      margin-top: 2px !important;
+    }
+    
+    /* Compact options grid */
+    #sheet-new-sale .sheet-form-options-grid {
+      padding: 10px !important;
+      border-radius: 12px !important;
+      margin-top: 8px !important;
+      margin-bottom: 6px !important;
+      gap: 10px !important;
+    }
+
+    /* Compact calculations card */
+    #sheet-new-sale .premium-card {
+      padding: 10px 12px !important;
+      border-radius: 12px !important;
+      gap: 4px !important;
+    }
+
+    #sheet-new-sale .premium-card > div {
+      padding: 2px 0 !important;
+    }
+
+    #sheet-new-sale .premium-card > div:last-of-type {
+      margin-top: 4px !important;
+      padding-top: 6px !important;
+    }
+
+    #sheet-new-sale .premium-card > div span:first-child {
+      font-size: 11px !important;
+    }
+
+    #sheet-new-sale .premium-card > div span:last-child {
+      font-size: 11px !important;
+    }
+
+    #sheet-new-sale .premium-card > div:last-of-type #lbl-total-calc {
+      font-size: 12px !important;
+    }
+
+    #sheet-new-sale .premium-card > div:last-of-type #val-total-calc {
+      font-size: 14px !important;
+    }
+
+    #sheet-new-import .sheet-desktop-side-col > div {
+      padding: 10px 12px !important;
+      border-radius: 12px !important;
+      gap: 6px !important;
+    }
+
+    #sheet-new-import .sheet-desktop-side-col p {
+      font-size: 11px !important;
+      line-height: 1.4 !important;
+    }
+
+    #sheet-new-import .sheet-desktop-side-col > div > div {
+      gap: 6px !important;
+      margin-top: 2px !important;
+    }
+
+    #sheet-new-import .sheet-desktop-side-col > div > div span.material-icons-round {
+      font-size: 14px !important;
+    }
+
+    #sheet-new-import .sheet-desktop-side-col > div > div span:last-child {
+      font-size: 11px !important;
+    }
+
+    #btn-submit-sale,
+    #btn-submit-import {
+      height: 38px !important;
+      font-size: 12px !important;
+      border-radius: 8px !important;
+    }
+
+    #btn-sale-add-item,
+    #btn-import-add-item {
+      padding: 6px !important;
+      font-size: 11px !important;
+      border-radius: 8px !important;
+      margin-top: 2px !important;
+    }
+
+    /* Align split columns efficiently */
+    #sheet-new-sale .sheet-desktop-split-wrapper,
+    #sheet-new-import .sheet-desktop-split-wrapper {
+      gap: 14px !important;
+    }
+
+    #sheet-new-sale .sheet-desktop-main-col,
+    #sheet-new-import .sheet-desktop-main-col {
+      padding-left: 4px !important;
+      padding-right: 4px !important;
+      gap: 10px !important;
+    }
+
+    #sheet-new-sale .sheet-desktop-side-col,
+    #sheet-new-import .sheet-desktop-side-col {
+      max-width: 290px !important;
+      padding: 12px !important;
+      border-radius: 14px !important;
+      gap: 12px !important;
+    }
+
+    /* Make sure integrated keypad is also compact if displayed */
+    #sheet-sale-keypad-sidebar,
+    #sheet-import-keypad-sidebar {
+      width: 250px !important;
+      padding: 10px !important;
+      gap: 8px !important;
+      max-height: 100% !important;
+    }
   }
 }
 
@@ -3838,6 +4091,241 @@ body.no-animations * {
     max-width: 1280px !important;
     border-radius: 28px 28px 0 0 !important;
   }
+}
+
+/* ==========================================================================
+   📋 TABLE-ROW HORIZONTAL LAYOUT FOR BILLS/INVOICES (SMART ERP STYLE)
+   ========================================================================== */
+
+/* Base style: beautiful row design (stacks as columns on small mobile) */
+.invoice-table-row {
+  background: var(--color-white);
+  border: 1px solid rgba(27, 67, 50, 0.06);
+  border-inline-start: 5px solid #2d6a4f !important;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 12px -3px rgba(27, 67, 50, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.invoice-table-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -6px rgba(27, 67, 50, 0.09);
+  background-color: #fafdfb;
+}
+
+/* Force lists to always render as 1 full-width item per row */
+#sales-list, #archive-sales-list, #imports-list, #archive-imports-list, #debts-list, #dues-list, #porters-list {
+  grid-template-columns: 1fr !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+/* Horizontal column structure for large screens (tablets & landscape) */
+@media (min-width: 768px) {
+  .invoice-table-row {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px 20px !important;
+    gap: 16px !important;
+  }
+
+  /* Column 1: ID & Date */
+  .itr-col-id {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  /* Shorten ID column specifically in import lists by 40% (120px -> 72px) */
+  #imports-list .itr-col-id,
+  #archive-imports-list .itr-col-id {
+    flex: 0 0 72px;
+  }
+
+  /* Shorten Actions column specifically in import lists to reduce empty space on the right */
+  #imports-list .itr-col-actions,
+  #archive-imports-list .itr-col-actions {
+    flex: 0 0 144px;
+  }
+
+  /* Shorten Items column specifically in import lists (flex: 0.77 -> 0.9, basis: 132px -> 152px, min-width: 100px -> 118px) */
+  #imports-list .itr-col-items,
+  #archive-imports-list .itr-col-items {
+    flex: 0.9 1 152px;
+    min-width: 118px;
+  }
+
+  /* Reduce sales ratio status column width by an additional 15% (flex: 0.85 -> 0.72, basis: 136px -> 116px, min-width: 119px -> 101px) */
+  #imports-list .itr-col-status,
+  #archive-imports-list .itr-col-status {
+    flex: 0.72 0 116px;
+    min-width: 101px;
+  }
+
+  /* Column 2: Customer Name & Address */
+  .itr-col-customer {
+    flex: 1 1 126px;
+    min-width: 98px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    justify-content: center;
+  }
+
+  /* Shorten farmer/customer column specifically in import lists by 40% */
+  #imports-list .itr-col-customer,
+  #archive-imports-list .itr-col-customer {
+    flex: 0.6 1 75px;
+    min-width: 58px;
+  }
+
+  .itr-col-customer h4,
+  .itr-col-customer span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Column 3: Crop Items & Details (Aligned capsule badges) */
+  .itr-col-items {
+    flex: 2 1 280px;
+    min-width: 220px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    align-content: center;
+  }
+
+  /* Column 4: Payment Type & Settled Status */
+  .itr-col-status {
+    flex: 0 0 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  /* Column 5: Total Amount */
+  .itr-col-total {
+    flex: 0 0 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-inline-start: 1px dashed rgba(0,0,0,0.08);
+    border-inline-end: 1px dashed rgba(0,0,0,0.08);
+    padding: 0 8px;
+    text-align: center;
+  }
+
+  /* Column 6: Actions Group */
+  .itr-col-actions {
+    flex: 0 0 240px;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+}
+
+/* Beautiful inline badge styling for crops/items in table layout */
+.itr-item-badge {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1.5px solid rgba(45, 106, 79, 0.15);
+  padding: 5px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(45, 106, 79, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.itr-item-badge:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(45, 106, 79, 0.35);
+  box-shadow: 0 4px 14px rgba(45, 106, 79, 0.09);
+  background-color: #fafdfc;
+}
+
+.badge-crop-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: Cairo, var(--font-sans), sans-serif;
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.badge-qty-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-qty, .badge-qty-boxes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2.5px 8px;
+  border-radius: 8px;
+  font-family: var(--font-sans), Cairo, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  line-height: 1;
+}
+
+/* Weight/Quantity style */
+.badge-qty {
+  color: #1b4332;
+  background: #d8f3dc;
+  border: 1.5px solid rgba(45, 106, 79, 0.22);
+}
+
+/* Boxes style (Slightly lighter/softer than the weight colors) */
+.badge-qty-boxes {
+  color: #2d6a4f;
+  background: #ecf8f3;
+  border: 1.5px solid rgba(45, 106, 79, 0.14);
+}
+
+.qty-num {
+  font-family: var(--font-mono), monospace;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.qty-unit {
+  font-size: 9.5px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.itr-item-badge .badge-price {
+  font-weight: 700;
+  color: var(--color-primary);
+  border-inline-start: 1px solid rgba(0,0,0,0.08);
+  padding-inline-start: 5px;
+  margin-inline-start: 3px;
 }
 
 

@@ -832,6 +832,14 @@
                     <input type="text" class="form-input" id="import-vehicle-type" placeholder="مثال: كيا حمل 4 طن..." style="padding-right: 42px;">
                   </div>
                 </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-import-notes">ملاحظات الفاتورة</label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">notes</span>
+                    <input type="text" class="form-input" id="import-notes" placeholder="أدخل أي ملاحظات إضافية هنا (اختياري)..." style="padding-right: 42px;">
+                  </div>
+                </div>
               </div>
 
               <!-- Crop Items section inside Import -->
@@ -1004,6 +1012,17 @@
                 </div>
 
                 <div class="form-group" style="margin: 0;">
+                  <label id="lbl-sale-notes" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">notes</span>
+                    <span id="lbl-sale-notes-text">ملاحظات الفاتورة</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">notes</span>
+                    <input type="text" class="form-input" id="sale-notes" placeholder="أدخل أي ملاحظات إضافية هنا (اختياري)..." style="padding-right: 42px;">
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
                   <label id="lbl-payment-method">طريقة الدفع</label>
                   <div class="toggle-switch-group">
                     <button class="toggle-switch-btn active" id="btn-pay-cash" data-method="cash">💵 نقد</button>
@@ -1028,7 +1047,25 @@
 
             <!-- Column 2: Invoice Options & Dynamic Calculations -->
             <div class="sheet-desktop-side-col">
-
+              <!-- Dynamic Calculations Card -->
+              <div class="premium-card">
+                <div>
+                  <span id="lbl-subtotal">مجموع أسعار البضاعة:</span>
+                  <span id="val-subtotal">0 د.ع</span>
+                </div>
+                <div>
+                  <span id="lbl-commission-7">عمولة المكتب 7%:</span>
+                  <span id="val-commission-7">0 د.ع</span>
+                </div>
+                <div>
+                  <span id="lbl-carrying-total">الحمالية الكلية:</span>
+                  <span id="val-carrying-total">0 د.ع</span>
+                </div>
+                <div>
+                  <span id="lbl-total-calc" style="font-weight: 700;">المبلغ الإجمالي:</span>
+                  <span id="val-total-calc" style="font-weight: 800;">0 د.ع</span>
+                </div>
+              </div>
 
               <button class="btn-primary" id="btn-submit-sale" style="margin-top: auto; width: 100%;">إصدار الفاتورة وحساب الأرباح</button>
             </div>

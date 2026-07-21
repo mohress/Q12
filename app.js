@@ -756,6 +756,8 @@ const translations = {
     lblCustomerAddress: "العنوان (اختياري)",
     txtAddSaleCrop: "إضافة صنف آخر في الفاتورة",
     lblBagsCost: "تكلفة الأكياس والكراتين (إجمالي اختياري)",
+    lblNotes: "ملاحظات الفاتورة",
+    lblNotesPl: "أدخل أي ملاحظات إضافية هنا (اختياري)...",
     lblPaymentMethod: "طريقة الدفع",
     btnPayCash: "💵 نقد",
     btnPayDebt: "📋 دين بالأجل",
@@ -870,6 +872,8 @@ const translations = {
     lblCustomerAddress: "Address (Optional)",
     txtAddSaleCrop: "Add Another Sale Item",
     lblBagsCost: "Bags/Cartons Extra Cost (Optional)",
+    lblNotes: "Invoice Notes",
+    lblNotesPl: "Enter any additional notes here (optional)...",
     lblPaymentMethod: "Payment Method",
     btnPayCash: "💵 Cash",
     btnPayDebt: "📋 Debt Account",
@@ -1564,7 +1568,7 @@ async function renderImportsList() {
     }
 
     const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
+    card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
     
     let itemsHtml = items.map(it => {
@@ -1577,7 +1581,7 @@ async function renderImportsList() {
       } else if (isSpecial) {
         itemBoxStr = '';
       } else {
-        itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} صندوق)` : ` (${it.box_count || 0} Box)`);
+        itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} ص)` : ` (${it.box_count || 0} B)`);
       }
 
       // Calculate individual item sales progress
@@ -1608,6 +1612,11 @@ async function renderImportsList() {
       const itemRemainingBoxes = Math.max(0, itemTotalBoxes - itemSoldBoxes);
 
       let itemColorClass = '#52b788'; // green
+      if (itemPercentSold >= 85) {
+        itemColorClass = '#e63946'; // red
+      } else if (itemPercentSold >= 50) {
+        itemColorClass = '#f4a261'; // orange
+      }
 
       let remainingText = '';
       if (isCount) {
@@ -1617,81 +1626,135 @@ async function renderImportsList() {
         remainingText = `${formatWeight(itemRemaining, it.unit || 'kg')} (${itemRemainingBoxes} ${boxLabel})`;
       }
 
-      return `
-        <div style="background: rgba(0,0,0,0.015); border: 1px solid rgba(0,0,0,0.03); padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;">
-          <div style="font-size:12px; font-weight:600; display:flex; justify-content:space-between; align-items: center;">
-            <span style="display: flex; align-items: center; gap: 4px;">
-              <span>${getCropIcon(it.crop_type)}</span>
-              <span>${it.crop_type}</span>
+      let qtyHtml = '';
+      if (isCount) {
+        const pcsText = currentLanguage === 'ar' ? 'قطعة' : 'Pcs';
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${formatVal(it.box_count || 0)}</span>
+            <span class="qty-unit">${pcsText}</span>
+          </span>
+        `;
+      } else {
+        const weightVal = formatVal(it.weight_kg || 0);
+        const weightUnit = it.unit || 'kg';
+        const weightUnitLabel = currentLanguage === 'ar' ? (weightUnit === 'kg' ? 'كجم' : weightUnit) : weightUnit;
+        
+        let boxesHtml = '';
+        if (it.box_count && it.box_count > 0) {
+          const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+          boxesHtml = `
+            <span class="badge-qty-boxes">
+              <span class="qty-num">${formatVal(it.box_count)}</span>
+              <span class="qty-unit">${boxLabel}</span>
             </span>
-            <span>${formatWeight((isCount ? (it.box_count || 0) : it.weight_kg), it.unit || 'kg')}${itemBoxStr}</span>
-          </div>
-          <!-- Item-specific Sales Progress Bar (Swapped Style: 8px gradient indicator) -->
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); font-weight: 500;">
-              <span>${currentLanguage === 'ar' ? 'نسبة البيع:' : 'Sold:'} <strong style="color: ${itemColorClass}; font-weight: 700;">${formatVal(itemPercentSold)}%</strong></span>
-              <span>${currentLanguage === 'ar' ? 'المتبقي:' : 'Rem:'} ${remainingText}</span>
-            </div>
-            <div class="progress-track">
-              <div class="progress-fill green" style="width: ${itemPercentSold}%;"></div>
-            </div>
-          </div>
-        </div>
+          `;
+        }
+        
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${weightVal}</span>
+            <span class="qty-unit">${weightUnitLabel}</span>
+          </span>
+          ${boxesHtml}
+        `;
+      }
+
+      return `
+        <span class="itr-item-badge" style="position: relative; overflow: hidden; min-width: 150px; justify-content: center; margin: 2px;">
+          <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
+          <span class="badge-qty-group">
+            ${qtyHtml}
+          </span>
+        </span>
       `;
     }).join('');
 
     const formattedDate = formatCustomDate(imp.invoice_date);
-    const totalBoxStr = hasNormalCrops ? (currentLanguage === 'ar' ? ` (${remainingBoxes} صندوق)` : ` (${remainingBoxes} Box)`) : '';
+
+    let colorHex = '#52b788'; // green
+    if (percentSold >= 85) {
+      colorHex = '#e63946'; // red
+    } else if (percentSold >= 50) {
+      colorHex = '#f4a261'; // orange
+    }
+
+    let settlementHtml = '';
+    if (imp.is_settled) {
+      settlementHtml = `
+        <span class="debt-status-tag ok" style="font-size: 10px; font-weight: 800; background: #e2f0d9; color: #385723; border: 1.5px solid #c5e0b4; white-space: nowrap; margin: 0;">
+          ✅ ${currentLanguage === 'ar' ? 'مسواة ومغلقة' : 'Settled & Closed'}
+        </span>
+      `;
+    } else if (percentSold === 100) {
+      settlementHtml = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span class="debt-status-tag warning" style="font-size: 9px; animation: pulse 1.5s infinite; background: #fff2cc; color: #7f6000; border: 1.5px solid #ffe599; font-weight: 800; white-space: nowrap; margin: 0;">
+            ⚠️ ${currentLanguage === 'ar' ? 'جاهزة للتسوية' : 'Ready to Settle'}
+          </span>
+          <button class="btn-primary btn-settle-invoice" data-id="${imp.id}" style="padding: 4px 10px; font-size: 11px; background: var(--color-success); border: none; border-radius: 8px; font-weight: 700; white-space: nowrap; color: #fff; cursor: pointer; transition: all 0.2s;">
+            ${currentLanguage === 'ar' ? 'تسوية الآن' : 'Settle Now'}
+          </button>
+        </div>
+      `;
+    } else {
+      settlementHtml = `
+        <span class="debt-status-tag late" style="font-size: 10px; font-weight: 700; background: #fef3c7; color: #d97706; border-color: #fde68a; white-space: nowrap; margin: 0;">
+          ⏳ ${currentLanguage === 'ar' ? 'قيد البيع' : 'Selling'}
+        </span>
+      `;
+    }
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-        <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-light); margin-bottom:4px; display:inline-block;">
-            # ${formatVal(imp.id)}
-          </span>
-          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${farmer.name}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${translations[currentLanguage].lblVehicleType}: ${imp.vehicle_type}</span>
-        </div>
-        <div style="text-align:left; display:flex; flex-direction:column; gap:4px;">
-          <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
-          ${imp.is_settled ? 
-            `<span class="debt-status-tag paid" style="font-size: 9px; align-self: flex-end;">${currentLanguage === 'ar' ? 'مكتملة ومسواة' : 'Settled'}</span>` : 
-            `<span class="debt-status-tag near" style="font-size: 9px; align-self: flex-end;">${currentLanguage === 'ar' ? 'بانتظار البيع والتسوية' : 'Awaiting sale'}</span>`
-          }
-        </div>
+      <!-- Column 1: ID & Date -->
+      <div class="itr-col-id">
+        <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom: 2px; display: inline-block; font-family: Cairo, sans-serif; align-self: flex-start;">
+          ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">#${formatVal(imp.id)}</span>
+        </span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">${formattedDate}</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:2px; margin: 6px 0;">
+      <!-- Column 2: Farmer Info & Vehicle -->
+      <div class="itr-col-customer">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;">${farmer.name}</h4>
+        <span style="font-size: 10px; color: var(--color-text-muted);">${translations[currentLanguage].lblVehicleType}: ${imp.vehicle_type}</span>
+      </div>
+
+      <!-- Column 3: Items/Crops & sold progress -->
+      <div class="itr-col-items" style="display: flex; flex-wrap: wrap; gap: 6px;">
         ${itemsHtml}
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-        <span style="font-size:10px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'فاتورة استيراد سلع' : 'Import Invoice'}</span>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-delete-import" data-id="${imp.id}" style="padding:6px 12px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-danger); background: rgba(230, 57, 70, 0.04); color: var(--color-danger); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">delete</span>
-            <span>${currentLanguage === 'ar' ? 'حذف' : 'Delete'}</span>
-          </button>
-          <button class="btn-secondary btn-import-details" data-id="${imp.id}" style="padding:6px 12px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">info</span>
-            <span>${currentLanguage === 'ar' ? 'تفاصيل' : 'Details'}</span>
-          </button>
+      <!-- Column 4: Settle/Sales Progress Status -->
+      <div class="itr-col-status">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; width: 100%; max-width: 160px; margin: 0 auto;">
+          <span style="font-size: 11px; color: var(--color-text-muted); font-weight: 700; white-space: nowrap;">${currentLanguage === 'ar' ? 'نسبة المبيعات' : 'Sales Ratio'}</span>
+          <div class="progress-track" style="width: 100%; margin: 2px 0;">
+            <div class="progress-fill green" style="width: ${percentSold}%;"></div>
+          </div>
+          <span style="font-size: 12.5px; font-weight: 850; color: #1b4332; font-family: Cairo, sans-serif;">
+            ${percentSold}%
+          </span>
         </div>
       </div>
 
-      ${(!imp.is_settled && percentSold === 100) ? `
-        <div class="settle-action-banner" style="margin-top: 8px;">
-          <div>
-            <span class="settle-badge">${currentLanguage === 'ar' ? 'جاهز للتسوية' : 'Ready to Settle'}</span>
-            <p style="font-size:11px; font-weight:600; color:var(--color-primary); margin-top:2px;">
-              ${currentLanguage === 'ar' ? 'تم بيع كامل حمولة المحصول!' : 'Entire crop vehicle has been fully sold!'}
-            </p>
-          </div>
-          <button class="btn-primary btn-settle-invoice" data-id="${imp.id}" style="padding:6px 12px; font-size:11px;">
-            ${currentLanguage === 'ar' ? 'تسوية الحساب' : 'Settle Now'}
-          </button>
-        </div>
-      ` : ''}
+      <!-- Column 5: Settlement Status / Settle Button -->
+      <div class="itr-col-total">
+        <span style="font-size: 10px; color: var(--color-text-muted); margin-bottom: 4px;">${currentLanguage === 'ar' ? 'الحالة المالية' : 'Financial Status'}</span>
+        ${settlementHtml}
+      </div>
+
+      <!-- Column 6: Actions Group -->
+      <div class="itr-col-actions">
+        <button class="btn-secondary btn-delete-import" data-id="${imp.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-danger); background: rgba(230, 57, 70, 0.04); color: var(--color-danger); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">delete</span>
+          <span>${currentLanguage === 'ar' ? 'حذف' : 'Delete'}</span>
+        </button>
+        <button class="btn-secondary btn-import-details" data-id="${imp.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">info</span>
+          <span>${currentLanguage === 'ar' ? 'تفاصيل' : 'Details'}</span>
+        </button>
+      </div>
     `;
 
     importsList.appendChild(card);
@@ -1821,7 +1884,7 @@ async function renderArchiveList() {
     }
 
     const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
+    card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
     
     let itemsHtml = items.map(it => {
@@ -1834,40 +1897,140 @@ async function renderArchiveList() {
       } else if (isSpecial) {
         itemBoxStr = '';
       } else {
-        itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} صندوق)` : ` (${it.box_count || 0} Box)`);
+        itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} ص)` : ` (${it.box_count || 0} B)`);
       }
-      return `<div style="font-size:12px; font-weight:600; display:flex; justify-content:space-between; margin-bottom:4px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type}</span>
-        <span>${formatWeight((isCount ? (it.box_count || 0) : it.weight_kg), it.unit || 'kg')}${itemBoxStr}</span>
-      </div>`;
+
+      // Calculate individual item sales progress
+      let itemTotal = 0;
+      let itemSold = 0;
+      let itemTotalBoxes = it.box_count || 0;
+      let itemSoldBoxes = 0;
+
+      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
+
+      if (isCount) {
+        itemTotal = it.box_count || 0;
+        salesOfItem.forEach(s => {
+          itemSold += (s.box_count || 0);
+        });
+        itemTotalBoxes = itemTotal;
+        itemSoldBoxes = itemSold;
+      } else {
+        itemTotal = it.weight_kg || 0;
+        salesOfItem.forEach(s => {
+          itemSold += (s.weight_kg || 0);
+          itemSoldBoxes += (s.box_count || 0);
+        });
+      }
+
+      const itemPercentSold = itemTotal > 0 ? Math.min(100, Math.round((itemSold / itemTotal) * 100)) : 0;
+      const itemRemaining = Math.max(0, itemTotal - itemSold);
+      const itemRemainingBoxes = Math.max(0, itemTotalBoxes - itemSoldBoxes);
+
+      let itemColorClass = '#52b788'; // green
+      if (itemPercentSold >= 85) {
+        itemColorClass = '#e63946'; // red
+      } else if (itemPercentSold >= 50) {
+        itemColorClass = '#f4a261'; // orange
+      }
+
+      let qtyHtml = '';
+      if (isCount) {
+        const pcsText = currentLanguage === 'ar' ? 'قطعة' : 'Pcs';
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${formatVal(it.box_count || 0)}</span>
+            <span class="qty-unit">${pcsText}</span>
+          </span>
+        `;
+      } else {
+        const weightVal = formatVal(it.weight_kg || 0);
+        const weightUnit = it.unit || 'kg';
+        const weightUnitLabel = currentLanguage === 'ar' ? (weightUnit === 'kg' ? 'كجم' : weightUnit) : weightUnit;
+        
+        let boxesHtml = '';
+        if (it.box_count && it.box_count > 0) {
+          const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+          boxesHtml = `
+            <span class="badge-qty-boxes">
+              <span class="qty-num">${formatVal(it.box_count)}</span>
+              <span class="qty-unit">${boxLabel}</span>
+            </span>
+          `;
+        }
+        
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${weightVal}</span>
+            <span class="qty-unit">${weightUnitLabel}</span>
+          </span>
+          ${boxesHtml}
+        `;
+      }
+
+      return `
+        <span class="itr-item-badge" style="position: relative; overflow: hidden; min-width: 150px; justify-content: center; margin: 2px;">
+          <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
+          <span class="badge-qty-group">
+            ${qtyHtml}
+          </span>
+        </span>
+      `;
     }).join('');
 
     const formattedDate = formatCustomDate(imp.invoice_date);
-    const totalBoxStr = hasNormalCrops ? (currentLanguage === 'ar' ? ` (${remainingBoxes} صندوق)` : ` (${remainingBoxes} Box)`) : '';
+
+    let colorHex = '#e63946'; // red for completed/fully sold
+
+    let settlementHtml = `
+      <span class="debt-status-tag ok" style="font-size: 10px; font-weight: 800; background: #e2f0d9; color: #385723; border: 1.5px solid #c5e0b4; white-space: nowrap; margin: 0;">
+        ✅ ${currentLanguage === 'ar' ? 'مسواة ومغلقة' : 'Settled & Closed'}
+      </span>
+    `;
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-        <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-light); margin-bottom:4px; display:inline-block;">
-            # ${formatVal(imp.id)}
-          </span>
-          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${farmer.name}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${translations[currentLanguage].lblVehicleType}: ${imp.vehicle_type}</span>
-        </div>
-        <div style="text-align:left; display:flex; flex-direction:column; gap:4px;">
-          <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
-          <span class="debt-status-tag paid" style="font-size: 9px; align-self: flex-end;">${currentLanguage === 'ar' ? 'مكتملة ومسواة' : 'Settled'}</span>
-        </div>
+      <!-- Column 1: ID & Date -->
+      <div class="itr-col-id">
+        <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom: 2px; display: inline-block; font-family: Cairo, sans-serif; align-self: flex-start;">
+          ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">#${formatVal(imp.id)}</span>
+        </span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">${formattedDate}</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:2px; margin: 6px 0;">
+      <!-- Column 2: Farmer Info & Vehicle -->
+      <div class="itr-col-customer">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;">${farmer.name}</h4>
+        <span style="font-size: 10px; color: var(--color-text-muted);">${translations[currentLanguage].lblVehicleType}: ${imp.vehicle_type}</span>
+      </div>
+
+      <!-- Column 3: Items/Crops & sold progress -->
+      <div class="itr-col-items" style="display: flex; flex-wrap: wrap; gap: 6px;">
         ${itemsHtml}
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-        <span style="font-size:10px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'أرشيف الاستيراد' : 'Archive Import'}</span>
-        <button class="btn-secondary btn-import-details" data-id="${imp.id}" style="padding:6px 12px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-          <span class="material-icons-round" style="font-size:14px;">info</span>
+      <!-- Column 4: Settle/Sales Progress Status -->
+      <div class="itr-col-status">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; width: 100%; max-width: 160px; margin: 0 auto;">
+          <span style="font-size: 11px; color: var(--color-text-muted); font-weight: 700; white-space: nowrap;">${currentLanguage === 'ar' ? 'نسبة المبيعات' : 'Sales Ratio'}</span>
+          <div class="progress-track" style="width: 100%; margin: 2px 0;">
+            <div class="progress-fill green" style="width: ${percentSold}%;"></div>
+          </div>
+          <span style="font-size: 12.5px; font-weight: 850; color: #1b4332; font-family: Cairo, sans-serif;">
+            ${percentSold}%
+          </span>
+        </div>
+      </div>
+
+      <!-- Column 5: Settlement Status -->
+      <div class="itr-col-total">
+        <span style="font-size: 10px; color: var(--color-text-muted); margin-bottom: 4px;">${currentLanguage === 'ar' ? 'الحالة المالية' : 'Financial Status'}</span>
+        ${settlementHtml}
+      </div>
+
+      <!-- Column 6: Actions Group -->
+      <div class="itr-col-actions">
+        <button class="btn-secondary btn-import-details" data-id="${imp.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">info</span>
           <span>${currentLanguage === 'ar' ? 'تفاصيل' : 'Details'}</span>
         </button>
       </div>
@@ -2127,9 +2290,12 @@ async function submitImportInvoice() {
     }
   }
 
+  const notes = document.getElementById('import-notes').value.trim();
+
   const invoiceId = await dbAdd('import_invoices', {
     farmer_id: farmer.id,
     vehicle_type: vehicleType,
+    notes: notes,
     invoice_date: Date.now(),
     is_settled: false,
     created_at: Date.now()
@@ -2151,6 +2317,7 @@ async function submitImportInvoice() {
   
   document.getElementById('import-farmer-name').value = '';
   document.getElementById('import-vehicle-type').value = '';
+  document.getElementById('import-notes').value = '';
   document.getElementById('import-items-container').innerHTML = '';
   closeBottomSheet('sheet-new-import');
   
@@ -2218,68 +2385,109 @@ async function renderSalesList() {
     const orderId = matched.orderId;
 
     const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
+    card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
 
     const formattedDate = formatCustomDate(sale.created_at);
 
     let itemsDetailsHtml = items.map(it => {
       const isCount = it.unit === 'count';
-      const qtyText = isCount 
-        ? (currentLanguage === 'ar' ? `${formatVal(it.box_count)} قطعة` : `${formatVal(it.box_count)} pieces`)
-        : formatWeight(it.weight_kg, it.unit || 'kg');
-      return `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${qtyText})</span>
-        <span style="font-weight:700;">${formatVal(it.agreed_price, true)}</span>
-      </div>`;
+      let qtyHtml = '';
+      if (isCount) {
+        const pcsText = currentLanguage === 'ar' ? 'قطعة' : 'Pcs';
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${formatVal(it.box_count)}</span>
+            <span class="qty-unit">${pcsText}</span>
+          </span>
+        `;
+      } else {
+        const weightVal = formatVal(it.weight_kg);
+        const weightUnit = it.unit || 'kg';
+        const weightUnitLabel = currentLanguage === 'ar' ? (weightUnit === 'kg' ? 'كجم' : weightUnit) : weightUnit;
+        
+        let boxesHtml = '';
+        if (it.box_count && it.box_count > 0) {
+          const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+          boxesHtml = `
+            <span class="badge-qty-boxes">
+              <span class="qty-num">${formatVal(it.box_count)}</span>
+              <span class="qty-unit">${boxLabel}</span>
+            </span>
+          `;
+        }
+        
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${weightVal}</span>
+            <span class="qty-unit">${weightUnitLabel}</span>
+          </span>
+          ${boxesHtml}
+        `;
+      }
+      return `
+        <span class="itr-item-badge">
+          <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
+          <span class="badge-qty-group">
+            ${qtyHtml}
+          </span>
+        </span>
+      `;
     }).join('');
 
     const isSettled = isSaleInvoiceSettled(sale, debts);
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-        <div>
-          <span class="lang-badge" style="background-color: ${isSettled ? '#6b7280' : 'var(--color-primary-mid)'}; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
-            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
-          </span>
-          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
-        </div>
-        <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
-          <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
-          ${isSettled ? 
-            `<span class="debt-status-tag ok" style="font-size:9px; background-color: #e5e7eb; color: #374151; border-color: #d1d5db;">📦 ${currentLanguage === 'ar' ? 'تمت تسويتها' : 'Settled'}</span>` : 
-            (sale.payment_type === 'cash' ? 
-              `<span class="debt-status-tag ok" style="font-size:9px;">💵 ${translations[currentLanguage].btnPayCash}</span>` : 
-              `<span class="debt-status-tag late" style="font-size:9px;">📋 ${translations[currentLanguage].btnPayDebt}</span>`
-            )
-          }
-        </div>
+      <!-- Column 1: ID & Date -->
+      <div class="itr-col-id">
+        <span class="lang-badge" style="background-color: ${isSettled ? '#6b7280' : 'var(--color-primary-mid)'}; margin-bottom: 2px; display: inline-block; font-family: Cairo, sans-serif; align-self: flex-start;">
+          ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
+        </span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">${formattedDate}</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+      <!-- Column 2: Customer Info -->
+      <div class="itr-col-customer">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;">${customer.name}</h4>
+        <span style="font-size: 10px; color: var(--color-text-muted);">${customer.address || ''}</span>
+      </div>
+
+      <!-- Column 3: Items/Crops -->
+      <div class="itr-col-items">
         ${itemsDetailsHtml}
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-        <div>
-          <span style="font-size:11px; color:var(--color-text-muted);">${translations[currentLanguage].lblTotalCalc}</span>
-          <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(sale.total_amount, true)}</h3>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-delete-sale" data-id="${sale.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-danger); background: rgba(230, 57, 70, 0.04); color: var(--color-danger); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">delete</span>
-            <span>${currentLanguage === 'ar' ? 'حذف' : 'Delete'}</span>
-          </button>
-          <button class="btn-secondary btn-sale-details" data-id="${sale.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">info</span>
-            <span>${currentLanguage === 'ar' ? 'تفاصيل' : 'Details'}</span>
-          </button>
-          <button class="btn-secondary btn-preview-thermal" data-id="${sale.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">print</span>
-            <span>${currentLanguage === 'ar' ? 'طباعة' : 'Print'}</span>
-          </button>
-        </div>
+      <!-- Column 4: Payment Type & Status -->
+      <div class="itr-col-status">
+        ${isSettled ? 
+          `<span class="debt-status-tag ok" style="font-size: 9px; background-color: #e5e7eb; color: #374151; border-color: #d1d5db; margin: 0; white-space: nowrap;">📦 ${currentLanguage === 'ar' ? 'تمت تسويتها' : 'Settled'}</span>` : 
+          (sale.payment_type === 'cash' ? 
+            `<span class="debt-status-tag ok" style="font-size: 9px; margin: 0; white-space: nowrap;">💵 ${translations[currentLanguage].btnPayCash}</span>` : 
+            `<span class="debt-status-tag late" style="font-size: 9px; margin: 0; white-space: nowrap;">📋 ${translations[currentLanguage].btnPayDebt}</span>`
+          )
+        }
+      </div>
+
+      <!-- Column 5: Total Amount -->
+      <div class="itr-col-total">
+        <span style="font-size: 10px; color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'المبلغ الإجمالي' : 'Total Amount'}</span>
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--color-primary); margin: 0;">${formatVal(sale.total_amount, true)}</h3>
+      </div>
+
+      <!-- Column 6: Actions Group -->
+      <div class="itr-col-actions">
+        <button class="btn-secondary btn-delete-sale" data-id="${sale.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-danger); background: rgba(230, 57, 70, 0.04); color: var(--color-danger); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">delete</span>
+          <span>${currentLanguage === 'ar' ? 'حذف' : 'Delete'}</span>
+        </button>
+        <button class="btn-secondary btn-sale-details" data-id="${sale.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">info</span>
+          <span>${currentLanguage === 'ar' ? 'تفاصيل' : 'Details'}</span>
+        </button>
+        <button class="btn-secondary btn-preview-thermal" data-id="${sale.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">print</span>
+          <span>${currentLanguage === 'ar' ? 'طباعة' : 'Print'}</span>
+        </button>
       </div>
     `;
 
@@ -2371,60 +2579,101 @@ async function renderSalesArchiveList() {
     }
 
     const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
+    card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
 
     const formattedDate = formatCustomDate(sale.created_at);
 
     let itemsDetailsHtml = items.map(it => {
       const isCount = it.unit === 'count';
-      const qtyText = isCount 
-        ? (currentLanguage === 'ar' ? `${formatVal(it.box_count)} قطعة` : `${formatVal(it.box_count)} pieces`)
-        : formatWeight(it.weight_kg, it.unit || 'kg');
-      return `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${qtyText})</span>
-        <span style="font-weight:700;">${formatVal(it.agreed_price, true)}</span>
-      </div>`;
+      let qtyHtml = '';
+      if (isCount) {
+        const pcsText = currentLanguage === 'ar' ? 'قطعة' : 'Pcs';
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${formatVal(it.box_count)}</span>
+            <span class="qty-unit">${pcsText}</span>
+          </span>
+        `;
+      } else {
+        const weightVal = formatVal(it.weight_kg);
+        const weightUnit = it.unit || 'kg';
+        const weightUnitLabel = currentLanguage === 'ar' ? (weightUnit === 'kg' ? 'كجم' : weightUnit) : weightUnit;
+        
+        let boxesHtml = '';
+        if (it.box_count && it.box_count > 0) {
+          const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+          boxesHtml = `
+            <span class="badge-qty-boxes">
+              <span class="qty-num">${formatVal(it.box_count)}</span>
+              <span class="qty-unit">${boxLabel}</span>
+            </span>
+          `;
+        }
+        
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${weightVal}</span>
+            <span class="qty-unit">${weightUnitLabel}</span>
+          </span>
+          ${boxesHtml}
+        `;
+      }
+      return `
+        <span class="itr-item-badge">
+          <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
+          <span class="badge-qty-group">
+            ${qtyHtml}
+          </span>
+        </span>
+      `;
     }).join('');
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-        <div>
-          <span class="lang-badge" style="background-color: #6b7280; margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
-            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
-          </span>
-          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${customer.address}</span>
-        </div>
-        <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
-          <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
-          <span class="debt-status-tag ok" style="font-size:9px; background-color: #e5e7eb; color: #374151; border-color: #d1d5db;">📦 مؤرشف</span>
-        </div>
+      <!-- Column 1: ID & Date -->
+      <div class="itr-col-id">
+        <span class="lang-badge" style="background-color: #6b7280; margin-bottom: 2px; display: inline-block; font-family: Cairo, sans-serif; align-self: flex-start;">
+          ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
+        </span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">${formattedDate}</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+      <!-- Column 2: Customer Info -->
+      <div class="itr-col-customer">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;">${customer.name}</h4>
+        <span style="font-size: 10px; color: var(--color-text-muted);">${customer.address || ''}</span>
+      </div>
+
+      <!-- Column 3: Items/Crops -->
+      <div class="itr-col-items">
         ${itemsDetailsHtml}
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-        <div>
-          <span style="font-size:11px; color:var(--color-text-muted);">${translations[currentLanguage].lblTotalCalc}</span>
-          <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(sale.total_amount, true)}</h3>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-delete-sale" data-id="${sale.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-danger); background: rgba(230, 57, 70, 0.04); color: var(--color-danger); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">delete</span>
-            <span>${currentLanguage === 'ar' ? 'حذف' : 'Delete'}</span>
-          </button>
-          <button class="btn-secondary btn-sale-details" data-id="${sale.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">info</span>
-            <span>${currentLanguage === 'ar' ? 'تفاصيل' : 'Details'}</span>
-          </button>
-          <button class="btn-secondary btn-preview-thermal" data-id="${sale.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">print</span>
-            <span>${currentLanguage === 'ar' ? 'طباعة' : 'Print'}</span>
-          </button>
-        </div>
+      <!-- Column 4: Payment Type & Status -->
+      <div class="itr-col-status">
+        <span class="debt-status-tag ok" style="font-size: 9px; background-color: #e5e7eb; color: #374151; border-color: #d1d5db; margin: 0; white-space: nowrap;">📦 مؤرشف</span>
+      </div>
+
+      <!-- Column 5: Total Amount -->
+      <div class="itr-col-total">
+        <span style="font-size: 10px; color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'المبلغ الإجمالي' : 'Total Amount'}</span>
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--color-primary); margin: 0;">${formatVal(sale.total_amount, true)}</h3>
+      </div>
+
+      <!-- Column 6: Actions Group -->
+      <div class="itr-col-actions">
+        <button class="btn-secondary btn-delete-sale" data-id="${sale.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-danger); background: rgba(230, 57, 70, 0.04); color: var(--color-danger); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">delete</span>
+          <span>${currentLanguage === 'ar' ? 'حذف' : 'Delete'}</span>
+        </button>
+        <button class="btn-secondary btn-sale-details" data-id="${sale.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">info</span>
+          <span>${currentLanguage === 'ar' ? 'تفاصيل' : 'Details'}</span>
+        </button>
+        <button class="btn-secondary btn-preview-thermal" data-id="${sale.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">print</span>
+          <span>${currentLanguage === 'ar' ? 'طباعة' : 'Print'}</span>
+        </button>
       </div>
     `;
 
@@ -3029,6 +3278,7 @@ async function submitSaleInvoice() {
   const grandTotal = subtotal + totalCommissions + totalCarrying + bagsCost;
 
   const orderId = await generateOrderId();
+  const saleNotes = document.getElementById('sale-notes').value.trim();
 
   const saleInvoiceId = await dbAdd('sale_invoices', {
     customer_id: customer.id,
@@ -3036,6 +3286,7 @@ async function submitSaleInvoice() {
     total_amount: grandTotal,
     payment_type: paymentType,
     bags_cost: bagsCost,
+    notes: saleNotes,
     created_at: Date.now()
   });
 
@@ -3125,6 +3376,7 @@ async function submitSaleInvoice() {
   document.getElementById('sale-customer-phone').value = '';
   document.getElementById('sale-customer-address').value = '';
   document.getElementById('sale-bags-cost').value = '';
+  document.getElementById('sale-notes').value = '';
   document.getElementById('sale-items-container').innerHTML = '';
   
   // Reset totals
@@ -3383,12 +3635,15 @@ async function renderDebtsList() {
     const isLate = now >= debt.due_date;
     const formattedDate = formatCustomDate(debt.due_date);
 
-    const diffMs = debt.due_date - (debt.created_at || (debt.due_date - 5 * 24 * 60 * 60 * 1000));
-    const debtDays = Math.max(1, Math.round(diffMs / (24 * 60 * 60 * 1000)));
+    // Calculate days remaining or days late relative to "now"
+    const msDiff = isLate ? (now - debt.due_date) : (debt.due_date - now);
+    const debtDays = Math.max(0, Math.round(msDiff / (24 * 60 * 60 * 1000)));
 
     let daysText = '';
     if (currentLanguage === 'ar' || (typeof numeralSystem !== 'undefined' && numeralSystem === 'ar')) {
-      if (debtDays === 1) {
+      if (debtDays === 0) {
+        daysText = 'اليوم';
+      } else if (debtDays === 1) {
         daysText = 'يوم واحد';
       } else if (debtDays === 2) {
         daysText = 'يومين';
@@ -3398,76 +3653,137 @@ async function renderDebtsList() {
         daysText = `${formatVal(debtDays)} يوم`;
       }
     } else {
-      daysText = `${debtDays} ${debtDays === 1 ? 'day' : 'days'}`;
+      if (debtDays === 0) {
+        daysText = 'today';
+      } else {
+        daysText = `${debtDays} ${debtDays === 1 ? 'day' : 'days'}`;
+      }
     }
 
-    const statusText = currentLanguage === 'ar' 
-      ? `مستحق الدفع بعد ${daysText}` 
-      : `Due after ${daysText}`;
+    let statusText = '';
+    if (isLate) {
+      if (debtDays === 0) {
+        statusText = currentLanguage === 'ar' ? 'مستحق اليوم' : 'Due today';
+      } else {
+        statusText = currentLanguage === 'ar' 
+          ? `متأخر منذ ${daysText}` 
+          : `Overdue by ${daysText}`;
+      }
+    } else {
+      if (debtDays === 0) {
+        statusText = currentLanguage === 'ar' ? 'مستحق اليوم' : 'Due today';
+      } else {
+        statusText = currentLanguage === 'ar' 
+          ? `متبقي ${daysText}` 
+          : `Due in ${daysText}`;
+      }
+    }
 
     const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
+    card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
 
     let itemsDetailsHtml = items.map(it => {
       const isCount = it.unit === 'count';
-      const qtyText = isCount 
-        ? (currentLanguage === 'ar' ? `${formatVal(it.box_count)} قطعة` : `${formatVal(it.box_count)} pieces`)
-        : formatWeight(it.weight_kg, it.unit || 'kg');
-      return `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${getCropIcon(it.crop_type)} ${it.crop_type} (${qtyText})</span>
-        <span style="font-weight:700;">${formatVal(it.agreed_price, true)}</span>
-      </div>`;
+      let qtyHtml = '';
+      if (isCount) {
+        const pcsText = currentLanguage === 'ar' ? 'قطعة' : 'Pcs';
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${formatVal(it.box_count)}</span>
+            <span class="qty-unit">${pcsText}</span>
+          </span>
+        `;
+      } else {
+        const weightVal = formatVal(it.weight_kg);
+        const weightUnit = it.unit || 'kg';
+        const weightUnitLabel = currentLanguage === 'ar' ? (weightUnit === 'kg' ? 'كجم' : weightUnit) : weightUnit;
+        
+        let boxesHtml = '';
+        if (it.box_count && it.box_count > 0) {
+          const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+          boxesHtml = `
+            <span class="badge-qty-boxes">
+              <span class="qty-num">${formatVal(it.box_count)}</span>
+              <span class="qty-unit">${boxLabel}</span>
+            </span>
+          `;
+        }
+        
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${weightVal}</span>
+            <span class="qty-unit">${weightUnitLabel}</span>
+          </span>
+          ${boxesHtml}
+        `;
+      }
+      return `
+        <span class="itr-item-badge">
+          <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
+          <span class="badge-qty-group">
+            ${qtyHtml}
+          </span>
+        </span>
+      `;
     }).join('');
 
     if (!itemsDetailsHtml) {
-      itemsDetailsHtml = `<div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-        <span>${currentLanguage === 'ar' ? 'تفاصيل المعاملة' : 'Transaction Detail'}</span>
-        <span>${currentLanguage === 'ar' ? 'دين مبيعات معلق بذمة الزبون' : 'Pending outstanding sales debt'}</span>
-      </div>`;
+      itemsDetailsHtml = `
+        <span class="itr-item-badge" style="border-color: rgba(0,0,0,0.08);">
+          <span class="badge-crop-name">📄 ${currentLanguage === 'ar' ? 'دين مبيعات معلق' : 'Outstanding Sales Debt'}</span>
+        </span>
+      `;
     }
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-        <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: Cairo, sans-serif;">
-            ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
-          </span>
-          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${customer.name}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${customer.address || ''} ${customer.phone ? `• ${customer.phone}` : ''}</span>
-        </div>
-        <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
-          <span style="font-size:11px; font-weight:600; color:var(--color-text-muted);">${formattedDate}</span>
-          ${isLate ? 
-            `<span class="debt-status-tag late" style="font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; background-color: rgba(239, 68, 68, 0.08); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.22); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; direction: rtl; letter-spacing: -0.01em;">⚠️ ${statusText}</span>` : 
-            `<span class="debt-status-tag unpaid" style="font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; background-color: rgba(79, 70, 229, 0.08); color: #4f46e5; border: 1px solid rgba(79, 70, 229, 0.22); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; direction: rtl; letter-spacing: -0.01em;">⏳ ${statusText}</span>`
-          }
-        </div>
+      <!-- Column 1: ID & Date -->
+      <div class="itr-col-id">
+        <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom: 2px; display: inline-block; font-family: Cairo, sans-serif; align-self: flex-start;">
+          ID: <span class="font-monofrik" style="font-size: 11px; vertical-align: middle; margin-left: 2px;">${orderId}</span>
+        </span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">${formattedDate}</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
+      <!-- Column 2: Customer Info -->
+      <div class="itr-col-customer">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;">${customer.name}</h4>
+        <span style="font-size: 10px; color: var(--color-text-muted);">${customer.address || ''} ${customer.phone ? `• ${customer.phone}` : ''}</span>
+      </div>
+
+      <!-- Column 3: Items/Crops -->
+      <div class="itr-col-items">
         ${itemsDetailsHtml}
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-        <div>
-          <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'إجمالي الدين' : 'Outstanding Debt'}</span>
-          <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(debt.amount, true)}</h3>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-debt-details" data-invoice-id="${debt.sale_invoice_id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">visibility</span>
-            <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
-          </button>
-          <button class="btn-secondary btn-debt-partial" data-id="${debt.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-info); background: rgba(0, 119, 182, 0.04); color: var(--color-info); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">payments</span>
-            <span>${currentLanguage === 'ar' ? 'تسديد جزئي' : 'Partial'}</span>
-          </button>
-          <button class="btn-secondary btn-debt-full" data-id="${debt.id}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">check_circle</span>
-            <span>${currentLanguage === 'ar' ? 'تسديد' : 'Settle'}</span>
-          </button>
-        </div>
+      <!-- Column 4: Payment Type & Status -->
+      <div class="itr-col-status">
+        ${isLate ? 
+          `<span class="debt-status-tag late" style="font-size: 9px; margin: 0; white-space: nowrap;">⚠️ ${statusText}</span>` : 
+          `<span class="debt-status-tag unpaid" style="font-size: 9px; margin: 0; white-space: nowrap;">⏳ ${statusText}</span>`
+        }
+      </div>
+
+      <!-- Column 5: Total Debt Amount -->
+      <div class="itr-col-total">
+        <span style="font-size: 10px; color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'إجمالي الدين' : 'Outstanding Debt'}</span>
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--color-primary); margin: 0;">${formatVal(debt.amount, true)}</h3>
+      </div>
+
+      <!-- Column 6: Actions Group -->
+      <div class="itr-col-actions">
+        <button class="btn-secondary btn-debt-details" data-invoice-id="${debt.sale_invoice_id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">visibility</span>
+          <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
+        </button>
+        <button class="btn-secondary btn-debt-partial" data-id="${debt.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-info); background: rgba(0, 119, 182, 0.04); color: var(--color-info); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">payments</span>
+          <span>${currentLanguage === 'ar' ? 'تسديد جزئي' : 'Partial'}</span>
+        </button>
+        <button class="btn-secondary btn-debt-full" data-id="${debt.id}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">check_circle</span>
+          <span>${currentLanguage === 'ar' ? 'تسديد' : 'Settle'}</span>
+        </button>
       </div>
     `;
 
@@ -3565,129 +3881,163 @@ async function renderDuesList() {
     const farmer = matched.farmer;
     const data = farmerGroups[farmerId];
 
-    // Calculate sales percentage for each imported crop type of this farmer
+    // Group dues items by crop type for Column 3 simple badges
+    const cropsGroup = {};
+    data.rawItems.forEach(item => {
+      if (!cropsGroup[item.crop_type]) {
+        cropsGroup[item.crop_type] = [];
+      }
+      cropsGroup[item.crop_type].push(item);
+    });
+
+    const cropsBadgesHtml = Object.keys(cropsGroup).map(crop => {
+      const cropIcon = getCropIcon(crop);
+      const items = cropsGroup[crop];
+      const totalBoxes = items.reduce((sum, item) => sum + (item.box_count || 0), 0);
+      const totalWeight = items.reduce((sum, item) => sum + (item.weight_kg || 0), 0);
+      const isCount = (getCropUnitType(crop) === 'count');
+      
+      let qtyHtml = '';
+      if (totalWeight > 0) {
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${formatVal(totalWeight)}</span>
+            <span class="qty-unit">${currentLanguage === 'ar' ? 'كجم' : 'kg'}</span>
+          </span>
+        `;
+      } else {
+        qtyHtml = `
+          <span class="badge-qty">
+            <span class="qty-num">${formatVal(totalBoxes)}</span>
+            <span class="qty-unit">${isCount ? (currentLanguage === 'ar' ? 'قطعة' : 'Pcs') : (currentLanguage === 'ar' ? 'صندوق' : 'box')}</span>
+          </span>
+        `;
+      }
+      
+      return `
+        <span class="itr-item-badge" style="position: relative; overflow: hidden; min-width: 140px; justify-content: center; margin: 2px;">
+          <span class="badge-crop-name">${cropIcon} ${crop}</span>
+          <span class="badge-qty-group">
+            ${qtyHtml}
+          </span>
+        </span>
+      `;
+    }).join('');
+
+    const cropsBadgesContainerHtml = cropsBadgesHtml || `
+      <div style="font-size: 10px; color: var(--color-text-muted); padding: 4px 0;">
+        ${currentLanguage === 'ar' ? 'لا توجد بضائع' : 'No goods'}
+      </div>
+    `;
+
+    // Calculate overall progress percentage across all target items of this farmer
     const activeInvoiceIds = allImports.filter(imp => imp.farmer_id === parseInt(farmerId) && !imp.is_settled).map(imp => imp.id);
     const duesInvoiceIds = data.rawItems.map(item => item.import_invoice_id);
     const combinedInvoiceIds = [...new Set([...activeInvoiceIds, ...duesInvoiceIds])];
     
     const targetItems = allImportItems.filter(it => combinedInvoiceIds.includes(it.invoice_id));
     const uniqueCropTypes = [...new Set(targetItems.map(it => it.crop_type))];
+
+    let totalImportedAll = 0;
+    let totalSoldAll = 0;
     
-    let cropProgressHtml = '';
     uniqueCropTypes.forEach(crop => {
       const cropImportItems = targetItems.filter(it => it.crop_type === crop);
-      let cropTotalImported = 0;
-      let cropTotalSold = 0;
-      let cropTotalBoxesImported = 0;
-      let cropTotalBoxesSold = 0;
       const isCount = (getCropUnitType(crop) === 'count');
       
       cropImportItems.forEach(it => {
-        cropTotalBoxesImported += (it.box_count || 0);
-        const salesOfItem = saleItems.filter(s => s.import_invoice_id === it.invoice_id && s.crop_type === crop);
-        salesOfItem.forEach(s => {
-          cropTotalBoxesSold += (s.box_count || 0);
-        });
-
         if (isCount) {
-          cropTotalImported += (it.box_count || 0);
+          totalImportedAll += (it.box_count || 0);
+          const salesOfItem = saleItems.filter(s => s.import_invoice_id === it.invoice_id && s.crop_type === crop);
           salesOfItem.forEach(s => {
-            cropTotalSold += (s.box_count || 0);
+            totalSoldAll += (s.box_count || 0);
           });
         } else {
-          cropTotalImported += (it.weight_kg || 0);
+          totalImportedAll += (it.weight_kg || 0);
+          const salesOfItem = saleItems.filter(s => s.import_invoice_id === it.invoice_id && s.crop_type === crop);
           salesOfItem.forEach(s => {
-            cropTotalSold += (s.weight_kg || 0);
+            totalSoldAll += (s.weight_kg || 0);
           });
         }
       });
-      
-      const cropPercentSold = cropTotalImported > 0 ? Math.min(100, Math.round((cropTotalSold / cropTotalImported) * 100)) : 0;
-      let cropColorClass = '#52b788';
-      
-      const unitLabel = isCount ? 'count' : 'kg';
-      const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
-
-      const soldText = isCount ? formatWeight(cropTotalSold, unitLabel) : `${formatWeight(cropTotalSold, 'kg')} (${cropTotalBoxesSold} ${boxLabel})`;
-      const importedText = isCount ? formatWeight(cropTotalImported, unitLabel) : `${formatWeight(cropTotalImported, 'kg')} (${cropTotalBoxesImported} ${boxLabel})`;
-      
-      cropProgressHtml += `
-        <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: rgba(0,0,0,0.015); border: 1px solid rgba(0,0,0,0.03); border-radius: 6px; margin-bottom: 4px;">
-          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--color-text-dark); align-items: center;">
-            <span style="display: flex; align-items: center; gap: 4px;">
-              <span>${getCropIcon(crop)}</span>
-              <span>${crop}</span>
-            </span>
-            <span style="color: ${cropColorClass}; font-weight: 700;">${formatVal(cropPercentSold)}%</span>
-          </div>
-          <div class="progress-track" style="margin: 2px 0;">
-            <div class="progress-fill green" style="width: ${cropPercentSold}%;"></div>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 9px; color: var(--color-text-muted); font-weight: 500;">
-            <span>${currentLanguage === 'ar' ? 'تم بيع:' : 'Sold:'} ${soldText}</span>
-            <span>${currentLanguage === 'ar' ? 'المستورد:' : 'Imported:'} ${importedText}</span>
-          </div>
-        </div>
-      `;
     });
-
-    if (!cropProgressHtml) {
-      cropProgressHtml = `
-        <div style="font-size: 11px; color: var(--color-text-muted); text-align: center; padding: 4px;">
-          ${currentLanguage === 'ar' ? 'لا توجد بضائع مستوردة معلقة' : 'No pending imported goods'}
-        </div>
-      `;
+    
+    const overallPercentSold = totalImportedAll > 0 ? Math.min(100, Math.round((totalSoldAll / totalImportedAll) * 100)) : 0;
+    let progressColorHex = '#52b788'; // green
+    if (overallPercentSold >= 85) {
+      progressColorHex = '#e63946'; // red
+    } else if (overallPercentSold >= 50) {
+      progressColorHex = '#f4a261'; // orange
     }
 
+    const importInvoiceIds = [...new Set(data.rawItems.map(item => item.import_invoice_id))];
+    const farmerImports = allImports.filter(imp => importInvoiceIds.includes(imp.id));
+    const importDates = farmerImports.map(imp => formatCustomDate(imp.invoice_date || imp.created_at)).filter(Boolean);
+    const uniqueImportDates = [...new Set(importDates)];
+    const importDatesStr = uniqueImportDates.length > 0 ? uniqueImportDates.join(', ') : (currentLanguage === 'ar' ? 'غير متوفر' : 'N/A');
+
     const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
+    card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-        <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
-            ID: FMR-${farmerId}
-          </span>
-          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${farmer.name}</h4>
-        </div>
-        <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
-          <span class="debt-status-tag unpaid" style="font-size:9px; background: rgba(0, 119, 182, 0.08); color: var(--color-info); border: 1px solid rgba(0, 119, 182, 0.15); border-radius: 4px; padding: 2px 6px;">
-            ⏳ ${currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout'}
-          </span>
-        </div>
+      <!-- Column 1: ID & Import Date -->
+      <div class="itr-col-id">
+        <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom: 2px; display: inline-block; font-family: monospace; letter-spacing: 0.5px; align-self: flex-start;">
+          ID: FMR-${farmerId}
+        </span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">
+          ${currentLanguage === 'ar' ? 'تاريخ الاستيراد' : 'Import Date'}: ${importDatesStr}
+        </span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:8px; margin: 8px 0;">
-        <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-          <span>${currentLanguage === 'ar' ? 'عدد الشحنات المعلقة' : 'Pending Shipments'}</span>
-          <span style="font-weight:700;">${formatVal(data.itemsCount)} ${currentLanguage === 'ar' ? 'شحنة' : 'shipment(s)'}</span>
-        </div>
+      <!-- Column 2: Farmer Info -->
+      <div class="itr-col-customer">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;">${farmer.name}</h4>
+        <span style="font-size: 10px; color: var(--color-text-muted);">${farmer.phone || ''} ${farmer.address ? `• ${farmer.address}` : ''}</span>
+      </div>
 
-        <!-- Sales percentages by crop for this farmer dues card -->
-        <div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 6px; border-top: 1px solid rgba(0,0,0,0.03); padding-top: 8px; margin-top: 4px;">
-          <div style="font-size: 11px; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 2px;">
-            ${currentLanguage === 'ar' ? 'نسب مبيعات الأصناف:' : 'Crop Sales Indexes:'}
+      <!-- Column 3: Items/Crop simple badges -->
+      <div class="itr-col-items" style="display: flex; flex-wrap: wrap; gap: 6px;">
+        ${cropsBadgesContainerHtml}
+      </div>
+
+      <!-- Column 4: Sales Progress Status -->
+      <div class="itr-col-status">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; width: 100%; max-width: 160px; margin: 0 auto;">
+          <span style="font-size: 11px; color: var(--color-text-muted); font-weight: 700; white-space: nowrap;">${currentLanguage === 'ar' ? 'نسبة المبيعات' : 'Sales Ratio'}</span>
+          <div class="progress-track" style="width: 100%; margin: 2px 0; background: rgba(0,0,0,0.06); height: 6px; border-radius: 999px; overflow: hidden;">
+            <div class="progress-fill green" style="width: ${overallPercentSold}%; height: 100%; background: ${progressColorHex}; border-radius: 999px;"></div>
           </div>
-          ${cropProgressHtml}
+          <span style="font-size: 12.5px; font-weight: 850; color: #1b4332; font-family: Cairo, sans-serif;">
+            ${overallPercentSold}%
+          </span>
         </div>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-        <div>
-          <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'صافي مستحقات الفلاح' : 'Net Farmer Dues'}</span>
-          <h3 style="font-size:16px; font-weight:700; color:var(--color-primary);">${formatVal(data.totalNetDue, true)}</h3>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-sales-audit" data-farmer-id="${farmerId}" data-crop-type="all" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; font-weight: 700;">
-            <span class="material-icons-round" style="font-size:14px;">analytics</span>
-            <span>${currentLanguage === 'ar' ? 'جرد المبيعات' : 'Sales Audit'}</span>
-          </button>
-          <button class="btn-secondary btn-pay-farmer-dues" data-farmer-id="${farmerId}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">paid</span>
-            <span>${currentLanguage === 'ar' ? 'صرف' : 'Pay'}</span>
-          </button>
-        </div>
+      <!-- Column 5: Net Farmer Dues -->
+      <div class="itr-col-total" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;">
+        <span style="font-size: 10px; color: var(--color-text-muted); margin: 0;">${currentLanguage === 'ar' ? 'صافي المستحقات' : 'Net Farmer Dues'}</span>
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--color-primary); margin: 0;">${formatVal(data.totalNetDue, true)}</h3>
+        <span class="debt-status-tag unpaid" style="font-size: 9px; margin: 2px 0 0 0; white-space: nowrap; background: rgba(0, 119, 182, 0.08); color: var(--color-info); border: 1px solid rgba(0, 119, 182, 0.15); border-radius: 4px; padding: 2px 6px;">
+          ⏳ ${currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout'}
+        </span>
+      </div>
+
+      <!-- Column 6: Actions Group -->
+      <div class="itr-col-actions">
+        <button class="btn-secondary btn-sales-audit" data-farmer-id="${farmerId}" data-crop-type="all" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; font-weight: 700; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">analytics</span>
+          <span>${currentLanguage === 'ar' ? 'جرد المبيعات' : 'Sales Audit'}</span>
+        </button>
+        <button class="btn-secondary btn-toggle-farmer-details" data-farmer-id="${farmerId}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: white; color: var(--color-primary); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">visibility</span>
+          <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
+        </button>
+        <button class="btn-secondary btn-pay-farmer-dues" data-farmer-id="${farmerId}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">paid</span>
+          <span>${currentLanguage === 'ar' ? 'صرف' : 'Pay'}</span>
+        </button>
       </div>
 
       <!-- Collapsible Details Container -->
@@ -3832,7 +4182,7 @@ async function renderDuesList() {
     btn.addEventListener('click', async (e) => {
       const farmerId = parseInt(btn.dataset.farmerId);
       const crop = btn.dataset.cropType;
-      await showSalesAuditSheet(farmerId, crop);
+      await printCropSalesAudit(farmerId, crop);
     });
   });
 }
@@ -4910,7 +5260,7 @@ async function renderPortersList() {
     const totalBoxes = totalUnpaidBoxes + totalPaidBoxes;
 
     const card = document.createElement('div');
-    card.className = 'premium-card stagger-item';
+    card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${idx * 0.05}s`;
 
     const dayLabel = getDayLabel(dayKey);
@@ -4928,67 +5278,69 @@ async function renderPortersList() {
     }
 
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:8px;">
-        <div>
-          <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom:4px; display:inline-block; font-family: monospace; letter-spacing: 0.5px;">
-            ID: ${dayKey}
-          </span>
-          <h4 style="font-size:14px; font-weight:700; color:var(--color-primary);">${dayLabel}</h4>
-          <span style="font-size:10px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'جرد الصناديق والمستحقات لهذا اليوم' : 'Daily boxes and dues for this day'}</span>
-        </div>
-        <div style="text-align:left; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
-          <span class="debt-status-tag ${statusClass === 'info' ? 'ok' : statusClass}" style="font-size:9px; border-radius: 4px; padding: 2px 6px; ${statusClass === 'info' ? 'background: #e2e8f0; color: #475569; border-color: #cbd5e1;' : ''}">
-            ${statusClass === 'ok' ? '✅' : (statusClass === 'late' ? '⏳' : '📝')} ${statusText}
-          </span>
-        </div>
+      <!-- Column 1: ID & Day Info -->
+      <div class="itr-col-id">
+        <span class="lang-badge" style="background-color: var(--color-primary-mid); margin-bottom: 2px; display: inline-block; font-family: monospace; letter-spacing: 0.5px; align-self: flex-start;">
+          ID: ${dayKey}
+        </span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-text-muted);">
+          ${formatVal(totalBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'box(es)'}
+        </span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:4px; margin: 6px 0;">
-        <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-          <span>${currentLanguage === 'ar' ? 'إجمالي الصناديق المباعة' : 'Total Boxes Sold'}</span>
-          <span style="font-weight:700;">${formatVal(totalBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'boxes'}</span>
-        </div>
-        ${totalPaidBoxes > 0 ? `
-          <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-            <span>${currentLanguage === 'ar' ? 'الصناديق المسواة (المدفوعة)' : 'Settled Boxes (Paid)'}</span>
-            <span style="font-weight:700; color: var(--color-success);">${formatVal(totalPaidBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'boxes'}</span>
-          </div>
-        ` : ''}
-        ${totalUnpaidBoxes > 0 ? `
-          <div style="font-size:11px; color:var(--color-text-dark); display:flex; justify-content:space-between; background: rgba(0,0,0,0.02); padding: 4px 6px; border-radius:6px;">
-            <span>${currentLanguage === 'ar' ? 'الصناديق المعلقة (غير المدفوعة)' : 'Pending Boxes (Unpaid)'}</span>
-            <span style="font-weight:700; color: var(--color-warning);">${formatVal(totalUnpaidBoxes)} ${currentLanguage === 'ar' ? 'صندوق' : 'boxes'}</span>
-          </div>
-        ` : ''}
+      <!-- Column 2: Day Title & Description -->
+      <div class="itr-col-customer">
+        <h4 style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin: 0;">${dayLabel}</h4>
+        <span style="font-size: 10px; color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'جرد حمالة اليوم' : 'Daily porter dues'}</span>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; border-top:1px dashed rgba(0,0,0,0.05); padding-top:6px;">
-        <div>
-          <span style="font-size:11px; color:var(--color-text-muted);">${currentLanguage === 'ar' ? 'المبلغ الإجمالي المعلق' : 'Total Pending Amount'}</span>
-          <h3 style="font-size:16px; font-weight:700; color:${totalUnpaidAmount > 0 ? 'var(--color-warning)' : 'var(--color-success)'};">${formatVal(totalUnpaidAmount, true)}</h3>
-          ${totalPaidAmount > 0 ? `
-            <span style="font-size:9.5px; color: var(--color-success); font-weight: 700; display: block; margin-top: 2px;">
-              ${currentLanguage === 'ar' ? 'تم توزيع ودفع: ' : 'Paid & distributed: '}${formatVal(totalPaidAmount, true)}
+      <!-- Column 3: Boxes Summary Badges -->
+      <div class="itr-col-items" style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="itr-item-badge" style="position: relative; overflow: hidden; min-width: 140px; justify-content: center; margin: 2px;">
+          <span class="badge-crop-name">📦 ${currentLanguage === 'ar' ? 'إجمالي الصناديق' : 'Total Boxes'}</span>
+          <span class="badge-qty-group">
+            <span class="badge-qty">
+              <span class="qty-num">${formatVal(totalBoxes)}</span>
             </span>
-          ` : ''}
-        </div>
-        <div style="display:flex; gap:6px;">
-          <button class="btn-secondary btn-toggle-porters-details" data-day="${dayKey}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none;">
-            <span class="material-icons-round" style="font-size:14px;">list</span>
-            <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
+          </span>
+        </span>
+      </div>
+
+      <!-- Column 4: Status -->
+      <div class="itr-col-status">
+        <span class="debt-status-tag ${statusClass === 'info' ? 'ok' : statusClass}" style="font-size: 10px; border-radius: 4px; padding: 4px 8px; margin: 0; white-space: nowrap; ${statusClass === 'info' ? 'background: #e2e8f0; color: #475569; border-color: #cbd5e1;' : ''}">
+          ${statusClass === 'ok' ? '✅' : (statusClass === 'late' ? '⏳' : '📝')} ${statusText}
+        </span>
+      </div>
+
+      <!-- Column 5: Total Pending Amount -->
+      <div class="itr-col-total" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;">
+        <span style="font-size: 10px; color: var(--color-text-muted); margin: 0;">${currentLanguage === 'ar' ? 'المبلغ المعلق' : 'Pending Amount'}</span>
+        <h3 style="font-size: 15px; font-weight: 700; color:${totalUnpaidAmount > 0 ? 'var(--color-warning)' : 'var(--color-success)'}; margin: 0;">${formatVal(totalUnpaidAmount, true)}</h3>
+        ${totalPaidAmount > 0 ? `
+          <span style="font-size: 9px; color: var(--color-success); font-weight: 700; display: block; margin-top: 2px; white-space: nowrap;">
+            ${currentLanguage === 'ar' ? 'مدفوع: ' : 'Paid: '}${formatVal(totalPaidAmount, true)}
+          </span>
+        ` : ''}
+      </div>
+
+      <!-- Column 6: Actions Group -->
+      <div class="itr-col-actions">
+        <button class="btn-secondary btn-toggle-porters-details" data-day="${dayKey}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-primary-light); background: rgba(0, 150, 199, 0.04); color: var(--color-primary); box-shadow: none; margin: 0;">
+          <span class="material-icons-round" style="font-size: 14px;">list</span>
+          <span>${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}</span>
+        </button>
+        ${totalUnpaidAmount > 0 ? `
+          <button class="btn-secondary btn-open-porters-pay" data-day="${dayKey}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none; margin: 0;">
+            <span class="material-icons-round" style="font-size: 14px;">payments</span>
+            <span>${currentLanguage === 'ar' ? 'دفع' : 'Pay'}</span>
           </button>
-          ${totalUnpaidAmount > 0 ? `
-            <button class="btn-secondary btn-open-porters-pay" data-day="${dayKey}" style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none;">
-              <span class="material-icons-round" style="font-size:14px;">payments</span>
-              <span>${currentLanguage === 'ar' ? 'دفع' : 'Pay'}</span>
-            </button>
-          ` : (dayPayouts.length > 0 ? `
-            <div style="padding:6px 10px; font-size:11px; display:flex; align-items:center; gap:4px; border:1px solid var(--color-success); background: rgba(82, 183, 136, 0.08); color: var(--color-success); border-radius: 8px; font-weight: 700;">
-              <span class="material-icons-round" style="font-size:14px; color: var(--color-success);">check_circle</span>
-              <span>${currentLanguage === 'ar' ? 'تم تأكيد الصرف' : 'Confirmed'}</span>
-            </div>
-          ` : '')}
-        </div>
+        ` : (dayPayouts.length > 0 ? `
+          <div style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--color-success); background: rgba(82, 183, 136, 0.08); color: var(--color-success); border-radius: 8px; font-weight: 700; margin: 0; white-space: nowrap;">
+            <span class="material-icons-round" style="font-size: 14px; color: var(--color-success);">check_circle</span>
+            <span>${currentLanguage === 'ar' ? 'تم تأكيد الصرف' : 'Confirmed'}</span>
+          </div>
+        ` : '')}
       </div>
 
       <!-- Collapsible Details for this day -->
@@ -6641,6 +6993,12 @@ async function openPrintPreview(saleId) {
         <span style="padding-top: 8px; display: inline-block;">الإجمالي المستحق:</span>
         <span style="font-size: 1.3em; padding-top: 4px; display: inline-block;">${formatVal(sale.total_amount, true)}</span>
       </div>
+      ${sale.notes ? `
+        <div style="border-top: 1.2px dashed #000; margin-top: 8px; padding-top: 6px; text-align: start; font-size: 15px; line-height: 1.35;">
+          <span style="font-weight: 800; display: block; margin-bottom: 2px;">ملاحظات:</span>
+          <span style="display: block; font-weight: 700;">${sale.notes}</span>
+        </div>
+      ` : ''}
     </div>
 
     <!-- Generates dynamic offline QR-code and random barcode inside preview -->
@@ -8312,18 +8670,22 @@ async function showInvoiceDetails(invoiceId, type) {
     let itemsHtml = impItems.map((it, idx) => {
       const cropIcon = getCropIcon(it.crop_type);
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9; background: var(--color-white); transition: background-color 0.15s;">
-          <td style="padding: 10px 12px; font-weight: 600; color: #94a3b8; text-align: center; font-size: 11px;">${formatVal(idx + 1)}</td>
-          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-text-dark); text-align: start;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #f8fafc; font-size: 13px; border: 1px solid #f1f5f9;">${cropIcon}</span>
-              <span style="font-size: 12.5px;">${it.crop_type}</span>
+        <tr style="border-bottom: 1px solid rgba(0, 0, 0, 0.04); background: var(--color-white); transition: background-color 0.15s;">
+          <td style="padding: 12px; font-weight: 700; color: #94a3b8; text-align: center; font-size: 12px; font-family: var(--font-mono), monospace;">${formatVal(idx + 1)}</td>
+          <td style="padding: 12px; font-weight: 700; color: var(--color-text-dark); text-align: start;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: rgba(45, 106, 79, 0.06); font-size: 15px; border: 1px solid rgba(45, 106, 79, 0.12); flex-shrink: 0;">${cropIcon}</span>
+              <span style="font-size: 13px; font-weight: 700; font-family: Cairo, sans-serif; color: #0f172a;">${it.crop_type}</span>
             </div>
           </td>
-          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-primary-mid); text-align: start; font-size: 12px;">${formatWeight(it.weight_kg, it.unit || 'kg')}</td>
-          <td style="padding: 10px 12px; text-align: start;">
-            <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10.5px; white-space: nowrap;">
-              ${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'صندوق' : 'Boxes'}
+          <td style="padding: 12px; text-align: start;">
+            <span style="display: inline-flex; align-items: center; background: #d8f3dc; color: #1b4332; border: 1.5px solid rgba(45, 106, 79, 0.22); padding: 4px 10px; border-radius: 8px; font-weight: 800; font-family: var(--font-mono), monospace; font-size: 11.5px; white-space: nowrap; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);">
+              ${formatWeight(it.weight_kg, it.unit || 'kg')}
+            </span>
+          </td>
+          <td style="padding: 12px; text-align: start;">
+            <span style="display: inline-flex; align-items: center; background: #ecf8f3; color: #2d6a4f; border: 1.5px solid rgba(45, 106, 79, 0.14); padding: 4px 10px; border-radius: 8px; font-weight: 800; font-family: var(--font-mono), monospace; font-size: 11.5px; white-space: nowrap; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);">
+              ${formatVal(it.box_count)} <span style="font-size: 9px; font-weight: 700; margin-inline-start: 3px; opacity: 0.85;">${currentLanguage === 'ar' ? 'صندوق' : 'Boxes'}</span>
             </span>
           </td>
         </tr>
@@ -8336,50 +8698,60 @@ async function showInvoiceDetails(invoiceId, type) {
       : (currentLanguage === 'ar' ? 'نشطة / قيد البيع' : 'Active');
     const statusBg = isSettled ? '#f0fdf4' : '#fffbeb';
     const statusColor = isSettled ? '#15803d' : '#b45309';
-    const statusBorder = isSettled ? '1px solid #bbf7d0' : '1px solid #fef3c7';
+    const statusBorder = isSettled ? '1.5px solid #bbf7d0' : '1.5px solid #fef3c7';
     const statusIcon = isSettled ? 'check_circle' : 'hourglass_empty';
 
     detailsBody.innerHTML = `
       <!-- Compact Receipt Header -->
-      <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div style="background: linear-gradient(135deg, #ffffff 0%, #fafdfc 100%); border-radius: 20px; padding: 16px; border: 1.5px solid rgba(45, 106, 79, 0.12); font-size: 12px; box-shadow: 0 4px 15px rgba(45, 106, 79, 0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: monospace; font-size: 11px; font-weight: 800; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); letter-spacing: 0.5px;">#${formatVal(imp.id)}</span>
+            <span style="font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 900; background: rgba(45, 106, 79, 0.08); color: var(--color-primary); padding: 4px 10px; border-radius: 8px; border: 1.5px solid rgba(45, 106, 79, 0.15); letter-spacing: 0.5px;">#${formatVal(imp.id)}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
-              <span style="color: var(--color-text-dark); font-weight: 700; font-size: 13px;">${farmer.name}</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
+              <span style="color: var(--color-text-dark); font-weight: 800; font-size: 14px; font-family: Cairo, sans-serif;">${farmer.name}</span>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; background: ${statusBg}; color: ${statusColor}; border: ${statusBorder}; font-weight: 700; font-size: 11px; line-height: 1;">
-            <span class="material-icons-round" style="font-size: 14px;">${statusIcon}</span>
+          <div style="display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 10px; background: ${statusBg}; color: ${statusColor}; border: ${statusBorder}; font-weight: 800; font-size: 11.5px; line-height: 1; font-family: Cairo, sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+            <span class="material-icons-round" style="font-size: 15px;">${statusIcon}</span>
             <span>${statusText}</span>
           </div>
         </div>
         
-        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11px;">
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">calendar_today</span>
-            <span>${formatCustomDate(imp.invoice_date)}</span>
+        <div style="margin-top: 12px; padding-top: 10px; border-top: 1.5px dashed rgba(45, 106, 79, 0.1); display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11.5px; font-family: Cairo, sans-serif;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 15px; color: #2d6a4f; opacity: 0.8;">calendar_today</span>
+            <span style="font-weight: 600; color: #475569;">${formatCustomDate(imp.invoice_date)}</span>
           </div>
           ${imp.vehicle_type ? `
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">local_shipping</span>
-            <span>${imp.vehicle_type}</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 15px; color: #2d6a4f; opacity: 0.8;">local_shipping</span>
+            <span style="font-weight: 600; color: #475569;">${imp.vehicle_type}</span>
           </div>
           ` : ''}
         </div>
       </div>
 
+      ${imp.notes ? `
+      <div style="background: linear-gradient(135deg, #ffffff 0%, #fafdfc 100%); border-radius: 16px; padding: 12px 16px; border: 1.5px solid rgba(45, 106, 79, 0.1); font-size: 12px; margin-top: 12px; text-align: start; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-weight: 800; color: #2d6a4f; font-family: Cairo, sans-serif;">
+          <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">notes</span>
+          <span>${currentLanguage === 'ar' ? 'ملاحظات الفاتورة:' : 'Invoice Notes:'}</span>
+        </div>
+        <p style="margin: 0; line-height: 1.5; font-weight: 600; color: #334155; font-family: Cairo, sans-serif;">${imp.notes}</p>
+      </div>
+      ` : ''}
+
       <!-- Compact Table -->
-      <div style="border: 1.5px solid #f1f5f9; border-radius: 16px; overflow: hidden; background: var(--color-white); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); margin-top: 12px; margin-bottom: 12px;">
-        <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+      <div style="border: 1.5px solid rgba(45, 106, 79, 0.12); border-radius: 18px; overflow: hidden; background: var(--color-white); box-shadow: 0 4px 16px rgba(45, 106, 79, 0.02); margin-top: 14px; margin-bottom: 14px;">
+        <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
           <thead>
-            <tr style="background: #f8fafc; border-bottom: 1.5px solid #f1f5f9; color: #64748b;">
-              <th style="padding: 10px 12px; font-weight: 800; text-align: center; width: 40px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">#</th>
-              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'المحصول' : 'Crop'}</th>
-              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'الوزن الكلي' : 'Total Weight'}</th>
-              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'العدد' : 'Boxes'}</th>
+            <tr style="background: #f4f9f6; border-bottom: 1.5px solid rgba(45, 106, 79, 0.1); color: #2d6a4f; font-family: Cairo, sans-serif;">
+              <th style="padding: 12px; font-weight: 800; text-align: center; width: 45px; font-size: 11.5px; letter-spacing: 0.5px;">#</th>
+              <th style="padding: 12px; font-weight: 800; text-align: start; font-size: 11.5px; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'المحصول' : 'Crop'}</th>
+              <th style="padding: 12px; font-weight: 800; text-align: start; font-size: 11.5px; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'الوزن الكلي' : 'Total Weight'}</th>
+              <th style="padding: 12px; font-weight: 800; text-align: start; font-size: 11.5px; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'العدد' : 'Boxes'}</th>
             </tr>
           </thead>
           <tbody>
@@ -8391,13 +8763,13 @@ async function showInvoiceDetails(invoiceId, type) {
       <!-- Compact Settle Panel -->
       <div style="margin-top: 4px;">
         ${!isSettled ? `
-          <button id="btn-details-settle-import" class="btn-primary" style="width: 100%; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-success); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(82, 183, 136, 0.15);">
-            <span class="material-icons-round" style="font-size: 16px;">check_circle</span>
+          <button id="btn-details-settle-import" class="btn-primary" style="width: 100%; padding: 12px; font-size: 12.5px; font-weight: 800; background: var(--color-success); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 12px rgba(82, 183, 136, 0.25); font-family: Cairo, sans-serif; transition: all 0.2s;">
+            <span class="material-icons-round" style="font-size: 18px;">check_circle</span>
             <span>${currentLanguage === 'ar' ? 'تسوية الفاتورة وإغلاقها' : 'Settle & Close'}</span>
           </button>
         ` : `
-          <div style="display: flex; align-items: center; gap: 6px; color: var(--color-success); font-weight: 800; font-size: 11.5px; background: rgba(82, 183, 136, 0.05); padding: 8px 12px; border-radius: 12px; border: 1px dashed rgba(82, 183, 136, 0.2);">
-            <span class="material-icons-round" style="font-size: 18px;">verified</span>
+          <div style="display: flex; align-items: center; gap: 6px; color: var(--color-success); font-weight: 800; font-size: 12px; background: rgba(82, 183, 136, 0.05); padding: 10px 14px; border-radius: 12px; border: 1.5px dashed rgba(82, 183, 136, 0.25); font-family: Cairo, sans-serif;">
+            <span class="material-icons-round" style="font-size: 20px;">verified</span>
             <span>${currentLanguage === 'ar' ? 'تم تسوية وتصفية هذه الفاتورة بالكامل.' : 'This invoice is fully settled.'}</span>
           </div>
         `}
@@ -8437,21 +8809,27 @@ async function showInvoiceDetails(invoiceId, type) {
       const cropIcon = getCropIcon(it.crop_type);
       const isCount = it.unit === 'count';
       return `
-        <tr style="border-bottom: 1px solid #f1f5f9; background: var(--color-white); transition: background-color 0.15s;">
-          <td style="padding: 10px 12px; font-weight: 600; color: #94a3b8; text-align: center; font-size: 11px;">${formatVal(idx + 1)}</td>
-          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-text-dark); text-align: start;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #f8fafc; font-size: 13px; border: 1px solid #f1f5f9;">${cropIcon}</span>
-              <span style="font-size: 12.5px;">${it.crop_type}</span>
+        <tr style="border-bottom: 1px solid rgba(0, 0, 0, 0.04); background: var(--color-white); transition: background-color 0.15s;">
+          <td style="padding: 12px; font-weight: 700; color: #94a3b8; text-align: center; font-size: 12px; font-family: var(--font-mono), monospace;">${formatVal(idx + 1)}</td>
+          <td style="padding: 12px; font-weight: 700; color: var(--color-text-dark); text-align: start;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: rgba(45, 106, 79, 0.06); font-size: 15px; border: 1px solid rgba(45, 106, 79, 0.12); flex-shrink: 0;">${cropIcon}</span>
+              <span style="font-size: 13px; font-weight: 700; font-family: Cairo, sans-serif; color: #0f172a;">${it.crop_type}</span>
             </div>
           </td>
-          <td style="padding: 10px 12px; font-weight: 700; color: var(--color-primary-mid); text-align: start; font-size: 12px;">${isCount ? '-' : formatWeight(it.weight_kg, it.unit || 'kg')}</td>
-          <td style="padding: 10px 12px; text-align: start;">
-            <span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10.5px; white-space: nowrap;">
-              ${isCount ? `${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'قطعة' : 'Pieces'}` : `${formatVal(it.box_count)} ${currentLanguage === 'ar' ? 'صندوق' : 'Boxes'}`}
+          <td style="padding: 12px; text-align: start;">
+            ${isCount ? `<span style="color: #94a3b8; font-weight: 500; font-size: 13px;">-</span>` : `
+            <span style="display: inline-flex; align-items: center; background: #d8f3dc; color: #1b4332; border: 1.5px solid rgba(45, 106, 79, 0.22); padding: 4px 10px; border-radius: 8px; font-weight: 800; font-family: var(--font-mono), monospace; font-size: 11.5px; white-space: nowrap; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);">
+              ${formatWeight(it.weight_kg, it.unit || 'kg')}
+            </span>
+            `}
+          </td>
+          <td style="padding: 12px; text-align: start;">
+            <span style="display: inline-flex; align-items: center; background: #ecf8f3; color: #2d6a4f; border: 1.5px solid rgba(45, 106, 79, 0.14); padding: 4px 10px; border-radius: 8px; font-weight: 800; font-family: var(--font-mono), monospace; font-size: 11.5px; white-space: nowrap; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);">
+              ${formatVal(it.box_count)} <span style="font-size: 9px; font-weight: 700; margin-inline-start: 3px; opacity: 0.85;">${isCount ? (currentLanguage === 'ar' ? 'قطعة' : 'Pcs') : (currentLanguage === 'ar' ? 'صندوق' : 'Boxes')}</span>
             </span>
           </td>
-          <td style="padding: 10px 12px; font-weight: 800; color: var(--color-primary); text-align: start; white-space: nowrap; font-size: 12px;">${formatVal(it.agreed_price, true)}</td>
+          <td style="padding: 12px; font-weight: 900; color: var(--color-primary); text-align: start; white-space: nowrap; font-size: 13px; font-family: var(--font-mono), monospace;">${formatVal(it.agreed_price, true)}</td>
         </tr>
       `;
     }).join('');
@@ -8474,21 +8852,21 @@ async function showInvoiceDetails(invoiceId, type) {
       statusText = currentLanguage === 'ar' ? 'مدفوعة نقداً' : 'Paid Cash';
       statusBg = '#f0fdf4';
       statusColor = '#15803d';
-      statusBorder = '1px solid #bbf7d0';
+      statusBorder = '1.5px solid #bbf7d0';
       statusIcon = 'payments';
     } else {
       if (isSettled) {
         statusText = currentLanguage === 'ar' ? 'دين مسدد' : 'Settled';
         statusBg = '#f0f9ff';
         statusColor = '#0369a1';
-        statusBorder = '1px solid #bae6fd';
+        statusBorder = '1.5px solid #bae6fd';
         statusIcon = 'check_circle';
       } else {
         const remaining = debt ? debt.amount : sale.total_amount;
         statusText = currentLanguage === 'ar' ? `بالأجل (${formatVal(remaining)} د.ع)` : `Credit (${formatVal(remaining)} IQD)`;
         statusBg = '#fef2f2';
         statusColor = '#b91c1c';
-        statusBorder = '1px solid #fecaca';
+        statusBorder = '1.5px solid #fecaca';
         statusIcon = 'hourglass_empty';
       }
     }
@@ -8502,53 +8880,53 @@ async function showInvoiceDetails(invoiceId, type) {
       const progressPercent = Math.min(100, Math.max(0, Math.round((paidAmount / originalTotal) * 100)));
 
       debtProgressHtml = `
-        <div style="background: var(--color-white); border: 1.5px solid #fee2e2; border-radius: 20px; padding: 16px; margin-bottom: 12px; font-family: inherit; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);">
+        <div style="background: linear-gradient(135deg, #ffffff 0%, rgba(239, 68, 68, 0.01) 100%); border: 1.5px solid rgba(239, 68, 68, 0.15); border-radius: 20px; padding: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.02);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
             <!-- Left Side: Progress Pill -->
-            <span style="background: #fff1f2; color: #dc2626; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 8px; border: 1px solid #ffe4e6; line-height: 1;">
+            <span style="background: #fef2f2; color: #dc2626; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 8px; border: 1.5px solid rgba(220, 38, 38, 0.12); line-height: 1; font-family: Cairo, sans-serif;">
               ${progressPercent}% ${currentLanguage === 'ar' ? 'مُسدد' : 'Paid'}
             </span>
             
             <!-- Right Side: Title and Icon -->
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="color: #dc2626; font-weight: 700; font-size: 13px;">
+              <span style="color: #b91c1c; font-weight: 800; font-size: 13.5px; font-family: Cairo, sans-serif;">
                 ${currentLanguage === 'ar' ? 'تتبع حالة سداد الدين:' : 'Debt Payment Tracker:'}
               </span>
-              <div style="width: 22px; height: 22px; border-radius: 6px; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <div style="width: 24px; height: 24px; border-radius: 8px; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);">
                 <span class="material-icons-round" style="font-size: 14px;">analytics</span>
               </div>
             </div>
           </div>
           
           <!-- Progress Bar -->
-          <div style="height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 14px;">
-            <div style="width: ${progressPercent}%; height: 100%; background: #10b981; border-radius: 10px; transition: width 0.8s ease;"></div>
+          <div style="height: 10px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; margin-bottom: 14px; border: 1px solid #e2e8f0; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+            <div style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 9999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);"></div>
           </div>
 
           <!-- Three Columns Footer -->
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: Cairo, sans-serif;">
             <!-- Left Column: Outstanding -->
             <div style="text-align: start; flex: 1;">
-              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">
                 ${currentLanguage === 'ar' ? 'المتبقي بذمة الزبون:' : 'Outstanding Debt:'}
               </span>
-              <strong style="color: #ef4444; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(outstanding, true)}</strong>
+              <strong style="color: #ef4444; font-size: 13px; font-weight: 900; font-family: var(--font-mono), monospace;">${formatVal(outstanding, true)}</strong>
             </div>
 
             <!-- Middle Column: Paid -->
             <div style="text-align: center; flex: 1;">
-              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
+              <span style="font-size: 11px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">
                 ${currentLanguage === 'ar' ? 'المبلغ المسدد:' : 'Paid So Far:'}
               </span>
-              <strong style="color: #10b981; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(paidAmount, true)}</strong>
+              <strong style="color: #10b981; font-size: 13px; font-weight: 900; font-family: var(--font-mono), monospace;">${formatVal(paidAmount, true)}</strong>
             </div>
 
             <!-- Right Column: Original -->
             <div style="text-align: end; flex: 1;">
-              <span style="font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-bottom: 2px;">
-                ${currentLanguage === 'ar' ? 'المبلغ الأصلي للفاتورة:' : 'Original Invoice Total:'}
+              <span style="font-size: 11px; color: #64748b; font-weight: 700; display: block; margin-bottom: 2px;">
+                ${currentLanguage === 'ar' ? 'المبلغ الأصلي للفاتورة:' : 'Original Total:'}
               </span>
-              <strong style="color: #1e293b; font-size: 12.5px; font-weight: 800; font-family: monospace;">${formatVal(originalTotal, true)}</strong>
+              <strong style="color: #1e293b; font-size: 13px; font-weight: 900; font-family: var(--font-mono), monospace;">${formatVal(originalTotal, true)}</strong>
             </div>
           </div>
         </div>
@@ -8557,47 +8935,57 @@ async function showInvoiceDetails(invoiceId, type) {
 
     detailsBody.innerHTML = `
       <!-- Compact Receipt Header -->
-      <div style="background: var(--color-white); border-radius: 16px; padding: 12px 14px; border: 1.5px solid #f1f5f9; font-size: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div style="background: linear-gradient(135deg, #ffffff 0%, #fafdfc 100%); border-radius: 20px; padding: 16px; border: 1.5px solid rgba(45, 106, 79, 0.12); font-size: 12px; margin-bottom: 14px; box-shadow: 0 4px 15px rgba(45, 106, 79, 0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-family: 'Monofrik' !important; font-size: 15px; font-weight: 900; background: rgba(0, 119, 182, 0.06); color: var(--color-primary); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(0, 119, 182, 0.1); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
+            <span style="font-family: var(--font-mono), monospace; font-size: 14px; font-weight: 900; background: rgba(45, 106, 79, 0.08); color: var(--color-primary); padding: 4px 10px; border-radius: 8px; border: 1.5px solid rgba(45, 106, 79, 0.15); line-height: 1; vertical-align: middle;">#${sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'))}</span>
             <span style="color: #cbd5e1; font-weight: 300;">|</span>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span class="material-icons-round" style="font-size: 14px; color: var(--color-text-muted);">person</span>
-              <span style="color: var(--color-text-dark); font-weight: 700; font-size: 13px;">${customer.name}</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
+              <span style="color: var(--color-text-dark); font-weight: 800; font-size: 14px; font-family: Cairo, sans-serif;">${customer.name}</span>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 8px; background: ${statusBg}; color: ${statusColor}; border: ${statusBorder}; font-weight: 700; font-size: 11px; line-height: 1;">
-            <span class="material-icons-round" style="font-size: 14px;">${statusIcon}</span>
+          <div style="display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 10px; background: ${statusBg}; color: ${statusColor}; border: ${statusBorder}; font-weight: 800; font-size: 11.5px; line-height: 1; font-family: Cairo, sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+            <span class="material-icons-round" style="font-size: 15px;">${statusIcon}</span>
             <span>${statusText}</span>
           </div>
         </div>
         
-        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11px;">
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">calendar_today</span>
-            <span>${formatCustomDate(sale.created_at)}</span>
+        <div style="margin-top: 12px; padding-top: 10px; border-top: 1.5px dashed rgba(45, 106, 79, 0.1); display: flex; justify-content: space-between; color: var(--color-text-muted); font-size: 11.5px; font-family: Cairo, sans-serif;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 15px; color: #2d6a4f; opacity: 0.8;">calendar_today</span>
+            <span style="font-weight: 600; color: #475569;">${formatCustomDate(sale.created_at)}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span class="material-icons-round" style="font-size: 14px; color: #94a3b8;">credit_card</span>
-            <span>${currentLanguage === 'ar' ? 'الدفع:' : 'Payment:'} ${sale.payment_type === 'cash' ? (currentLanguage === 'ar' ? '💵 نقد' : 'Cash') : (currentLanguage === 'ar' ? '📋 دين بالأجل' : 'Debt')}</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 15px; color: #2d6a4f; opacity: 0.8;">credit_card</span>
+            <span style="font-weight: 600; color: #475569;">${currentLanguage === 'ar' ? 'الدفع:' : 'Payment:'} ${sale.payment_type === 'cash' ? (currentLanguage === 'ar' ? '💵 نقد' : 'Cash') : (currentLanguage === 'ar' ? '📋 دين بالأجل' : 'Debt')}</span>
           </div>
         </div>
       </div>
+
+      ${sale.notes ? `
+      <div style="background: linear-gradient(135deg, #ffffff 0%, #fafdfc 100%); border-radius: 16px; padding: 12px 16px; border: 1.5px solid rgba(45, 106, 79, 0.1); font-size: 12px; margin-bottom: 14px; text-align: start; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-weight: 800; color: #2d6a4f; font-family: Cairo, sans-serif;">
+          <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">notes</span>
+          <span>${currentLanguage === 'ar' ? 'ملاحظات الفاتورة:' : 'Invoice Notes:'}</span>
+        </div>
+        <p style="margin: 0; line-height: 1.5; font-weight: 600; color: #334155; font-family: Cairo, sans-serif;">${sale.notes}</p>
+      </div>
+      ` : ''}
 
       <!-- Outstanding Debt Tracker if needed -->
       ${debtProgressHtml}
 
       <!-- Compact Table -->
-      <div style="border: 1.5px solid #f1f5f9; border-radius: 16px; overflow: hidden; background: var(--color-white); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); margin-top: 12px; margin-bottom: 12px;">
-        <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+      <div style="border: 1.5px solid rgba(45, 106, 79, 0.12); border-radius: 18px; overflow: hidden; background: var(--color-white); box-shadow: 0 4px 16px rgba(45, 106, 79, 0.02); margin-top: 14px; margin-bottom: 14px;">
+        <table class="details-table" style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
           <thead>
-            <tr style="background: #f8fafc; border-bottom: 1.5px solid #f1f5f9; color: #64748b;">
-              <th style="padding: 10px 12px; font-weight: 800; text-align: center; width: 40px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">#</th>
-              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'المحصول' : 'Crop'}</th>
-              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
-              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'العلب' : 'Boxes'}</th>
-              <th style="padding: 10px 12px; font-weight: 800; text-align: start; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
+            <tr style="background: #f4f9f6; border-bottom: 1.5px solid rgba(45, 106, 79, 0.1); color: #2d6a4f; font-family: Cairo, sans-serif;">
+              <th style="padding: 12px; font-weight: 800; text-align: center; width: 45px; font-size: 11.5px; letter-spacing: 0.5px;">#</th>
+              <th style="padding: 12px; font-weight: 800; text-align: start; font-size: 11.5px; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'المحصول' : 'Crop'}</th>
+              <th style="padding: 12px; font-weight: 800; text-align: start; font-size: 11.5px; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
+              <th style="padding: 12px; font-weight: 800; text-align: start; font-size: 11.5px; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'العلب' : 'Boxes'}</th>
+              <th style="padding: 12px; font-weight: 800; text-align: start; font-size: 11.5px; letter-spacing: 0.5px;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
             </tr>
           </thead>
           <tbody>
@@ -8607,52 +8995,52 @@ async function showInvoiceDetails(invoiceId, type) {
       </div>
 
       <!-- Financial Calculation Summary List -->
-      <div style="background: linear-gradient(135deg, var(--color-white) 0%, rgba(0, 119, 182, 0.01) 100%); border: 1px solid rgba(0, 119, 182, 0.08); border-radius: 14px; padding: 10px 12px; line-height: 1.5; font-size: 12px; margin-bottom: 12px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-          <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'مجموع قيمة البضاعة:' : 'Goods Subtotal:'}</span>
-          <span style="font-weight: 700; color: var(--color-text-dark);">${formatVal(subtotal, true)}</span>
+      <div style="background: linear-gradient(135deg, #ffffff 0%, rgba(45, 106, 79, 0.02) 100%); border: 1.5px solid rgba(45, 106, 79, 0.12); border-radius: 18px; padding: 14px 16px; line-height: 1.6; font-size: 13px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(45, 106, 79, 0.01);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-family: Cairo, sans-serif;">
+          <span style="color: #64748b; font-weight: 600;">${currentLanguage === 'ar' ? 'مجموع قيمة البضاعة:' : 'Goods Subtotal:'}</span>
+          <span style="font-weight: 700; color: #1e293b; font-family: var(--font-mono), monospace;">${formatVal(subtotal, true)}</span>
         </div>
         ${totalCommissions > 0 ? `
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'عمولة المكتب (7%):' : 'Office Commission (7%):'}</span>
-            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(totalCommissions, true)}</span>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-family: Cairo, sans-serif;">
+            <span style="color: #64748b; font-weight: 600;">${currentLanguage === 'ar' ? 'عمولة المكتب (7%):' : 'Office Commission (7%):'}</span>
+            <span style="font-weight: 700; color: var(--color-primary-mid); font-family: var(--font-mono), monospace;">+ ${formatVal(totalCommissions, true)}</span>
           </div>
         ` : ''}
         ${totalCarrying > 0 ? `
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'أجور تحميل (حمالية):' : 'Carrying Fee:'}</span>
-            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(totalCarrying, true)}</span>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-family: Cairo, sans-serif;">
+            <span style="color: #64748b; font-weight: 600;">${currentLanguage === 'ar' ? 'أجور تحميل (حمالية):' : 'Carrying Fee:'}</span>
+            <span style="font-weight: 700; color: var(--color-primary-mid); font-family: var(--font-mono), monospace;">+ ${formatVal(totalCarrying, true)}</span>
           </div>
         ` : ''}
         ${sale.bags_cost > 0 ? `
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: var(--color-text-muted);">${currentLanguage === 'ar' ? 'أجور الأكياس والكراتين:' : 'Bags/Boxes Cost:'}</span>
-            <span style="font-weight: 700; color: var(--color-primary); font-family: monospace;">+ ${formatVal(sale.bags_cost, true)}</span>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-family: Cairo, sans-serif;">
+            <span style="color: #64748b; font-weight: 600;">${currentLanguage === 'ar' ? 'أجور الأكياس والكراتين:' : 'Bags/Boxes Cost:'}</span>
+            <span style="font-weight: 700; color: var(--color-primary-mid); font-family: var(--font-mono), monospace;">+ ${formatVal(sale.bags_cost, true)}</span>
           </div>
         ` : ''}
         
-        <div style="display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 900; color: var(--color-primary); border-top: 1px dashed rgba(0,0,0,0.08); margin-top: 6px; padding-top: 6px;">
+        <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 900; color: var(--color-primary); border-top: 1.5px dashed rgba(45, 106, 79, 0.15); margin-top: 8px; padding-top: 8px; font-family: Cairo, sans-serif;">
           <span>${currentLanguage === 'ar' ? 'صافي الإجمالي المستحق:' : 'Grand Total:'}</span>
-          <span style="font-family: monospace;">${formatVal(sale.total_amount, true)}</span>
+          <span style="font-family: var(--font-mono), monospace; font-weight: 900; font-size: 16px;">${formatVal(sale.total_amount, true)}</span>
         </div>
       </div>
 
       <!-- Quick Actions (Printing & Settle Options) -->
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <!-- Print Button -->
-        <button id="btn-details-print-sale" class="btn-primary" style="flex: 1; min-width: 110px; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-primary-mid); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(0, 150, 199, 0.15);">
-          <span class="material-icons-round" style="font-size: 16px;">print</span>
+        <button id="btn-details-print-sale" class="btn-primary" style="flex: 1; min-width: 110px; padding: 12px; font-size: 12.5px; font-weight: 800; background: var(--color-primary-mid); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 12px rgba(0, 150, 199, 0.25); font-family: Cairo, sans-serif; transition: all 0.2s;">
+          <span class="material-icons-round" style="font-size: 18px;">print</span>
           <span>${currentLanguage === 'ar' ? 'طباعة الفاتورة' : 'Print'}</span>
         </button>
         
         <!-- Debt Settlement Buttons (Only for pending debts) -->
         ${(sale.payment_type === 'debt' && !isSettled && debt) ? `
-          <button id="btn-details-partial-pay" class="btn-primary" style="flex: 1; min-width: 90px; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-info); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(0, 119, 182, 0.1);">
-            <span class="material-icons-round" style="font-size: 16px;">payments</span>
+          <button id="btn-details-partial-pay" class="btn-primary" style="flex: 1; min-width: 90px; padding: 12px; font-size: 12.5px; font-weight: 800; background: var(--color-info); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 12px rgba(0, 119, 182, 0.15); font-family: Cairo, sans-serif; transition: all 0.2s;">
+            <span class="material-icons-round" style="font-size: 18px;">payments</span>
             <span>${currentLanguage === 'ar' ? 'تسديد دفعة' : 'Pay Partial'}</span>
           </button>
-          <button id="btn-details-full-settle" class="btn-primary" style="flex: 1; min-width: 90px; padding: 10px; font-size: 12px; font-weight: 800; background: var(--color-success); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 10px rgba(82, 183, 136, 0.15);">
-            <span class="material-icons-round" style="font-size: 16px;">check_circle</span>
+          <button id="btn-details-full-settle" class="btn-primary" style="flex: 1; min-width: 90px; padding: 12px; font-size: 12.5px; font-weight: 800; background: var(--color-success); border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; box-shadow: 0 4px 12px rgba(82, 183, 136, 0.25); font-family: Cairo, sans-serif; transition: all 0.2s;">
+            <span class="material-icons-round" style="font-size: 18px;">check_circle</span>
             <span>${currentLanguage === 'ar' ? 'تسديد كامل' : 'Settle All'}</span>
           </button>
         ` : ''}
@@ -8867,6 +9255,10 @@ function applyBilingualTranslations() {
   document.getElementById('sheet-import-title-h3').textContent = t.sheetImportTitle;
   document.getElementById('lbl-import-farmer-label').textContent = t.lblFarmerName;
   document.getElementById('lbl-import-vehicle-label').textContent = t.lblVehicleType;
+  const elImportNotesLabel = document.getElementById('lbl-import-notes');
+  if (elImportNotesLabel) elImportNotesLabel.textContent = t.lblNotes;
+  const elImportNotesInput = document.getElementById('import-notes');
+  if (elImportNotesInput) elImportNotesInput.placeholder = t.lblNotesPl;
   document.getElementById('btn-add-import-crop').innerHTML = `<span class="material-icons-round" style="font-size: 16px;">add</span> ${t.txtAddCrop}`;
   document.getElementById('btn-submit-import').textContent = t.btnSubmitImport;
 
@@ -8874,6 +9266,10 @@ function applyBilingualTranslations() {
   document.getElementById('lbl-sale-cust-label').textContent = t.lblCustomerName;
   document.getElementById('lbl-sale-phone-label').textContent = t.lblCustomerPhone;
   document.getElementById('lbl-sale-address-label').textContent = t.lblCustomerAddress;
+  const elSaleNotesLabel = document.getElementById('lbl-sale-notes-text');
+  if (elSaleNotesLabel) elSaleNotesLabel.textContent = t.lblNotes;
+  const elSaleNotesInput = document.getElementById('sale-notes');
+  if (elSaleNotesInput) elSaleNotesInput.placeholder = t.lblNotesPl;
   document.getElementById('btn-add-sale-crop').innerHTML = `<span class="material-icons-round" style="font-size: 16px;">add</span> ${t.txtAddSaleCrop}`;
   document.getElementById('lbl-sale-bags-label').textContent = t.lblBagsCost;
   document.getElementById('lbl-payment-method-title').textContent = t.lblPaymentMethod;
