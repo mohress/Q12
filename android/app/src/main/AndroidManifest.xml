@@ -15,6 +15,7 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBar"
             android:launchMode="singleTask"
+            android:screenOrientation="reverseLandscape"
             android:directBootAware="true"
             android:exported="true">
 
@@ -60,15 +61,14 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
     </application>
 
     <!-- Permissions -->
 
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.INTERNET" />
     
     <!-- Bluetooth Permissions for legacy and modern Android -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
