@@ -12,23 +12,25 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.widget.Toast
 import com.getcapacitor.BridgeActivity
-import android.os.Handler
-import android.os.Looper
 import android.content.pm.ActivityInfo
 import android.webkit.WebView
 
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-        
-        // Check if System WebView is ready at startup
+        // WebView early-boot retry check
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && WebView.getCurrentWebViewPackage() == null) {
-            Handler(Looper.getMainLooper()).postDelayed({
+            super.onCreate(savedInstanceState)
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
+            
+            // Schedule delayed retry after 2000ms
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 recreate()
             }, 2000)
+            return
         }
 
         super.onCreate(savedInstanceState)
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
         
         // Setup listener for system UI changes to hide the navigation/gesture bar when status bar is hidden
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -61,10 +63,11 @@ class MainActivity : BridgeActivity() {
 
     override fun onResume() {
         super.onResume()
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
         
+        // Check if WebView became available after initial launch and call recreate() if bridge is null
         if (bridge == null) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || WebView.getCurrentWebViewPackage() != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && WebView.getCurrentWebViewPackage() != null) {
                 recreate()
             }
         }
