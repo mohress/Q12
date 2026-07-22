@@ -418,10 +418,10 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "طماطة", synonymsAr: ["طماطم", "بندورة"], nameEn: "Tomato", icon: "🍅" },
   { primaryAr: "خيار", synonymsAr: [], nameEn: "Cucumber", icon: "🥒" },
   { primaryAr: "بطاطا", synonymsAr: ["بتيتة", "بطاطس", "البطاطا", "البطاطس"], nameEn: "Potato", icon: "🥔" },
-  { primaryAr: "بصل", synonymsAr: [], nameEn: "Onion", icon: "🧅" },
+  { primaryAr: "بصل", synonymsAr: [], nameEn: "Onion", icon: "🧄" },
   { primaryAr: "ثوم", synonymsAr: [], nameEn: "Garlic", icon: "🧄" },
   { primaryAr: "باذنجان", synonymsAr: ["بيتنجان"], nameEn: "Eggplant", icon: "🍆" },
-  { primaryAr: "فلفل حلو", synonymsAr: ["فلفل بارد", "فلفل", "فلفل أخضر"], nameEn: "Bell Pepper", icon: "🫑" },
+  { primaryAr: "فلفل حلو", synonymsAr: ["فلفل بارد", "فلفل", "فلفل أخضر"], nameEn: "Bell Pepper", icon: "🌶️" },
   { primaryAr: "فلفل حار", synonymsAr: [], nameEn: "Hot Pepper", icon: "🌶️" },
   { primaryAr: "جزر", synonymsAr: [], nameEn: "Carrot", icon: "🥕" },
   { primaryAr: "خس", synonymsAr: [], nameEn: "Lettuce", icon: "🥬" },
@@ -463,11 +463,11 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "كزبرة", synonymsAr: [], nameEn: "Coriander", icon: "🌿" },
   { primaryAr: "بقدونس", synonymsAr: ["معدنوس"], nameEn: "Parsley", icon: "🌿" },
   { primaryAr: "تمر", synonymsAr: [], nameEn: "Dates", icon: "🌴" },
-  { primaryAr: "زيتون", synonymsAr: [], nameEn: "Olive", icon: "🫒" },
+  { primaryAr: "زيتون", synonymsAr: [], nameEn: "Olive", icon: "🌱" },
   { primaryAr: "نعناع", synonymsAr: [], nameEn: "Mint", icon: "🌿" },
   { primaryAr: "كراث", synonymsAr: [], nameEn: "Leek", icon: "🌱" },
-  { primaryAr: "لفت", synonymsAr: ["شلغم"], nameEn: "Turnip", icon: "🧅" },
-  { primaryAr: "توت", synonymsAr: ["توث"], nameEn: "Berry", icon: "🫐" },
+  { primaryAr: "لفت", synonymsAr: ["شلغم"], nameEn: "Turnip", icon: "🥔" },
+  { primaryAr: "توت", synonymsAr: ["توث"], nameEn: "Berry", icon: "🍇" },
   { primaryAr: "فول", synonymsAr: ["باقلاء", "باجلا", "باجلاء"], nameEn: "Broad Beans", icon: "🌱" },
   { primaryAr: "فاصوليا", synonymsAr: ["فاصولية"], nameEn: "Beans", icon: "🌱" },
   { primaryAr: "بازلاء", synonymsAr: ["بزيلا", "بازلية"], nameEn: "Peas", icon: "🌱" },
@@ -478,7 +478,7 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "برقوق", synonymsAr: ["ألوجة", "آلو", "كوجة"], nameEn: "Plum", icon: "🍑" },
   { primaryAr: "نبق", synonymsAr: ["كنار", "سدر"], nameEn: "Jujube", icon: "🍊" },
   { primaryAr: "كماة", synonymsAr: ["چما"], nameEn: "Truffle", icon: "🍄" },
-  { primaryAr: "توت أسود", synonymsAr: ["عليج"], nameEn: "Blackberry", icon: "🫐" },
+  { primaryAr: "توت أسود", synonymsAr: ["عليج"], nameEn: "Blackberry", icon: "🍇" },
   { primaryAr: "بروكلي", synonymsAr: [], nameEn: "Broccoli", icon: "🥦" },
   { primaryAr: "خرشوف", synonymsAr: ["أرضي شوكي"], nameEn: "Artichoke", icon: "🥦" },
   { primaryAr: "هليون", synonymsAr: [], nameEn: "Asparagus", icon: "🌱" },
@@ -506,10 +506,10 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "تين شوكي", synonymsAr: ["صبار"], nameEn: "Prickly Pear", icon: "🌵" },
   { primaryAr: "جانرك", synonymsAr: ["كرز أخضر"], nameEn: "Green Cherry Plum", icon: "🍏" },
   // New count-only crops
-  { primaryAr: "باشن فروت", synonymsAr: ["فاكهة العاطفة"], nameEn: "Passion Fruit", icon: "🫐", countOnly: true },
+  { primaryAr: "باشن فروت", synonymsAr: ["فاكهة العاطفة"], nameEn: "Passion Fruit", icon: "🍇", countOnly: true },
   { primaryAr: "مانكو ستين", synonymsAr: ["مانغوستين"], nameEn: "Mangosteen", icon: "🍊", countOnly: true },
   { primaryAr: "رامبوتان", synonymsAr: [], nameEn: "Rambutan", icon: "🍊", countOnly: true },
-  { primaryAr: "دراكون فروت", synonymsAr: ["فاكهة التنين", "بتايا"], nameEn: "Dragon Fruit", icon: "🐉", countOnly: true },
+  { primaryAr: "دراكون فروت", synonymsAr: ["فاكهة التنين", "بتايا"], nameEn: "Dragon Fruit", icon: "🍎", countOnly: true },
   { primaryAr: "ذرة كارتون", synonymsAr: ["ذرة معلبة"], nameEn: "Carton Corn", icon: "🌽", countOnly: true },
   { primaryAr: "طماطة عنقودية", synonymsAr: ["طماطة كرزية", "طماطم كرزية", "شيري طماطم"], nameEn: "Cherry Tomato", icon: "🍅", countOnly: true }
 ];
@@ -564,13 +564,74 @@ function saveCustomCrop(cropName, measureType) {
 
 // Check if that specific import invoice item reaches 100% sold
 // Fetch import details
+function sanitizeCropIcon(icon) {
+  if (!icon) return '🥦';
+  // Filter out Unicode 12/13 emojis that render as missing glyph boxes/X on older Android WebViews / Amazon Silk devices
+  if (icon === '🫑') return '🌶️'; // Bell pepper -> Hot pepper
+  if (icon === '🧅') return '🧄'; // Onion -> Garlic
+  if (icon === '🫒') return '🌱'; // Olive -> Seedling
+  if (icon === '🫐') return '🍇'; // Blueberry -> Grape
+  if (icon === '🐉') return '🍎'; // Dragon fruit -> Apple
+  return icon;
+}
+
+function findCropSuggestion(cropType) {
+  if (!cropType) return null;
+  const clean = cropType.toString().trim().toLowerCase();
+  if (!clean) return null;
+
+  // 1. Direct primaryAr match
+  let crop = CROP_SUGGESTIONS.find(c => c.primaryAr.toLowerCase() === clean);
+  if (crop) return crop;
+
+  // 2. Synonyms match
+  crop = CROP_SUGGESTIONS.find(c => Array.isArray(c.synonymsAr) && c.synonymsAr.some(s => s.toLowerCase() === clean));
+  if (crop) return crop;
+
+  // 3. English name match
+  crop = CROP_SUGGESTIONS.find(c => c.nameEn && c.nameEn.toLowerCase() === clean);
+  if (crop) return crop;
+
+  // 4. Custom crops from localStorage
+  try {
+    const stored = localStorage.getItem('alwa_custom_crops');
+    if (stored) {
+      const customCrops = JSON.parse(stored);
+      const custom = customCrops.find(c => c.primaryAr && c.primaryAr.toLowerCase() === clean);
+      if (custom) return custom;
+    }
+  } catch(e) {}
+
+  // 5. Partial / Substring match
+  crop = CROP_SUGGESTIONS.find(c => 
+    clean.includes(c.primaryAr.toLowerCase()) || 
+    c.primaryAr.toLowerCase().includes(clean) ||
+    (Array.isArray(c.synonymsAr) && c.synonymsAr.some(s => clean.includes(s.toLowerCase()) || s.toLowerCase().includes(clean)))
+  );
+
+  return crop || null;
+}
+
 function getCropIcon(cropType) {
-  const crop = CROP_SUGGESTIONS.find(c => c.primaryAr === cropType);
-  return crop ? crop.icon : '🥦';
+  if (!cropType) return '🥦';
+  
+  // If cropType string contains an emoji directly, extract and return it safely
+  const cleanStr = cropType.toString().trim();
+  const emojiMatch = cleanStr.match(/^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}])/u);
+  if (emojiMatch) {
+    return sanitizeCropIcon(emojiMatch[0]);
+  }
+
+  const crop = findCropSuggestion(cropType);
+  if (crop && crop.icon) {
+    return sanitizeCropIcon(crop.icon);
+  }
+
+  return '🥦';
 }
 
 function getCropUnitType(cropType) {
-  const crop = CROP_SUGGESTIONS.find(c => c.primaryAr === cropType);
+  const crop = findCropSuggestion(cropType);
   if (!crop) return 'weight';
   if (crop.countOnly) return 'count';
   if (crop.bothUnits) return 'both';
@@ -2083,7 +2144,7 @@ function addImportCropRow() {
       <label>${currentLanguage === 'ar' ? 'نوع المحصول' : 'Crop Type'}</label>
       <div style="position: relative;">
         <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">eco</span>
-        <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'مثل: طماطة، بطاطا...' : 'e.g. Tomato, Potato...'}" required autocomplete="off" style="padding-right: 42px;">
+        <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'نوع المحصول (طماطة، خيار، بطاطا...)' : 'Crop Type (e.g. Tomato, Potato...)'}" required autocomplete="off" style="padding-right: 42px;">
         <div class="crop-autocomplete-dropdown autocomplete-dropdown"></div>
       </div>
     </div>
@@ -2092,14 +2153,14 @@ function addImportCropRow() {
         <label class="import-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي القائم (كغم)' : 'الوزن الكلي القائم (Kg)') : 'Total Weight (Kg)'}</label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
-          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'أدخل الوزن كغم...' : 'أدخل الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;">
+          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي القائم (كغم)...' : 'الوزن القائم (Kg)...') : 'Total Weight (Kg)...'}" required style="padding-right: 42px;">
         </div>
       </div>
       <div class="form-group import-box-count-container" style="flex: 1; min-width: 0;">
         <label class="import-box-count-label">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
-          <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'العدد...' : 'Count...'}" style="padding-right: 42px;">
+          <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'عدد الصناديق / الأكياس...' : 'Count of boxes/bags...'}" style="padding-right: 42px;">
         </div>
       </div>
     </div>
@@ -2127,7 +2188,7 @@ function addImportCropRow() {
     matches.forEach(m => {
       const div = document.createElement('div');
       div.className = 'autocomplete-item';
-      div.textContent = `${m.icon} ${m.primaryAr} (${m.nameEn})`;
+      div.textContent = `${sanitizeCropIcon(m.icon)} ${m.primaryAr} (${m.nameEn})`;
       div.addEventListener('click', () => {
         selector.value = m.primaryAr;
         autocomplete.style.display = 'none';
@@ -2734,7 +2795,7 @@ async function addSaleCropRow() {
       <div style="position: relative;">
         <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">inventory_2</span>
         <select class="form-input sale-cargo-select" required style="padding-right: 42px;">
-          <option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر من البضاعة المعروضة بالاستيراد...' : 'Choose from available imports...'}</option>
+          <option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر البضاعة المتوفرة بالفواتير (المحصول - الفلاح - السيارة)...' : 'Choose from available imports...'}</option>
         </select>
       </div>
     </div>
@@ -2746,7 +2807,7 @@ async function addSaleCropRow() {
         </label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
-          <input type="number" class="form-input sale-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي...' : 'الوزن بـ Kg...') : 'Enter weight in Kg...'}" required style="padding-right: 42px;">
+          <input type="number" class="form-input sale-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي المباع (كغم)...' : 'الوزن المباع (Kg)...') : 'Sold Weight (Kg)...'}" required style="padding-right: 42px;">
         </div>
       </div>
 
@@ -2756,7 +2817,7 @@ async function addSaleCropRow() {
         </label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
-          <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'عدد' : 'Count'}" required style="padding-right: 42px;">
+          <input type="number" class="form-input sale-box-count" placeholder="${currentLanguage === 'ar' ? 'عدد الصناديق المباعة...' : 'Number of Boxes Sold...'}" required style="padding-right: 42px;">
         </div>
       </div>
 
@@ -2766,7 +2827,7 @@ async function addSaleCropRow() {
         </label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">payments</span>
-          <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'السعر' : 'Price'}" required style="padding-right: 42px;">
+          <input type="number" class="form-input sale-crop-unit-price" placeholder="${currentLanguage === 'ar' ? 'سعر البيع للكيلو الواحد (دينار)...' : 'Sale Price per Kg (IQD)...'}" required style="padding-right: 42px;">
         </div>
       </div>
     </div>
@@ -3298,9 +3359,9 @@ async function submitSaleInvoice() {
     });
 
     // Record farmer dues for this sold share:
-    // Farmer payout calculation: (Sold price) - (Company 7% commission) - (Porter 500 per box, if applicable)
-    // Note: If watermelon, porter is 0, so farmer dues = Sold price - 7%
-    const farmerDueAmount = item.agreed_price - item.commission_amount - item.porter_fee;
+    // Farmer payout calculation: (Crop Price) + (2% bonus percentage)
+    // Note: Buyer pays 7% total commission (5% office profit + 2% farmer bonus). Porter fee is paid by buyer and does NOT affect farmer due.
+    const farmerDueAmount = item.agreed_price + Math.round(item.agreed_price * 0.02);
 
     // Retrieve original import invoice to identify farmer
     const originalImport = await dbGet('import_invoices', item.import_invoice_id);
@@ -3315,7 +3376,7 @@ async function submitSaleInvoice() {
         box_count: item.box_count,
         sold_price: item.agreed_price,
         commission_deducted: item.commission_amount,
-        porter_deducted: item.porter_fee,
+        porter_deducted: 0,
         net_due: farmerDueAmount,
         is_paid: false,
         created_at: Date.now()
@@ -5267,8 +5328,13 @@ async function renderPortersList() {
     let statusText = '';
     let statusClass = '';
     if (unpaidDayPayouts.length > 0) {
-      statusText = currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout';
-      statusClass = 'late';
+      if (totalPaidAmount > 0) {
+        statusText = currentLanguage === 'ar' ? 'تم صرف دفعة وبانتظار الباقي' : 'Partially paid, awaiting rest';
+        statusClass = 'near';
+      } else {
+        statusText = currentLanguage === 'ar' ? 'بانتظار الصرف' : 'Awaiting Payout';
+        statusClass = 'late';
+      }
     } else if (dayPayouts.length > 0) {
       statusText = currentLanguage === 'ar' ? 'تم تأكيد صرف المستحقات' : 'Disbursement Confirmed';
       statusClass = 'ok';
@@ -5309,17 +5375,17 @@ async function renderPortersList() {
       <!-- Column 4: Status -->
       <div class="itr-col-status">
         <span class="debt-status-tag ${statusClass === 'info' ? 'ok' : statusClass}" style="font-size: 10px; border-radius: 4px; padding: 4px 8px; margin: 0; white-space: nowrap; ${statusClass === 'info' ? 'background: #e2e8f0; color: #475569; border-color: #cbd5e1;' : ''}">
-          ${statusClass === 'ok' ? '✅' : (statusClass === 'late' ? '⏳' : '📝')} ${statusText}
+          ${statusClass === 'ok' ? '✅' : (statusClass === 'near' ? '🔄' : (statusClass === 'late' ? '⏳' : '📝'))} ${statusText}
         </span>
       </div>
 
       <!-- Column 5: Total Pending Amount -->
       <div class="itr-col-total" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;">
-        <span style="font-size: 10px; color: var(--color-text-muted); margin: 0;">${currentLanguage === 'ar' ? 'المبلغ المعلق' : 'Pending Amount'}</span>
+        <span style="font-size: 10px; color: var(--color-text-muted); margin: 0;">${currentLanguage === 'ar' ? 'المبلغ المعلق المتبقي' : 'Pending Amount'}</span>
         <h3 style="font-size: 15px; font-weight: 700; color:${totalUnpaidAmount > 0 ? 'var(--color-warning)' : 'var(--color-success)'}; margin: 0;">${formatVal(totalUnpaidAmount, true)}</h3>
         ${totalPaidAmount > 0 ? `
           <span style="font-size: 9px; color: var(--color-success); font-weight: 700; display: block; margin-top: 2px; white-space: nowrap;">
-            ${currentLanguage === 'ar' ? 'مدفوع: ' : 'Paid: '}${formatVal(totalPaidAmount, true)}
+            ${currentLanguage === 'ar' ? 'تم صرف سابقاً: ' : 'Previously paid: '}${formatVal(totalPaidAmount, true)}
           </span>
         ` : ''}
       </div>
@@ -5333,7 +5399,7 @@ async function renderPortersList() {
         ${totalUnpaidAmount > 0 ? `
           <button class="btn-secondary btn-open-porters-pay" data-day="${dayKey}" style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--color-success); background: rgba(82, 183, 136, 0.04); color: var(--color-success); box-shadow: none; margin: 0;">
             <span class="material-icons-round" style="font-size: 14px;">payments</span>
-            <span>${currentLanguage === 'ar' ? 'دفع' : 'Pay'}</span>
+            <span>${totalPaidAmount > 0 ? (currentLanguage === 'ar' ? 'دفع الباقي' : 'Pay Balance') : (currentLanguage === 'ar' ? 'دفع' : 'Pay')}</span>
           </button>
         ` : (dayPayouts.length > 0 ? `
           <div style="padding: 6px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--color-success); background: rgba(82, 183, 136, 0.08); color: var(--color-success); border-radius: 8px; font-weight: 700; margin: 0; white-space: nowrap;">
@@ -5385,7 +5451,9 @@ async function renderPortersList() {
       <!-- Collapsible Pay Form for this day -->
       <div id="pay-section-${dayKey}" style="display: none; margin-top: 12px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
         <h4 style="font-size: 12px; font-weight: 700; color: var(--color-primary); margin-bottom: 8px;">
-          ${currentLanguage === 'ar' ? 'صرف وتوزيع مستحقات اليوم' : 'Distribute and Payout Day Dues'}
+          ${totalPaidAmount > 0
+            ? (currentLanguage === 'ar' ? 'صرف وتوزيع باقي مستحقات اليوم المتبقية' : 'Distribute and Payout Remaining Day Dues')
+            : (currentLanguage === 'ar' ? 'صرف وتوزيع مستحقات اليوم' : 'Distribute and Payout Day Dues')}
         </h4>
         <div class="form-group" style="margin-bottom: 8px;">
           <label style="font-size: 10.5px; font-weight: 700; color: var(--color-primary); display: block; margin-bottom: 2px;">
@@ -5395,7 +5463,11 @@ async function renderPortersList() {
         </div>
 
         <div style="background: rgba(0, 150, 199, 0.04); border: 1px solid rgba(0, 150, 199, 0.1); border-radius: 6px; padding: 8px; text-align: center; margin-bottom: 10px;">
-          <span style="font-size: 10px; color: var(--color-text-muted); display: block;">${currentLanguage === 'ar' ? 'حصة كل حمال (مبلغ اليوم مقسماً بالتساوي):' : 'Share of each porter (day amount divided equally):'}</span>
+          <span style="font-size: 10px; color: var(--color-text-muted); display: block;">
+            ${totalPaidAmount > 0
+              ? (currentLanguage === 'ar' ? 'حصة كل حمال من المبلغ المعلق المتبقي:' : 'Share of each porter from remaining pending amount:')
+              : (currentLanguage === 'ar' ? 'حصة كل حمال (مبلغ اليوم مقسماً بالتساوي):' : 'Share of each porter (day amount divided equally):')}
+          </span>
           <h3 id="porter-individual-share-lbl-${dayKey}" style="font-size: 16px; font-weight: 800; color: var(--color-primary); margin-top: 2px;">${formatVal(totalUnpaidAmount, true)}</h3>
         </div>
 
@@ -5474,8 +5546,12 @@ async function renderPortersList() {
         const share = Math.round(totalUnpaidAmount / count);
         const confirmTitle = currentLanguage === 'ar' ? 'تأكيد دفع مستحقات الحمالين' : 'Confirm Porter Payout';
         const confirmMessage = currentLanguage === 'ar' ? 
-          `هل أنت متأكد من دفع مبلغ ${formatVal(totalUnpaidAmount, true)} دينار عراقي لليوم (${dayLabel})؟\nسيتم توزيعها على ${count} حمالين، بمعدل ${formatVal(share, true)} لكل حمال، وسيتم خصم المبلغ من الخزينة.` :
-          `Are you sure you want to payout ${formatVal(totalUnpaidAmount, true)} IQD for (${dayLabel})?\nIt will be distributed to ${count} porters (${formatVal(share, true)} each), and deducted from the safe box.`;
+          (totalPaidAmount > 0
+            ? `هل أنت متأكد من دفع دفعة إضافية بمبلغ ${formatVal(totalUnpaidAmount, true)} دينار عراقي لليوم (${dayLabel})؟\nسيتم توزيعها على ${count} حمالين، بمعدل ${formatVal(share, true)} لكل حمال، وسيتم خصم المبلغ من الخزينة.`
+            : `هل أنت متأكد من دفع مبلغ ${formatVal(totalUnpaidAmount, true)} دينار عراقي لليوم (${dayLabel})؟\nسيتم توزيعها على ${count} حمالين، بمعدل ${formatVal(share, true)} لكل حمال، وسيتم خصم المبلغ من الخزينة.`) :
+          (totalPaidAmount > 0
+            ? `Are you sure you want to payout an additional ${formatVal(totalUnpaidAmount, true)} IQD for (${dayLabel})?\nIt will be distributed to ${count} porters (${formatVal(share, true)} each), and deducted from the safe box.`
+            : `Are you sure you want to payout ${formatVal(totalUnpaidAmount, true)} IQD for (${dayLabel})?\nIt will be distributed to ${count} porters (${formatVal(share, true)} each), and deducted from the safe box.`);
         
         const isConfirmed = await showCustomConfirm(confirmTitle, confirmMessage);
         if (!isConfirmed) return;
@@ -5492,11 +5568,15 @@ async function renderPortersList() {
 
         tx.oncomplete = async () => {
           invalidateDbCache('porter_payouts');
-          logAppEvent(
-            `صرف وتوزيع أجور الحمالين لليوم ${dayLabel} لعدد ${count} حمالين`,
-            `Paid and distributed porters dues for ${dayLabel} to ${count} porters`,
-            totalUnpaidAmount
-          );
+          
+          const logMsgAr = totalPaidAmount > 0
+            ? `صرف دفعة إضافية من أجور الحمالين لليوم ${dayLabel} لعدد ${count} حمالين`
+            : `صرف وتوزيع أجور الحمالين لليوم ${dayLabel} لعدد ${count} حمالين`;
+          const logMsgEn = totalPaidAmount > 0
+            ? `Paid additional porters dues for ${dayLabel} to ${count} porters`
+            : `Paid and distributed porters dues for ${dayLabel} to ${count} porters`;
+          
+          logAppEvent(logMsgAr, logMsgEn, totalUnpaidAmount);
           playSound('success');
           showToast(currentLanguage === 'ar' ? 'تم صرف وتوزيع أجور الحمالين والخصم تلقائياً من الخزنة بنجاح!' : 'Porters dues successfully distributed and deducted from safe box!', 'check_circle');
           await refreshAllUI();
@@ -10197,8 +10277,8 @@ async function exportFullYearToExcel() {
           'الوحدة المستخدمة': cropUnit,
           'سعر البيع المتفق عليه (ج.م)': it.agreed_price || 0,
           'عمولة الوكالة (ج.م)': it.commission_amount || 0,
-          'أجرة العتالة (الشيالين) المستقطعة': it.porter_fee || 0,
-          'صافي مستحق الفلاح من هذا البيع': (it.agreed_price || 0) - (it.commission_amount || 0) - (it.porter_fee || 0),
+          'أجرة العتالة (الشيالين)': it.porter_fee || 0,
+          'صافي مستحق الفلاح من هذا البيع': (it.agreed_price || 0) - (it.commission_amount || 0),
           'رقم فاتورة الاستيراد المصدرية': it.import_invoice_id || ''
         };
       } else {
@@ -10212,8 +10292,8 @@ async function exportFullYearToExcel() {
           'Unit': cropUnit,
           'Agreed Sale Price (EGP)': it.agreed_price || 0,
           'Commission Amount': it.commission_amount || 0,
-          'Porter Fee Deducted': it.porter_fee || 0,
-          'Net Due to Farmer': (it.agreed_price || 0) - (it.commission_amount || 0) - (it.porter_fee || 0),
+          'Porter Fee': it.porter_fee || 0,
+          'Net Due to Farmer': (it.agreed_price || 0) - (it.commission_amount || 0),
           'Source Import Invoice ID': it.import_invoice_id || ''
         };
       }
@@ -12434,6 +12514,27 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 window.addEventListener('focus', reapplyFullscreen, false);
+
+// Dismiss soft keyboard when pressing Enter on input fields
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.keyCode === 13) {
+    const target = e.target;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+      if (target.tagName !== 'TEXTAREA' || !e.shiftKey) {
+        target.blur();
+      }
+    }
+  }
+});
+
+// Set enterkeyhint="done" on inputs when focused to hint mobile keyboards
+document.addEventListener('focusin', (e) => {
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+    if (!e.target.hasAttribute('enterkeyhint')) {
+      e.target.setAttribute('enterkeyhint', 'done');
+    }
+  }
+});
 
 window.addEventListener('DOMContentLoaded', () => {
   applyAnimationsPreference();

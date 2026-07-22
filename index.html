@@ -820,7 +820,7 @@
                   <label id="lbl-farmer-name">اسم الفلاح</label>
                   <div style="position: relative;">
                     <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
-                    <input type="text" class="form-input" id="import-farmer-name" placeholder="أدخل اسم الفلاح..." autocomplete="off" style="padding-right: 42px;">
+                    <input type="text" class="form-input" id="import-farmer-name" placeholder="اسم الفلاح (أدخل الاسم أو اختر من القائمة)..." autocomplete="off" style="padding-right: 42px;">
                     <div class="autocomplete-dropdown" id="farmer-autocomplete"></div>
                   </div>
                 </div>
@@ -829,7 +829,7 @@
                   <label id="lbl-vehicle-type">نوع السيارة</label>
                   <div style="position: relative;">
                     <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">local_shipping</span>
-                    <input type="text" class="form-input" id="import-vehicle-type" placeholder="مثال: كيا حمل 4 طن..." style="padding-right: 42px;">
+                    <input type="text" class="form-input" id="import-vehicle-type" placeholder="نوع السيارة (مثال: كيا حمل 4 طن)..." style="padding-right: 42px;">
                   </div>
                 </div>
 
@@ -837,7 +837,7 @@
                   <label id="lbl-import-notes">ملاحظات الفاتورة</label>
                   <div style="position: relative;">
                     <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">notes</span>
-                    <input type="text" class="form-input" id="import-notes" placeholder="أدخل أي ملاحظات إضافية هنا (اختياري)..." style="padding-right: 42px;">
+                    <input type="text" class="form-input" id="import-notes" placeholder="ملاحظات الفاتورة (اختياري)..." style="padding-right: 42px;">
                   </div>
                 </div>
               </div>
@@ -952,42 +952,6 @@
           <div class="sheet-desktop-split-wrapper">
             <!-- Column 1: Main Customer Info & Crops List -->
             <div class="sheet-desktop-main-col">
-              <div class="sheet-form-header-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px;">
-                <div class="form-group" style="margin: 0;">
-                  <label id="lbl-customer-name" style="display: flex; align-items: center; gap: 6px;">
-                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
-                    <span>اسم الزبون (صاحب المحل)</span>
-                  </label>
-                  <div style="position: relative;">
-                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
-                    <input type="text" class="form-input" id="sale-customer-name" placeholder="أدخل اسم الزبون..." autocomplete="off" style="padding-right: 42px;">
-                    <div class="autocomplete-dropdown" id="customer-autocomplete"></div>
-                  </div>
-                </div>
-
-                <div class="form-group" style="margin: 0;">
-                  <label id="lbl-customer-phone" style="display: flex; align-items: center; gap: 6px;">
-                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">phone</span>
-                    <span>رقم الهاتف (اختياري)</span>
-                  </label>
-                  <div style="position: relative;">
-                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">phone</span>
-                    <input type="text" class="form-input" id="sale-customer-phone" placeholder="رقم الهاتف..." style="padding-right: 42px;">
-                  </div>
-                </div>
-
-                <div class="form-group" style="margin: 0;">
-                  <label id="lbl-customer-address" style="display: flex; align-items: center; gap: 6px;">
-                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">location_on</span>
-                    <span>العنوان (اختياري)</span>
-                  </label>
-                  <div style="position: relative;">
-                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">location_on</span>
-                    <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون..." style="padding-right: 42px;">
-                  </div>
-                </div>
-              </div>
-
               <!-- Crops for Sale -->
               <div style="display: flex; flex-direction: column; gap: 10px;" id="sale-items-container">
                 <!-- Dynamic Items added here -->
@@ -1007,7 +971,7 @@
                   </label>
                   <div style="position: relative;">
                     <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">shopping_bag</span>
-                    <input type="number" class="form-input" id="sale-bags-cost" placeholder="أدخل التكلفة الكلية للدواخل..." value="0" style="padding-right: 42px;">
+                    <input type="number" class="form-input" id="sale-bags-cost" placeholder="تكلفة الأكياس والكراتين (دواخل اختياري)..." value="0" style="padding-right: 42px;">
                   </div>
                 </div>
 
@@ -1018,7 +982,7 @@
                   </label>
                   <div style="position: relative;">
                     <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">notes</span>
-                    <input type="text" class="form-input" id="sale-notes" placeholder="أدخل أي ملاحظات إضافية هنا (اختياري)..." style="padding-right: 42px;">
+                    <input type="text" class="form-input" id="sale-notes" placeholder="ملاحظات الفاتورة (اختياري)..." style="padding-right: 42px;">
                   </div>
                 </div>
 
@@ -1040,6 +1004,43 @@
                   </div>
                   <div id="custom-debt-days-input-group" style="display: none; margin-top: 8px;">
                     <input type="number" class="form-input" id="custom-debt-days-input" placeholder="أدخل عدد الأيام..." min="1" step="1">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Customer Info moved to the bottom -->
+              <div class="sheet-form-header-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 24px;">
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-customer-name" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
+                    <span>اسم الزبون (صاحب المحل)</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">person</span>
+                    <input type="text" class="form-input" id="sale-customer-name" placeholder="اسم الزبون (صاحب المحل)..." autocomplete="off" style="padding-right: 42px;">
+                    <div class="autocomplete-dropdown" id="customer-autocomplete"></div>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-customer-phone" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">phone</span>
+                    <span>رقم الهاتف (اختياري)</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">phone</span>
+                    <input type="text" class="form-input" id="sale-customer-phone" placeholder="رقم الهاتف (اختياري)..." style="padding-right: 42px;">
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-customer-address" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">location_on</span>
+                    <span>العنوان (اختياري)</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">location_on</span>
+                    <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون (اختياري)..." style="padding-right: 42px;">
                   </div>
                 </div>
               </div>
