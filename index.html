@@ -32,15 +32,7 @@
   <div id="welcome-splash" class="welcome-splash-overlay">
     <div class="splash-content">
       <div class="splash-logo-container" style="background: white; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 15px; display: flex; align-items: center; justify-content: center; width: 150px; height: 150px; margin: 0 auto 20px auto; position: relative; overflow: visible;">
-        <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="42" stroke="#2D6A4F" stroke-width="6" stroke-dasharray="6 3"/>
-          <path d="M50 85 V25" stroke="#2D6A4F" stroke-width="4" stroke-linecap="round"/>
-          <path d="M50 65 Q35 55 30 40 Q45 45 50 65" fill="#40916C"/>
-          <path d="M50 55 Q65 45 70 30 Q55 35 50 55" fill="#74C69D"/>
-          <rect x="32" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
-          <rect x="53" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
-          <circle cx="50" cy="22" r="7" fill="#FFB703"/>
-        </svg>
+        <img src="logo.svg" alt="App Logo" width="120" height="120" style="object-fit: contain;">
         <div class="splash-logo-glow"></div>
       </div>
       <h2 id="splash-welcome-title" class="splash-title">أهلاً بك</h2>
@@ -91,23 +83,11 @@
     <header class="app-header">
       <div class="app-logo-section">
         <div class="app-logo-circle" style="background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); padding: 4px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
-          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="42" stroke="#2D6A4F" stroke-width="6" stroke-dasharray="6 3"/>
-            <path d="M50 85 V25" stroke="#2D6A4F" stroke-width="4" stroke-linecap="round"/>
-            <path d="M50 65 Q35 55 30 40 Q45 45 50 65" fill="#40916C"/>
-            <path d="M50 55 Q65 45 70 30 Q55 35 50 55" fill="#74C69D"/>
-            <rect x="32" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
-            <rect x="53" y="65" width="15" height="10" rx="2" fill="#D8F3DC" stroke="#2D6A4F" stroke-width="2"/>
-            <circle cx="50" cy="22" r="7" fill="#FFB703"/>
-          </svg>
+          <img src="logo.svg" alt="App Logo" width="36" height="36" style="object-fit: contain;">
         </div>
         <div class="app-title-group">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <h1 id="txt-app-title">محاسب العلوة</h1>
-            <div class="system-status-badge">
-              <span class="status-dot"></span>
-              <span id="lbl-system-status">نشط ومؤمن</span>
-            </div>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <h1 id="txt-app-title" style="margin: 0;">محاسب العلوة</h1>
           </div>
           <p id="txt-app-subtitle">نظام ادارة العلوة الذكي</p>
         </div>
@@ -115,6 +95,14 @@
 
       <!-- 📱🔋 Header Devices & Connection Monitor (مراقبة حالة الأجهزة والاتصال الفعلي) -->
       <div class="header-devices-panel" style="direction: rtl;">
+        <!-- Brightness Widget (Styled exactly like tablet-battery-chip) -->
+        <div class="device-status-chip brightness-control-widget" id="brightness-chip" title="إضاءة الشاشة" style="display: flex; align-items: center; gap: 8px; user-select: none;">
+          <span class="material-icons-round device-icon" style="color: #F59E0B; font-size: 18px;">light_mode</span>
+          <span class="device-value" style="font-size: 12px; font-weight: 800; color: var(--color-primary-dark); margin-left: 2px;">إضاءة الشاشة:</span>
+          <button id="btn-brightness-dec" style="background: white; border: 1px solid rgba(45, 106, 79, 0.25); width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: all 0.2s; color: var(--color-primary-dark); font-size: 14px; line-height: 1; padding: 0; outline: none;" onmouseover="this.style.background='rgba(45, 106, 79, 0.08)'" onmouseout="this.style.background='white'">-</button>
+          <span id="lbl-brightness-val" class="device-value" style="min-width: 36px; text-align: center; font-size: 12.5px; font-weight: 800; color: var(--color-primary-dark);">100%</span>
+          <button id="btn-brightness-inc" style="background: white; border: 1px solid rgba(45, 106, 79, 0.25); width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: all 0.2s; color: var(--color-primary-dark); font-size: 14px; line-height: 1; padding: 0; outline: none;" onmouseover="this.style.background='rgba(45, 106, 79, 0.08)'" onmouseout="this.style.background='white'">+</button>
+        </div>
         <!-- Tablet Battery Status (Visible only if supported by browser) -->
         <div class="device-status-chip" id="tablet-battery-chip" title="حالة بطارية التابلت" style="display: none;">
           <span class="material-icons-round device-icon">tablet_android</span>
@@ -255,9 +243,18 @@
     <main id="screen-accounts" class="screen-content animate">
       <!-- Segmented Control for Subtabs -->
       <div class="segmented-control">
-        <button class="segmented-control-btn active" id="subtab-debts">ديون الزبائن</button>
-        <button class="segmented-control-btn" id="subtab-dues">مستحقات الفلاحين</button>
-        <button class="segmented-control-btn" id="subtab-porters">مستحقات الحمالين</button>
+        <button class="segmented-control-btn active" id="subtab-debts">
+          <span class="material-icons-round">people_alt</span>
+          <span id="tab-debts-btn">ديون الزبائن</span>
+        </button>
+        <button class="segmented-control-btn" id="subtab-dues">
+          <span class="material-icons-round">agriculture</span>
+          <span id="tab-dues-btn">مستحقات الفلاحين</span>
+        </button>
+        <button class="segmented-control-btn" id="subtab-porters">
+          <span class="material-icons-round">engineering</span>
+          <span id="tab-porters-btn">مستحقات الحمالين</span>
+        </button>
       </div>
 
       <!-- 1. Customer Debts Section -->
@@ -1291,7 +1288,7 @@
 
         <div class="form-group">
           <label id="lbl-pay-amount">مبلغ السداد</label>
-          <input type="number" class="form-input" id="pay-amount" placeholder="أدخل المبلغ المسدد...">
+          <input type="number" class="form-input" id="pay-amount" placeholder="ادخل المبلغ المسدد">
         </div>
 
         <button class="btn-primary" id="btn-submit-payment" style="background: var(--color-info); box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);">تسجيل الدفعة وتصفية الدين</button>
@@ -1428,6 +1425,30 @@
         </div>
         
         <button class="btn-primary" id="btn-submit-porter-payout" style="background: var(--color-success); margin-top: 20px; width: 100%; font-size: 13px; font-weight: 700;">تأكيد الصرف وخصم الخزنة فوراً</button>
+      </div>
+    </div>
+
+    <!-- Porter Dues Details Sheet -->
+    <div id="sheet-porter-details" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-porter-details-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary);">تفاصيل حمالة اليوم</h3>
+        <button class="icon-btn" id="btn-close-porter-details-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" id="porter-details-body" style="gap: 16px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
+    <!-- Farmer Dues Items Sheet -->
+    <div id="sheet-farmer-dues-items" class="bottom-sheet">
+      <div class="bottom-sheet-drag-handle"></div>
+      <div class="bottom-sheet-header">
+        <h3 id="txt-farmer-dues-items-title" style="font-size: 16px; font-weight: 700; color: var(--color-primary);">تفاصيل مستحقات الفلاح</h3>
+        <button class="icon-btn" id="btn-close-farmer-dues-items-sheet"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="bottom-sheet-body" id="farmer-dues-items-body" style="gap: 16px; max-height: 70vh; overflow-y: auto; padding: 12px 16px 24px 16px; display: flex; flex-direction: column;">
+        <!-- Filled dynamically -->
       </div>
     </div>
 
@@ -1643,6 +1664,78 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <!-- QRious for offline QR code generation in printable thermal invoices -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  
+  <!-- Screen Brightness Control Logic -->
+  <script>
+    (function() {
+      const saved = localStorage.getItem('app-screen-brightness');
+      const brightness = saved ? parseInt(saved, 10) : 100;
+      
+      function formatDigits(num) {
+        const savedSystem = localStorage.getItem('alwa_numeral_system') || 'en';
+        if (savedSystem === 'ar') {
+          const arNums = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+          return String(num).split('').map(function(d) { return arNums[parseInt(d, 10)] || d; }).join('') + '٪';
+        }
+        return num + '%';
+      }
+      
+      window.applyAppBrightness = function(val) {
+        const label = document.getElementById('lbl-brightness-val');
+        
+        // 1. Hardware screen brightness plugin for tablet (Cordova/Capacitor)
+        const brightnessValue = Math.max(val / 100, 0.1); // float between 0.1 and 1.0
+        const nativeBrightness = window.brightness || (window.cordova && window.cordova.plugins && window.cordova.plugins.brightness);
+        
+        if (nativeBrightness && typeof nativeBrightness.setBrightness === 'function') {
+          nativeBrightness.setBrightness(brightnessValue, function() {
+            console.log("System brightness set to: " + val + "%");
+          }, function(err) {
+            console.error("Failed to set native system brightness", err);
+          });
+        }
+        
+        // Ensure absolutely no simulation layer or CSS filter is applied on the app UI
+        document.documentElement.style.filter = '';
+        
+        if (label) {
+          label.textContent = formatDigits(val);
+        }
+      };
+      
+      // Run once immediately
+      window.applyAppBrightness(brightness);
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        window.applyAppBrightness(brightness);
+        
+        const decBtn = document.getElementById('btn-brightness-dec');
+        const incBtn = document.getElementById('btn-brightness-inc');
+        let current = brightness;
+        
+        if (decBtn && incBtn) {
+          decBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (current > 10) {
+              current -= 10;
+              localStorage.setItem('app-screen-brightness', current);
+              window.applyAppBrightness(current);
+            }
+          });
+          
+          incBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (current < 100) {
+              current += 10;
+              localStorage.setItem('app-screen-brightness', current);
+              window.applyAppBrightness(current);
+            }
+          });
+        }
+      });
+    })();
+  </script>
+
   <!-- Application Main Script -->
   <script type="module" src="app.js"></script>
 </body>
