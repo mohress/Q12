@@ -112,12 +112,32 @@
           <p id="txt-app-subtitle">نظام ادارة العلوة الذكي</p>
         </div>
       </div>
+
+      <!-- 📱🔋 Header Devices & Connection Monitor (مراقبة حالة الأجهزة والاتصال الفعلي) -->
+      <div class="header-devices-panel" style="direction: rtl;">
+        <!-- Tablet Battery Status (Visible only if supported by browser) -->
+        <div class="device-status-chip" id="tablet-battery-chip" title="حالة بطارية التابلت" style="display: none;">
+          <span class="material-icons-round device-icon">tablet_android</span>
+          <span class="material-icons-round battery-icon" id="tablet-battery-icon">battery_std</span>
+          <span class="device-value" id="tablet-battery-level">التابلت: --%</span>
+        </div>
+        <!-- Thermal Printer Status (Real connection state) -->
+        <div class="device-status-chip offline" id="printer-battery-chip" title="حالة اتصال طابعة الفواتير رقم ٢ بالبلوتوث">
+          <span class="material-icons-round device-icon">print</span>
+          <span class="material-icons-round battery-icon" id="printer-battery-icon">radio_button_unchecked</span>
+          <span class="device-value" id="printer-battery-level">طابعة الفواتير: غير متصلة</span>
+        </div>
+      </div>
+
       <div class="app-header-actions" style="display: flex; align-items: center; gap: 12px;">
         <!-- Notification Bell Icon Button with Badge -->
-        <button id="btn-notifications" class="notification-bell-btn" title="مطالبات الديون">
-          <span class="material-icons-round">notifications</span>
-          <span id="notifications-badge" class="notification-badge" style="display: none;">0</span>
-        </button>
+        <div style="display: flex; align-items: center; gap: 8px; direction: rtl;">
+          <span style="font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; color: var(--color-primary-dark); white-space: nowrap;">تنبيهات الديون</span>
+          <button id="btn-notifications" class="notification-bell-btn" title="مطالبات الديون">
+            <span class="material-icons-round">notifications</span>
+            <span id="notifications-badge" class="notification-badge" style="display: none;">0</span>
+          </button>
+        </div>
         <!-- Redesigned premium date badge -->
         <div class="premium-date-badge">
           <div class="date-icon-wrapper">

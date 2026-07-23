@@ -1453,6 +1453,7 @@ async function refreshAllUI() {
 async function checkDueClaims() {
   const badge = document.getElementById('notifications-badge');
   const bell = document.getElementById('btn-notifications');
+  const wrapper = document.getElementById('wrapper-notifications');
   if (!badge || !bell) return;
   
   const debts = await dbGetAll('debts');
@@ -1464,9 +1465,11 @@ async function checkDueClaims() {
     badge.textContent = formatVal(count);
     badge.style.display = 'flex';
     bell.classList.add('ring');
+    if (wrapper) wrapper.classList.add('active');
   } else {
     badge.style.display = 'none';
     bell.classList.remove('ring');
+    if (wrapper) wrapper.classList.remove('active');
   }
 }
 
@@ -2849,6 +2852,24 @@ async function addSaleCropRow() {
       </div>
       <span class="sale-row-porter-total-label" style="font-size:11px; font-weight:600; color:var(--color-primary-mid); display:block; margin-top:4px;"></span>
     </div>
+
+    <div class="form-group sale-box-commission-container" style="margin-top: 8px; display: none;">
+      <label class="sale-box-commission-label">
+        <span>${currentLanguage === 'ar' ? 'العمولة لكل كارتون' : 'Commission per Box'}</span>
+      </label>
+      <div class="box-commission-options-row" style="display: flex; gap: 8px; margin-top: 4px; margin-bottom: 8px; flex-wrap: wrap;">
+        <button type="button" class="box-commission-opt-btn" data-value="0" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">0</button>
+        <button type="button" class="box-commission-opt-btn" data-value="100" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">100</button>
+        <button type="button" class="box-commission-opt-btn" data-value="200" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">200</button>
+        <button type="button" class="box-commission-opt-btn active" data-value="250" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--color-primary); background: var(--color-primary); color: white; cursor: pointer; text-align: center; transition: all 0.2s;">250</button>
+        <button type="button" class="box-commission-opt-btn btn-custom-box-commission-trigger" data-value="custom" style="flex: 1; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; border: 1.5px solid rgba(27,67,50,0.25); background: white; color: var(--color-primary); cursor: pointer; text-align: center; transition: all 0.2s;">${currentLanguage === 'ar' ? 'مخصص' : 'Custom'}</button>
+      </div>
+      <div class="sale-box-commission-wrapper" style="position: relative; display: none;">
+        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">payments</span>
+        <input type="number" class="form-input sale-box-commission-rate" value="250" style="display: none; text-align: center; font-weight: 600; padding-right: 42px;" placeholder="${currentLanguage === 'ar' ? 'أدخل عمولة مخصصة...' : 'Enter custom rate...'}">
+      </div>
+      <span class="sale-row-box-commission-total-label" style="font-size:11px; font-weight:600; color:var(--color-primary-mid); display:block; margin-top:4px;"></span>
+    </div>
   `;
 
   const cargoSelect = row.querySelector('.sale-cargo-select');
@@ -2858,6 +2879,7 @@ async function addSaleCropRow() {
   const remainingLabel = row.querySelector('.sale-row-remaining-label');
   const boxContainer = row.querySelector('.sale-box-count-container');
   const porterRateContainer = row.querySelector('.sale-porter-rate-container');
+  const boxCommissionContainer = row.querySelector('.sale-box-commission-container');
 
   // Populate cargo select dynamically from active imports cache
   // Filter out fully sold items
@@ -2980,6 +3002,12 @@ async function addSaleCropRow() {
       porterRateContainer.style.display = 'block';
     }
 
+    if (isCount) {
+      boxCommissionContainer.style.display = 'block';
+    } else {
+      boxCommissionContainer.style.display = 'none';
+    }
+
     updateSaleInvoiceOverallTotal();
   });
 
@@ -3020,10 +3048,48 @@ async function addSaleCropRow() {
     });
   });
 
+  const commissionBtns = row.querySelectorAll('.box-commission-opt-btn');
+  const commissionRateInput = row.querySelector('.sale-box-commission-rate');
+
+  commissionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Deactivate all
+      commissionBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'white';
+        b.style.color = 'var(--color-primary)';
+        b.style.borderColor = 'rgba(27,67,50,0.25)';
+        b.style.fontWeight = '600';
+      });
+
+      // Activate clicked
+      btn.classList.add('active');
+      btn.style.background = 'var(--color-primary)';
+      btn.style.color = 'white';
+      btn.style.borderColor = 'var(--color-primary)';
+      btn.style.fontWeight = '700';
+
+      const val = btn.dataset.value;
+      const rateWrapper = row.querySelector('.sale-box-commission-wrapper');
+      if (val === 'custom') {
+        if (rateWrapper) rateWrapper.style.display = 'block';
+        commissionRateInput.style.display = 'block';
+        commissionRateInput.value = '';
+        commissionRateInput.focus();
+      } else {
+        if (rateWrapper) rateWrapper.style.display = 'none';
+        commissionRateInput.style.display = 'none';
+        commissionRateInput.value = val;
+      }
+      updateSaleInvoiceOverallTotal();
+    });
+  });
+
   weightInput.addEventListener('input', updateSaleInvoiceOverallTotal);
   boxInput.addEventListener('input', updateSaleInvoiceOverallTotal);
   priceInput.addEventListener('input', updateSaleInvoiceOverallTotal);
   porterRateInput.addEventListener('input', updateSaleInvoiceOverallTotal);
+  commissionRateInput.addEventListener('input', updateSaleInvoiceOverallTotal);
 
   row.querySelector('.delete-row-btn').addEventListener('click', () => {
     row.remove();
@@ -3120,8 +3186,19 @@ function updateSaleInvoiceOverallTotal() {
     const price = isCount ? (boxCount * unitPrice) : (weight * unitPrice);
     subtotal += price;
     
-    // Alwa 7% commission
-    totalCommissions += Math.round(price * 0.07);
+    // Alwa 7% commission, unless count-based and box-commission-rate is used
+    let rowCommission = 0;
+    if (isCount) {
+      const commissionRate = parseNumberInput(row.querySelector('.sale-box-commission-rate').value) || 0;
+      rowCommission = boxCount * commissionRate;
+      row.querySelector('.sale-row-box-commission-total-label').textContent = 
+        currentLanguage === 'ar' ? `عمولة الصنف: ${formatVal(rowCommission)} دينار` : `Item commission: ${formatVal(rowCommission)} IQD`;
+    } else {
+      rowCommission = Math.round(price * 0.07);
+      const label = row.querySelector('.sale-row-box-commission-total-label');
+      if (label) label.textContent = '';
+    }
+    totalCommissions += rowCommission;
     
     // Carrying cost (الحمالية): 
     let rowPorterFee = 0;
@@ -3301,6 +3378,9 @@ async function submitSaleInvoice() {
     const porterRate = isSpecial ? 0 : (parseNumberInput(row.querySelector('.sale-porter-rate').value) || 0);
     const rowPorterFee = isSpecial ? 0 : (boxCount * porterRate);
 
+    const commissionRate = isCount ? (parseNumberInput(row.querySelector('.sale-box-commission-rate').value) || 0) : 0;
+    const commissionAmount = isCount ? (boxCount * commissionRate) : Math.round(totalPrice * 0.07);
+
     saleItemsToSave.push({
       import_invoice_id: importInvoiceId,
       crop_type: cropType,
@@ -3308,7 +3388,7 @@ async function submitSaleInvoice() {
       box_count: boxCount,
       agreed_price: totalPrice,
       unit: isCount ? 'count' : (impItem.unit || 'kg'),
-      commission_amount: Math.round(totalPrice * 0.07), // 7% company fee
+      commission_amount: commissionAmount,
       porter_fee: rowPorterFee,
       unit_price: unitPrice
     });
@@ -7338,6 +7418,7 @@ const mockPrinters = [
 
 let activeWebBluetoothDevice = null;
 let activeWebBluetoothCharacteristic = null;
+let printerBatteryPercent = null;
 
 function requestAndroidBluetoothPermissions(successCallback, failureCallback) {
   if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.permissions) {
@@ -7560,6 +7641,47 @@ function renderPrinterDevicesList() {
   }
 }
 
+async function subscribeToPrinterBatteryNotifications(device) {
+  if (!device || !device.gatt || !device.gatt.connected) return;
+  try {
+    const server = device.gatt;
+    const service = await server.getPrimaryService('0000180f-0000-1000-8000-00805f9b34fb');
+    const characteristic = await service.getCharacteristic('00002a19-0000-1000-8000-00805f9b34fb');
+    
+    // Read initial value
+    const initialVal = await characteristic.readValue();
+    printerBatteryPercent = initialVal.getUint8(0);
+    console.log(`[Printer Battery] Initial battery read: ${printerBatteryPercent}%`);
+
+    // Listen to changes
+    await characteristic.startNotifications();
+    characteristic.addEventListener('characteristicvaluechanged', (event) => {
+      const val = event.target.value;
+      printerBatteryPercent = val.getUint8(0);
+      console.log(`[Printer Battery] Battery changed notification: ${printerBatteryPercent}%`);
+    });
+  } catch (err) {
+    console.log('[Printer Battery] Notifications or battery service not supported on this device:', err);
+    printerBatteryPercent = null;
+  }
+}
+
+async function queryPrinterBatteryWebBluetooth() {
+  if (!isPrinterConnected || !activeWebBluetoothDevice || !activeWebBluetoothDevice.gatt || !activeWebBluetoothDevice.gatt.connected) {
+    printerBatteryPercent = null;
+    return;
+  }
+  try {
+    const server = activeWebBluetoothDevice.gatt;
+    const service = await server.getPrimaryService('0000180f-0000-1000-8000-00805f9b34fb');
+    const characteristic = await service.getCharacteristic('00002a19-0000-1000-8000-00805f9b34fb');
+    const value = await characteristic.readValue();
+    printerBatteryPercent = value.getUint8(0);
+  } catch (err) {
+    // Silent fail if not supported
+  }
+}
+
 async function triggerWebBluetoothPairing() {
   const statusText = document.getElementById('printer-status-text');
   const statusDot = document.getElementById('printer-status-dot');
@@ -7581,7 +7703,8 @@ async function triggerWebBluetoothPairing() {
         '000018f3-0000-1000-8000-00805f9b34fb',
         '0000fee7-0000-1000-8000-00805f9b34fb',
         '00004953-5441-5254-4543-484c49544530',
-        'e7810a71-73ae-499d-8c15-faa9ae0c2c61'
+        'e7810a71-73ae-499d-8c15-faa9ae0c2c61',
+        '0000180f-0000-1000-8000-00805f9b34fb' // Standard Battery Service UUID
       ]
     });
 
@@ -7616,6 +7739,9 @@ async function triggerWebBluetoothPairing() {
     bleConnectedDeviceId = device.id;
     isCordovaSerialActive = false;
     connectedDeviceAddress = device.id;
+
+    // Subscribe to printer battery levels/notifications if available
+    subscribeToPrinterBatteryNotifications(device);
 
     // Cache the printer settings for future background auto-connections
     localStorage.setItem('alwa_printer_address', device.id);
@@ -7986,6 +8112,10 @@ function initAutoConnect() {
             activeWebBluetoothDevice = device;
             activeWebBluetoothCharacteristic = writableChar;
             isAutoConnecting = false;
+            
+            // Subscribe to printer battery levels/notifications if available
+            subscribeToPrinterBatteryNotifications(device);
+
             establishAutoConnectSuccess(savedName, savedAddress, savedType);
             return;
           }
@@ -11731,6 +11861,9 @@ async function startApp() {
     // 23. Initialize custom virtual numeric keypad for precise number inputs
     initCustomKeypad();
 
+    // 24. Initialize Header Devices and Battery Monitor (Tablet & Thermal Printer #2)
+    initDevicesBatteryMonitor();
+
   } catch (err) {
     console.error('Fatal initialization error:', err);
     
@@ -11746,6 +11879,102 @@ async function startApp() {
     
     showToast(currentLanguage === 'ar' ? 'حدث خطأ أثناء بدء تشغيل النظام، تم التحميل الاحتياطي' : 'Error starting the system, loaded with safety backup', 'warning', true);
   }
+}
+
+// 🔋 HEADER DEVICES MONITOR (Real-time Battery and Bluetooth Connection)
+function initDevicesBatteryMonitor() {
+  function updateTabletBatteryUI(level, isCharging) {
+    const levelPercent = Math.round(level * 100);
+    const labelEl = document.getElementById('tablet-battery-level');
+    const iconEl = document.getElementById('tablet-battery-icon');
+    const chipEl = document.getElementById('tablet-battery-chip');
+    if (!labelEl || !iconEl || !chipEl) return;
+
+    // Show the chip since we got a real battery reading
+    chipEl.style.display = 'flex';
+    labelEl.textContent = `التابلت: ${levelPercent}%`;
+    
+    let iconName = 'battery_std';
+    if (isCharging) {
+      chipEl.classList.add('charging');
+      iconName = 'battery_charging_full';
+    } else {
+      chipEl.classList.remove('charging');
+      if (levelPercent >= 90) iconName = 'battery_full';
+      else if (levelPercent >= 70) iconName = 'battery_6_bar';
+      else if (levelPercent >= 50) iconName = 'battery_4_bar';
+      else if (levelPercent >= 20) iconName = 'battery_2_bar';
+      else iconName = 'battery_alert';
+    }
+    
+    iconEl.textContent = iconName;
+
+    if (levelPercent <= 20 && !isCharging) {
+      chipEl.classList.add('low-battery');
+    } else {
+      chipEl.classList.remove('low-battery');
+    }
+  }
+
+  function updateDevicesStatus() {
+    // 1. Tablet Battery (Real Browser API only, no mock/simulated fallback)
+    const tabletChip = document.getElementById('tablet-battery-chip');
+    if (navigator.getBattery) {
+      navigator.getBattery().then(function(battery) {
+        updateTabletBatteryUI(battery.level, battery.charging);
+        
+        // Listen to changes in battery status
+        battery.onlevelchange = () => updateTabletBatteryUI(battery.level, battery.charging);
+        battery.onchargingchange = () => updateTabletBatteryUI(battery.level, battery.charging);
+      }).catch(function() {
+        if (tabletChip) tabletChip.style.display = 'none';
+      });
+    } else {
+      if (tabletChip) tabletChip.style.display = 'none';
+    }
+
+    // 2. Printer Real-time Bluetooth Connection Status (Real battery reading if available)
+    const printerChip = document.getElementById('printer-battery-chip');
+    const printerIcon = document.getElementById('printer-battery-icon');
+    const printerLevel = document.getElementById('printer-battery-level');
+    
+    if (printerChip && printerIcon && printerLevel) {
+      if (isPrinterConnected) {
+        printerChip.classList.remove('offline');
+        printerChip.classList.add('connected');
+        
+        // Query the physical device's GATT Battery Service periodically if connected
+        queryPrinterBatteryWebBluetooth();
+
+        if (printerBatteryPercent !== null) {
+          printerLevel.textContent = `طابعة الفواتير: ${printerBatteryPercent}%`;
+          
+          let pIcon = 'battery_full';
+          if (printerBatteryPercent >= 90) pIcon = 'battery_full';
+          else if (printerBatteryPercent >= 70) pIcon = 'battery_6_bar';
+          else if (printerBatteryPercent >= 50) pIcon = 'battery_4_bar';
+          else if (printerBatteryPercent >= 20) pIcon = 'battery_2_bar';
+          else pIcon = 'battery_alert';
+          
+          printerIcon.textContent = pIcon;
+        } else {
+          printerLevel.textContent = `طابعة الفواتير: متصلة`;
+          printerIcon.textContent = 'radio_button_checked';
+        }
+      } else {
+        printerChip.classList.add('offline');
+        printerChip.classList.remove('connected');
+        printerLevel.textContent = `طابعة الفواتير: غير متصلة`;
+        printerIcon.textContent = 'radio_button_unchecked';
+      }
+    }
+  }
+
+  // Initial call
+  updateDevicesStatus();
+  
+  // Update state regularly to match bluetooth toggles
+  setInterval(updateDevicesStatus, 2000);
 }
 
 // Global states for custom keypad
@@ -12521,6 +12750,8 @@ document.addEventListener('keydown', (e) => {
     const target = e.target;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
       if (target.tagName !== 'TEXTAREA' || !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
         target.blur();
       }
     }
