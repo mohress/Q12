@@ -397,12 +397,60 @@ export class BLEPrinterDriver {
       // 3. Process image into ESC/POS monochrome bitmap commands in 40px bands
       const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
       const pixels = imgData.data;
+
+      // Pre-calculate grayscale values into a float buffer for error diffusion
+      const grayData = new Float32Array(canvasWidth * finalHeight);
+      for (let y = 0; y < finalHeight; y++) {
+        for (let x = 0; x < canvasWidth; x++) {
+          const idx = (y * canvasWidth + x) * 4;
+          const r = pixels[idx];
+          const g = pixels[idx + 1];
+          const b = pixels[idx + 2];
+          const a = pixels[idx + 3];
+          
+          if (a <= 128) {
+            grayData[y * canvasWidth + x] = 255; // Treat transparent as white paper
+          } else {
+            grayData[y * canvasWidth + x] = 0.299 * r + 0.587 * g + 0.114 * b;
+          }
+        }
+      }
+
+      // Floyd-Steinberg Error Diffusion Dithering Pass
+      // This allows shading, light grey backgrounds, and alternating table rows
+      // to print correctly as fine stippled dots on monochrome thermal printers.
+      for (let y = 0; y < finalHeight; y++) {
+        for (let x = 0; x < canvasWidth; x++) {
+          const idx = y * canvasWidth + x;
+          const oldVal = grayData[idx];
+          // Use 185 as threshold. Values below 185 become black (0), above become white (255)
+          const newVal = oldVal < 185 ? 0 : 255;
+          grayData[idx] = newVal;
+          
+          const err = oldVal - newVal;
+          
+          // Distribute error to 4 neighbors (Floyd-Steinberg coefficients)
+          if (x + 1 < canvasWidth) {
+            grayData[idx + 1] += err * (7 / 16);
+          }
+          if (y + 1 < finalHeight) {
+            if (x > 0) {
+              grayData[(y + 1) * canvasWidth + (x - 1)] += err * (3 / 16);
+            }
+            grayData[(y + 1) * canvasWidth + x] += err * (5 / 16);
+            if (x + 1 < canvasWidth) {
+              grayData[(y + 1) * canvasWidth + (x + 1)] += err * (1 / 16);
+            }
+          }
+        }
+      }
+
       const commands: number[] = [];
 
       // ESC @ - Initialize Printer
       commands.push(0x1B, 0x40);
 
-      const bandHeight = 40;
+      const bandHeight = 240; // Increased from 40 to 240 to drastically minimize command overhead and maximize physical motor print speed
       const totalBands = Math.ceil(finalHeight / bandHeight);
       const widthBytes = canvasWidth / 8;
 
@@ -422,18 +470,9 @@ export class BLEPrinterDriver {
               const x = xByte * 8 + bit;
               let isBlack = 0;
               if (x < canvasWidth) {
-                const idx = (y * canvasWidth + x) * 4;
-                const r = pixels[idx];
-                const g = pixels[idx + 1];
-                const b = pixels[idx + 2];
-                const a = pixels[idx + 3];
-
-                // High-contrast thresholding with transparency support
-                if (a > 128) {
-                  const grayscale = 0.299 * r + 0.587 * g + 0.114 * b;
-                  if (grayscale < 200) { // Solid black threshold
-                    isBlack = 1;
-                  }
+                const idx = y * canvasWidth + x;
+                if (grayData[idx] < 128) {
+                  isBlack = 1;
                 }
               }
               byteVal = (byteVal << 1) | isBlack;

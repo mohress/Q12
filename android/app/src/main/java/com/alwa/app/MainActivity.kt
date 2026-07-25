@@ -14,6 +14,7 @@ import android.widget.Toast
 import com.getcapacitor.BridgeActivity
 import android.content.pm.ActivityInfo
 import android.webkit.WebView
+import android.webkit.JavascriptInterface
 
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +57,17 @@ class MainActivity : BridgeActivity() {
         // Apply programmatic persistent Home Launcher if device owner is active
         try {
             setAsDefaultLauncher()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // Register custom brightness interface for tablet screen
+        try {
+            bridge?.let { b ->
+                b.webView?.let { webView ->
+                    webView.addJavascriptInterface(BrightnessInterface(this), "NativeBrightness")
+                }
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -125,6 +137,21 @@ class MainActivity : BridgeActivity() {
                 or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             )
+        }
+    }
+}
+
+class BrightnessInterface(private val activity: MainActivity) {
+    @JavascriptInterface
+    fun setBrightness(value: Float) {
+        activity.runOnUiThread {
+            try {
+                val layoutParams = activity.window.attributes
+                layoutParams.screenBrightness = value
+                activity.window.attributes = layoutParams
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
