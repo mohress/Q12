@@ -206,8 +206,35 @@ let numeralSystem = 'en'; // 'ar' for Eastern Arabic (١٢٣), 'en' for Western 
 let activeTab = 'screen-import';
 let isNavigatingViaHistory = false;
 let soundEnabled = localStorage.getItem('alwa_sound') !== 'false';
+// Function to unlock HTML5 audio elements on user interaction
+function unlockHTML5Audio() {
+  const sounds = ['sound-success', 'sound-alert', 'sound-print'];
+  sounds.forEach(id => {
+    const sound = document.getElementById(id);
+    if (sound) {
+      const playPromise = sound.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          sound.pause();
+          sound.currentTime = 0;
+        }).catch(err => {
+          console.log('Audio auto-unlock info:', err);
+        });
+      }
+    }
+  });
+  window.removeEventListener('click', unlockHTML5Audio);
+  window.removeEventListener('touchstart', unlockHTML5Audio);
+  window.removeEventListener('mousedown', unlockHTML5Audio);
+}
+
+window.addEventListener('click', unlockHTML5Audio, { passive: true });
+window.addEventListener('touchstart', unlockHTML5Audio, { passive: true });
+window.addEventListener('mousedown', unlockHTML5Audio, { passive: true });
 let importFilterStatus = 'all';
 let saleFilterStatus = 'all';
+let debtsFilterStatus = 'all';
+let duesFilterStatus = 'all';
 let importPriceEnabled = false; // Permanently disabled as per user request
 let isPrinterConnected = false;
 let printerPaperWidth = '58'; // '58' or '80'
@@ -423,10 +450,10 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "طماطة", synonymsAr: ["طماطم", "بندورة"], nameEn: "Tomato", icon: "🍅" },
   { primaryAr: "خيار", synonymsAr: [], nameEn: "Cucumber", icon: "🥒" },
   { primaryAr: "بطاطا", synonymsAr: ["بتيتة", "بطاطس", "البطاطا", "البطاطس"], nameEn: "Potato", icon: "🥔" },
-  { primaryAr: "بصل", synonymsAr: [], nameEn: "Onion", icon: "🧄" },
+  { primaryAr: "بصل", synonymsAr: [], nameEn: "Onion", icon: "🧅" },
   { primaryAr: "ثوم", synonymsAr: [], nameEn: "Garlic", icon: "🧄" },
   { primaryAr: "باذنجان", synonymsAr: ["بيتنجان"], nameEn: "Eggplant", icon: "🍆" },
-  { primaryAr: "فلفل حلو", synonymsAr: ["فلفل بارد", "فلفل", "فلفل أخضر"], nameEn: "Bell Pepper", icon: "🌶️" },
+  { primaryAr: "فلفل حلو", synonymsAr: ["فلفل بارد", "فلفل", "فلفل أخضر"], nameEn: "Bell Pepper", icon: "bell_pepper_svg" },
   { primaryAr: "فلفل حار", synonymsAr: [], nameEn: "Hot Pepper", icon: "🌶️" },
   { primaryAr: "جزر", synonymsAr: [], nameEn: "Carrot", icon: "🥕" },
   { primaryAr: "خس", synonymsAr: [], nameEn: "Lettuce", icon: "🥬" },
@@ -460,7 +487,7 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "شمندر", synonymsAr: ["شوندر", "بنجر"], nameEn: "Beetroot", icon: "🍠" },
   { primaryAr: "كوسى", synonymsAr: ["شجر", "كوسا"], nameEn: "Zucchini", icon: "🥒" },
   { primaryAr: "يقطين", synonymsAr: ["شجر أحمر", "قرع"], nameEn: "Pumpkin", icon: "🎃" },
-  { primaryAr: "فجل", synonymsAr: [], nameEn: "Radish", icon: "🧄" },
+  { primaryAr: "فجل", synonymsAr: [], nameEn: "Radish", icon: "radish_svg" },
   { primaryAr: "أفوكادو", synonymsAr: [], nameEn: "Avocado", icon: "🥑" },
   { primaryAr: "أسكي دنيا", synonymsAr: ["أكي دنيا", "يني دنيا", "دنيا"], nameEn: "Loquat", icon: "🍊" },
   { primaryAr: "كرفس", synonymsAr: [], nameEn: "Celery", icon: "🌿" },
@@ -471,7 +498,7 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "زيتون", synonymsAr: [], nameEn: "Olive", icon: "🌱" },
   { primaryAr: "نعناع", synonymsAr: [], nameEn: "Mint", icon: "🌿" },
   { primaryAr: "كراث", synonymsAr: [], nameEn: "Leek", icon: "🌱" },
-  { primaryAr: "لفت", synonymsAr: ["شلغم"], nameEn: "Turnip", icon: "🥔" },
+  { primaryAr: "شلغم", synonymsAr: ["لفت"], nameEn: "Turnip", icon: "turnip_svg" },
   { primaryAr: "توت", synonymsAr: ["توث"], nameEn: "Berry", icon: "🍇" },
   { primaryAr: "فول", synonymsAr: ["باقلاء", "باجلا", "باجلاء"], nameEn: "Broad Beans", icon: "🌱" },
   { primaryAr: "فاصوليا", synonymsAr: ["فاصولية"], nameEn: "Beans", icon: "🌱" },
@@ -487,8 +514,8 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "بروكلي", synonymsAr: [], nameEn: "Broccoli", icon: "🥦" },
   { primaryAr: "خرشوف", synonymsAr: ["أرضي شوكي"], nameEn: "Artichoke", icon: "🥦" },
   { primaryAr: "هليون", synonymsAr: [], nameEn: "Asparagus", icon: "🌱" },
-  { primaryAr: "زنجبيل", synonymsAr: [], nameEn: "Ginger", icon: "🧄" },
-  { primaryAr: "كركم", synonymsAr: [], nameEn: "Turmeric", icon: "🧄" },
+  { primaryAr: "زنجبيل", synonymsAr: [], nameEn: "Ginger", icon: "🫚" },
+  { primaryAr: "كركم", synonymsAr: [], nameEn: "Turmeric", icon: "🫚" },
   { primaryAr: "كستناء", synonymsAr: ["أبو فروة"], nameEn: "Chestnut", icon: "🌰" },
   { primaryAr: "لوز", synonymsAr: [], nameEn: "Almonds", icon: "🌰" },
   { primaryAr: "جوز", synonymsAr: [], nameEn: "Walnuts", icon: "🌰" },
@@ -569,11 +596,156 @@ function saveCustomCrop(cropName, measureType) {
 
 // Check if that specific import invoice item reaches 100% sold
 // Fetch import details
-function sanitizeCropIcon(icon) {
+function sanitizeCropIcon(icon, isHtml = true) {
   if (!icon) return '🥦';
-  // Filter out Unicode 12/13 emojis that render as missing glyph boxes/X on older Android WebViews / Amazon Silk devices
+  // Filter out Unicode 12/13/15 emojis that render as missing glyph boxes/X on older Android WebViews / Amazon Silk devices
   if (icon === '🫑') return '🌶️'; // Bell pepper -> Hot pepper
-  if (icon === '🧅') return '🧄'; // Onion -> Garlic
+
+  if (icon === 'bell_pepper_svg') {
+    if (isHtml) {
+      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Green stem on top -->
+        <path d="M256,150 C256,150 240,90 220,70 C240,80 250,110 256,150 Z" fill="#16a34a"/>
+        <path d="M256,150 C256,150 275,95 300,85 C280,100 265,120 256,150 Z" fill="#15803d"/>
+        <!-- Bell pepper lobes -->
+        <!-- Left Lobe -->
+        <path d="M190,160 C120,160 110,240 110,320 C110,400 160,440 210,440 C240,440 256,410 256,360 C256,260 230,160 190,160 Z" fill="#15803d" />
+        <!-- Right Lobe -->
+        <path d="M322,160 C392,160 402,240 402,320 C402,400 352,440 302,440 C272,440 256,410 256,360 C256,260 282,160 322,160 Z" fill="#166534" />
+        <!-- Center Lobe -->
+        <path d="M256,160 C180,160 160,230 160,330 C160,420 210,450 256,450 C302,450 352,420 352,330 C352,230 332,160 256,160 Z" fill="#22c55e" />
+        
+        <!-- Highlights and Details for that glossy 3D feel -->
+        <!-- Left highlight -->
+        <path d="M170,190 C140,220 135,270 135,310" stroke="#86efac" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.6" />
+        <!-- Center top highlight -->
+        <path d="M220,180 Q256,165 292,180" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.4" />
+        <!-- Center lobe gloss -->
+        <path d="M220,210 C195,240 190,290 190,330" stroke="#ffffff" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.5" />
+        <path d="M235,200 C215,225 210,275 210,310" stroke="#ffffff" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.7" />
+        <!-- Bottom shadow curves for depth -->
+        <path d="M170,410 Q210,430 256,430" stroke="#14532d" stroke-width="6" fill="none" opacity="0.3" />
+        <path d="M342,410 Q302,430 256,430" stroke="#14532d" stroke-width="6" fill="none" opacity="0.3" />
+      </svg>`;
+    }
+    return '🌶️';
+  }
+
+  if (icon === 'radish_svg') {
+    if (isHtml) {
+      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Radish leaves (green) -->
+        <path d="M256,120 C230,40 180,50 160,80 C180,110 210,120 256,120 Z" fill="#22c55e"/>
+        <path d="M256,120 C282,40 332,50 352,80 C332,110 302,120 256,120 Z" fill="#15803d"/>
+        <path d="M256,120 C256,20 220,10 200,30 C220,50 240,80 256,120 Z" fill="#4ade80"/>
+        <path d="M256,120 C256,20 292,10 312,30 C292,50 272,80 256,120 Z" fill="#166534"/>
+        <!-- Radish main body (vibrant pink/red fading to white) -->
+        <path d="M256,120 C170,120 140,200 140,280 C140,340 180,380 256,410 C332,380 372,340 372,280 C372,200 342,120 256,120 Z" fill="#ec4899"/>
+        <path d="M256,260 C180,260 150,300 150,330 C150,370 190,400 256,420 C322,400 362,370 362,330 C362,300 332,260 256,260 Z" fill="#f8fafc" opacity="0.9"/>
+        <path d="M256,310 C200,310 170,340 170,360 C170,380 200,410 256,420 C312,410 342,380 342,360 C342,340 312,310 256,310 Z" fill="#ffffff"/>
+        <!-- Root tail -->
+        <path d="M256,415 C250,440 240,470 240,490 C250,480 260,450 256,415 Z" fill="#e2e8f0"/>
+        <!-- Details and highlights -->
+        <path d="M256,120 C240,200 210,260 210,300" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
+        <path d="M256,120 C272,200 302,260 302,300" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
+      </svg>`;
+    }
+    return '🌱';
+  }
+
+  if (icon === 'turnip_svg') {
+    if (isHtml) {
+      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Turnip leaves (green) -->
+        <path d="M256,130 C220,50 170,70 150,100 C170,130 200,140 256,130 Z" fill="#15803d"/>
+        <path d="M256,130 C292,50 342,70 362,100 C342,130 312,130 256,130 Z" fill="#166534"/>
+        <path d="M256,130 C240,40 200,30 180,50 C200,70 220,100 256,130 Z" fill="#22c55e"/>
+        <path d="M256,130 C272,40 312,30 332,50 C312,70 292,100 256,130 Z" fill="#4ade80"/>
+        <!-- Turnip main body (purple/magenta top, white bottom) -->
+        <path d="M256,130 C150,130 110,210 110,290 C110,370 180,410 256,410 C332,410 402,370 402,290 C402,210 362,130 256,130 Z" fill="#a21caf"/>
+        <path d="M256,220 C160,220 120,260 120,310 C120,370 180,405 256,405 C332,405 392,370 392,310 C392,260 352,220 256,220 Z" fill="#f472b6" opacity="0.6"/>
+        <path d="M256,270 C170,270 130,300 130,330 C130,380 180,400 256,400 C332,400 382,380 382,330 C382,300 342,270 256,270 Z" fill="#f8fafc"/>
+        <path d="M256,310 C190,310 150,330 150,350 C150,380 190,395 256,395 C322,395 362,380 362,350 C362,330 322,310 256,310 Z" fill="#ffffff"/>
+        <!-- Small root tail -->
+        <path d="M256,405 C253,425 248,445 245,465 C253,450 258,425 256,405 Z" fill="#cbd5e1"/>
+        <!-- Root details -->
+        <path d="M256,130 C240,220 200,280 200,320" stroke="#fdf2f8" stroke-width="6" fill="none" opacity="0.2"/>
+        <path d="M256,130 C272,220 312,280 312,320" stroke="#fdf2f8" stroke-width="6" fill="none" opacity="0.2"/>
+      </svg>`;
+    }
+    return '🧅';
+  }
+
+  if (icon === '🧅') {
+    if (isHtml) {
+      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em; fill: currentColor;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Purplish-red onion body -->
+        <path d="M256,40 C190,140 130,220 130,300 C130,375 186,430 256,430 C326,430 382,375 382,300 C382,220 322,140 256,40 Z" fill="#d946ef"/>
+        <!-- Inner highlights / segments to show layers -->
+        <path d="M256,40 C210,150 170,230 170,300 C170,360 208,410 256,410 C304,410 342,360 342,300 C342,230 302,150 256,40 Z" fill="#f472b6" opacity="0.8"/>
+        <path d="M256,40 C230,160 210,240 210,300 C210,345 230,385 256,385 C282,385 302,345 302,300 C302,240 282,160 256,40 Z" fill="#fdf2f8" opacity="0.8"/>
+        <!-- Root/bottom tuft -->
+        <path d="M236,430 L256,460 L276,430 Z" fill="#e2e8f0"/>
+        <!-- Green sprout at top -->
+        <path d="M256,40 C256,40 240,10 220,15 C240,25 256,40 256,40 Z" fill="#22c55e"/>
+        <path d="M256,40 C256,40 272,10 292,15 C272,25 256,40 256,40 Z" fill="#15803d"/>
+      </svg>`;
+    }
+    return '🧅';
+  }
+
+  if (icon === '🧄') {
+    if (isHtml) {
+      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Whole bulb -->
+        <path d="M256,60 C180,180 120,220 120,310 C120,390 180,440 256,440 C332,440 392,390 392,310 C392,220 332,180 256,60 Z" fill="#fef08a" opacity="0.3"/>
+        <!-- Clove segments -->
+        <path d="M256,60 C210,180 160,250 160,320 C160,390 200,430 256,430 C312,430 352,390 352,320 C352,250 302,180 256,60 Z" fill="#f8fafc"/>
+        <!-- Left clove -->
+        <path d="M256,60 C160,180 130,240 130,320 C130,380 170,420 220,430 C190,390 180,310 210,180 Z" fill="#f1f5f9"/>
+        <!-- Right clove -->
+        <path d="M256,60 C352,180 382,240 382,320 C382,380 342,420 292,430 C322,390 332,310 302,180 Z" fill="#e2e8f0"/>
+        <!-- Purple streaks for realism -->
+        <path d="M256,80 C230,180 200,260 200,320" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
+        <path d="M256,80 C280,180 312,260 312,320" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
+        <path d="M256,80 C210,150 160,240 160,320" stroke="#f472b6" stroke-width="6" fill="none" opacity="0.3"/>
+        <path d="M256,80 C302,150 352,240 352,320" stroke="#f472b6" stroke-width="6" fill="none" opacity="0.3"/>
+        <!-- Base roots -->
+        <path d="M236,430 C236,430 246,450 256,450 C266,450 276,430 276,430" stroke="#cbd5e1" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <!-- Dry stem top -->
+        <path d="M256,60 L256,30" stroke="#d97706" stroke-width="16" stroke-linecap="round"/>
+      </svg>`;
+    }
+    return '🧄';
+  }
+
+  if (icon === '𫚚' || icon === '𫚚' || icon === '🫚') {
+    if (isHtml) {
+      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background branch structure -->
+        <path d="M120,280 C90,260 60,280 60,310 C60,350 110,380 150,380 L180,360 Z" fill="#eab308" opacity="0.6"/>
+        <path d="M320,180 C350,150 380,150 400,180 C420,210 390,260 350,280 Z" fill="#eab308" opacity="0.6"/>
+        <!-- Main body -->
+        <path d="M140,360 C100,320 120,240 180,220 C220,210 240,150 280,140 C320,130 360,180 340,240 C320,280 340,320 310,360 C270,400 180,400 140,360 Z" fill="#eab308"/>
+        <!-- Knobs and branch details -->
+        <path d="M240,150 C220,110 180,100 150,130 C120,160 140,210 180,220 Z" fill="#ca8a04"/>
+        <path d="M300,220 C320,180 360,170 380,200 C400,230 380,270 340,280 Z" fill="#ca8a04"/>
+        <!-- Inner highlights for texture / segments -->
+        <path d="M160,340 C140,310 140,260 180,240" stroke="#fef08a" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.5"/>
+        <path d="M260,170 C280,150 310,160 320,200" stroke="#fef08a" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.5"/>
+        <path d="M240,360 C210,360 180,330 180,300" stroke="#a16207" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.3"/>
+        <!-- Ginger-skin ring lines (rhizome segments) -->
+        <path d="M160,290 Q180,275 200,290" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
+        <path d="M180,340 Q210,320 230,340" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
+        <path d="M240,210 Q260,195 270,215" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
+        <path d="M270,155 Q285,145 295,160" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
+        <path d="M290,290 Q310,275 320,300" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
+        <path d="M250,370 Q280,350 300,370" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
+      </svg>`;
+    }
+    return '𫚚';
+  }
+
   if (icon === '🫒') return '🌱'; // Olive -> Seedling
   if (icon === '🫐') return '🍇'; // Blueberry -> Grape
   if (icon === '🐉') return '🍎'; // Dragon fruit -> Apple
@@ -617,19 +789,19 @@ function findCropSuggestion(cropType) {
   return crop || null;
 }
 
-function getCropIcon(cropType) {
+function getCropIcon(cropType, isHtml = true) {
   if (!cropType) return '🥦';
   
   // If cropType string contains an emoji directly, extract and return it safely
   const cleanStr = cropType.toString().trim();
   const emojiMatch = cleanStr.match(/^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}])/u);
   if (emojiMatch) {
-    return sanitizeCropIcon(emojiMatch[0]);
+    return sanitizeCropIcon(emojiMatch[0], isHtml);
   }
 
   const crop = findCropSuggestion(cropType);
   if (crop && crop.icon) {
-    return sanitizeCropIcon(crop.icon);
+    return sanitizeCropIcon(crop.icon, isHtml);
   }
 
   return '🥦';
@@ -2241,27 +2413,27 @@ function addImportCropRow() {
     <div class="dynamic-row-header">
       <span>${currentLanguage === 'ar' ? `المحصول ${index + 1}` : `Crop #${index + 1}`}</span>
     </div>
-    <div class="form-group">
-      <label>${currentLanguage === 'ar' ? 'نوع المحصول' : 'Crop Type'}</label>
-      <div style="position: relative;">
-        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">eco</span>
-        <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'نوع المحصول (طماطة، خيار، بطاطا...)' : 'Crop Type (e.g. Tomato, Potato...)'}" required autocomplete="off" style="padding-right: 42px;">
-        <div class="crop-autocomplete-dropdown autocomplete-dropdown"></div>
-      </div>
-    </div>
-    <div style="display: flex; gap: 12px; width: 100%;">
-      <div class="form-group" style="flex: 1; min-width: 0;">
-        <label class="import-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي القائم (كغم)' : 'الوزن الكلي القائم (Kg)') : 'Total Weight (Kg)'}</label>
+    <div style="display: flex; gap: 12px; width: 100%; flex-wrap: wrap;">
+      <div class="form-group" style="flex: 1.5; min-width: 150px;">
+        <label>${currentLanguage === 'ar' ? 'نوع المحصول' : 'Crop Type'}</label>
         <div style="position: relative;">
-          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
-          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن الكلي القائم (كغم)...' : 'الوزن القائم (Kg)...') : 'Total Weight (Kg)...'}" required style="padding-right: 42px;">
+          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">eco</span>
+          <input type="text" class="form-input import-crop-type" placeholder="${currentLanguage === 'ar' ? 'نوع المحصول...' : 'Crop Type...'}" required autocomplete="off" style="padding-right: 42px;">
+          <div class="crop-autocomplete-dropdown autocomplete-dropdown"></div>
         </div>
       </div>
-      <div class="form-group import-box-count-container" style="flex: 1; min-width: 0;">
+      <div class="form-group" style="flex: 1; min-width: 100px;">
+        <label class="import-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن القائم (كغم)' : 'الوزن القائم (Kg)') : 'Weight (Kg)'}</label>
+        <div style="position: relative;">
+          <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
+          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن...' : 'Weight...') : 'Weight...'}" required style="padding-right: 42px;">
+        </div>
+      </div>
+      <div class="form-group import-box-count-container" style="flex: 1; min-width: 100px;">
         <label class="import-box-count-label">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">grid_on</span>
-          <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'عدد الصناديق / الأكياس...' : 'Count of boxes/bags...'}" style="padding-right: 42px;">
+          <input type="number" class="form-input import-box-count" placeholder="${currentLanguage === 'ar' ? 'العدد...' : 'Count...'}" style="padding-right: 42px;">
         </div>
       </div>
     </div>
@@ -2288,8 +2460,11 @@ function addImportCropRow() {
     // Render matches
     matches.forEach(m => {
       const div = document.createElement('div');
-      div.className = 'autocomplete-item';
-      div.textContent = `${sanitizeCropIcon(m.icon)} ${m.primaryAr} (${m.nameEn})`;
+      div.className = 'autocomplete-item crop-grid-item';
+      div.innerHTML = `
+        <span class="crop-grid-icon" style="font-size: 26px; line-height: 1; display: block;">${sanitizeCropIcon(m.icon)}</span>
+        <span class="crop-grid-name" style="font-size: 11px; font-weight: 700; color: #1b4332; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; margin-top: 4px;">${m.primaryAr}</span>
+      `;
       div.addEventListener('click', () => {
         selector.value = m.primaryAr;
         autocomplete.style.display = 'none';
@@ -2314,11 +2489,12 @@ function addImportCropRow() {
 
     // Always append "➕ إضافة صنف جديد" at the end
     const addCustomDiv = document.createElement('div');
-    addCustomDiv.className = 'autocomplete-item';
-    addCustomDiv.style.borderTop = '1px dashed rgba(0,0,0,0.1)';
-    addCustomDiv.style.fontWeight = '700';
-    addCustomDiv.style.color = 'var(--color-primary)';
-    addCustomDiv.textContent = currentLanguage === 'ar' ? `➕ إضافة صنف جديد...` : `➕ Add new crop...`;
+    addCustomDiv.className = 'autocomplete-item crop-grid-item add-custom-crop-grid';
+    addCustomDiv.style.border = '1.5px dashed var(--color-primary)';
+    addCustomDiv.innerHTML = `
+      <span class="crop-grid-icon" style="font-size: 22px; line-height: 1; color: var(--color-primary); display: block;">➕</span>
+      <span class="crop-grid-name" style="font-size: 10px; font-weight: 800; color: var(--color-primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; margin-top: 4px;">${currentLanguage === 'ar' ? `صنف جديد` : `New Crop`}</span>
+    `;
     addCustomDiv.addEventListener('click', () => {
       openCustomCropDialog(selector, () => {
         autocomplete.style.display = 'none';
@@ -3254,7 +3430,7 @@ async function refreshCargoOptions(selectElement) {
           : `(rem: ${formatWeight(remWeight, it.unit || 'kg')} [${remBoxes} b])`;
       }
 
-      opt.textContent = `${getCropIcon(it.crop_type)} ${it.crop_type} - فلاح: ${imp.farmer_name} (#${imp.id}) ${remainingText}`;
+      opt.textContent = `${getCropIcon(it.crop_type, false)} ${it.crop_type} - فلاح: ${imp.farmer_name} (#${imp.id}) ${remainingText}`;
       selectElement.appendChild(opt);
     });
   });
@@ -3845,7 +4021,14 @@ async function renderDebtsList() {
   debtsList.innerHTML = '';
 
   const matchedDebts = [];
-  const activeDebts = debts.filter(d => !d.is_paid);
+  let activeDebts = debts.filter(d => !d.is_paid);
+  if (debtsFilterStatus === 'late') {
+    const now = Date.now();
+    activeDebts = activeDebts.filter(d => now >= d.due_date);
+  } else if (debtsFilterStatus === 'upcoming') {
+    const now = Date.now();
+    activeDebts = activeDebts.filter(d => now < d.due_date);
+  }
   activeDebts.sort((a,b) => b.due_date - a.due_date);
 
   for (const debt of activeDebts) {
@@ -4203,7 +4386,18 @@ async function renderDuesList() {
   duesList.innerHTML = '';
 
   // Group unpaid dues by farmer
-  const unpaidDues = dues.filter(d => !d.is_paid);
+  let unpaidDues = dues.filter(d => !d.is_paid);
+  if (duesFilterStatus === 'today') {
+    const todayStart = new Date();
+    todayStart.setHours(0,0,0,0);
+    const todayStartMs = todayStart.getTime();
+    unpaidDues = unpaidDues.filter(d => d.created_at >= todayStartMs);
+  } else if (duesFilterStatus === 'old') {
+    const todayStart = new Date();
+    todayStart.setHours(0,0,0,0);
+    const todayStartMs = todayStart.getTime();
+    unpaidDues = unpaidDues.filter(d => d.created_at < todayStartMs);
+  }
   
   const farmerGroups = {};
   unpaidDues.forEach(due => {
@@ -12348,6 +12542,30 @@ async function startApp() {
       });
     });
 
+    // Bind click events on debts filter-chips
+    const filterChipsDebts = document.querySelectorAll('.filter-chip-debts');
+    filterChipsDebts.forEach(chip => {
+      chip.addEventListener('click', () => {
+        filterChipsDebts.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        debtsFilterStatus = chip.getAttribute('data-filter');
+        listPageLimits.debts = 10;
+        renderDebtsList();
+      });
+    });
+
+    // Bind click events on dues filter-chips
+    const filterChipsDues = document.querySelectorAll('.filter-chip-dues');
+    filterChipsDues.forEach(chip => {
+      chip.addEventListener('click', () => {
+        filterChipsDues.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        duesFilterStatus = chip.getAttribute('data-filter');
+        listPageLimits.dues = 10;
+        renderDuesList();
+      });
+    });
+
     document.getElementById('search-sale-customer').addEventListener('input', debounce(() => {
       listPageLimits.sales = 10;
       renderSalesList();
@@ -12857,15 +13075,28 @@ function initDevicesBatteryMonitor() {
           queryPrinterBatteryCordovaBLE();
         }
 
-        if (printerBatteryPercent === null) {
-          const stored = localStorage.getItem('alwa_printer_battery_percent');
-          if (stored) {
-            printerBatteryPercent = parseInt(stored, 10);
-          } else {
-            printerBatteryPercent = 92 + Math.floor(Math.random() * 6);
+        const mode = localStorage.getItem('alwa_printer_battery_mode') || 'auto';
+        if (mode === 'manual') {
+          const manualVal = parseInt(localStorage.getItem('alwa_printer_battery_manual_val') || '80', 10);
+          printerBatteryPercent = manualVal;
+        } else {
+          // auto mode
+          let basePercent = printerBatteryPercent;
+          if (basePercent === null) {
+            const stored = localStorage.getItem('alwa_printer_battery_percent');
+            if (stored) {
+              basePercent = parseInt(stored, 10);
+            } else {
+              basePercent = 92 + Math.floor(Math.random() * 6);
+            }
           }
-          localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
+          // Apply offset calibration
+          const offset = parseInt(localStorage.getItem('alwa_printer_battery_offset') || '0', 10);
+          printerBatteryPercent = Math.min(100, Math.max(5, basePercent + offset));
         }
+
+        // Save resolved value for other modules
+        localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
 
         // Idle battery drain (1% every 10 minutes -> 300 cycles of 2 seconds)
         idleDrainCounter++;
@@ -12903,12 +13134,189 @@ function initDevicesBatteryMonitor() {
   // Bind globally so other GATT battery listeners can refresh instantly
   window.updateDevicesStatus = updateDevicesStatus;
 
+  // Set up click listener on printer status chip to open calibration bottom sheet
+  const pChip = document.getElementById('printer-battery-chip');
+  if (pChip) {
+    pChip.addEventListener('click', () => {
+      openBottomSheet('sheet-printer-battery');
+      initAndOpenPrinterBatterySheet();
+    });
+  }
+
   // Initial call
   updateDevicesStatus();
   
   // Update state regularly to match bluetooth toggles
   setInterval(updateDevicesStatus, 2000);
 }
+
+// 🔋 Smart calibration sheet initializer and coordinator
+function initAndOpenPrinterBatterySheet() {
+  const mode = localStorage.getItem('alwa_printer_battery_mode') || 'auto';
+  const offset = parseInt(localStorage.getItem('alwa_printer_battery_offset') || '0', 10);
+  const manualVal = parseInt(localStorage.getItem('alwa_printer_battery_manual_val') || '80', 10);
+
+  const btnAuto = document.getElementById('btn-battery-mode-auto');
+  const btnManual = document.getElementById('btn-battery-mode-manual');
+  const autoOptions = document.getElementById('battery-auto-options');
+  const manualOptions = document.getElementById('battery-manual-options');
+  const lblOffset = document.getElementById('lbl-battery-offset');
+  const rngOffset = document.getElementById('rng-battery-offset');
+  const lblManualVal = document.getElementById('lbl-battery-manual-val');
+  const rngManual = document.getElementById('rng-battery-manual');
+
+  function renderMode() {
+    const activeMode = localStorage.getItem('alwa_printer_battery_mode') || 'auto';
+    if (activeMode === 'auto') {
+      btnAuto.classList.add('active');
+      btnAuto.style.backgroundColor = 'var(--color-primary)';
+      btnAuto.style.color = 'white';
+      btnManual.classList.remove('active');
+      btnManual.style.backgroundColor = 'transparent';
+      btnManual.style.color = '#555';
+      if (autoOptions) autoOptions.style.display = 'flex';
+      if (manualOptions) manualOptions.style.display = 'none';
+    } else {
+      btnManual.classList.add('active');
+      btnManual.style.backgroundColor = 'var(--color-primary)';
+      btnManual.style.color = 'white';
+      btnAuto.classList.remove('active');
+      btnAuto.style.backgroundColor = 'transparent';
+      btnAuto.style.color = '#555';
+      if (autoOptions) autoOptions.style.display = 'none';
+      if (manualOptions) manualOptions.style.display = 'flex';
+    }
+    
+    // Update live values
+    const modalLevel = document.getElementById('modal-printer-battery-level');
+    const modalIcon = document.getElementById('modal-printer-battery-icon');
+    if (modalLevel && modalIcon) {
+      if (printerBatteryPercent !== null) {
+        modalLevel.textContent = `${printerBatteryPercent}%`;
+        let pIcon = 'battery_full';
+        if (printerBatteryPercent >= 90) pIcon = 'battery_full';
+        else if (printerBatteryPercent >= 70) pIcon = 'battery_6_bar';
+        else if (printerBatteryPercent >= 50) pIcon = 'battery_4_bar';
+        else if (printerBatteryPercent >= 20) pIcon = 'battery_2_bar';
+        else pIcon = 'battery_alert';
+        modalIcon.textContent = pIcon;
+      } else {
+        modalLevel.textContent = '--%';
+        modalIcon.textContent = 'battery_unknown';
+      }
+    }
+  }
+
+  // Setup initial UI states
+  if (rngOffset) {
+    rngOffset.value = offset;
+    if (lblOffset) lblOffset.textContent = (offset > 0 ? '+' : '') + offset + '%';
+  }
+  if (rngManual) {
+    rngManual.value = manualVal;
+    if (lblManualVal) lblManualVal.textContent = manualVal + '%';
+  }
+
+  renderMode();
+
+  // Mode listeners
+  if (btnAuto && !btnAuto.dataset.bound) {
+    btnAuto.dataset.bound = 'true';
+    btnAuto.addEventListener('click', () => {
+      localStorage.setItem('alwa_printer_battery_mode', 'auto');
+      if (typeof window.updateDevicesStatus === 'function') {
+        window.updateDevicesStatus();
+      }
+      renderMode();
+    });
+  }
+
+  if (btnManual && !btnManual.dataset.bound) {
+    btnManual.dataset.bound = 'true';
+    btnManual.addEventListener('click', () => {
+      localStorage.setItem('alwa_printer_battery_mode', 'manual');
+      if (typeof window.updateDevicesStatus === 'function') {
+        window.updateDevicesStatus();
+      }
+      renderMode();
+    });
+  }
+
+  // Sliders input listeners
+  if (rngOffset && !rngOffset.dataset.bound) {
+    rngOffset.dataset.bound = 'true';
+    rngOffset.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      localStorage.setItem('alwa_printer_battery_offset', val);
+      if (lblOffset) lblOffset.textContent = (val > 0 ? '+' : '') + val + '%';
+      if (typeof window.updateDevicesStatus === 'function') {
+        window.updateDevicesStatus();
+      }
+      // Update modal text instantly
+      const modalLevel = document.getElementById('modal-printer-battery-level');
+      if (modalLevel && printerBatteryPercent !== null) {
+        modalLevel.textContent = `${printerBatteryPercent}%`;
+      }
+    });
+  }
+
+  if (rngManual && !rngManual.dataset.bound) {
+    rngManual.dataset.bound = 'true';
+    rngManual.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      localStorage.setItem('alwa_printer_battery_manual_val', val);
+      if (lblManualVal) lblManualVal.textContent = val + '%';
+      if (localStorage.getItem('alwa_printer_battery_mode') === 'manual') {
+        printerBatteryPercent = val;
+        localStorage.setItem('alwa_printer_battery_percent', val);
+        if (typeof window.updateDevicesStatus === 'function') {
+          window.updateDevicesStatus();
+        }
+      }
+      // Update modal text instantly
+      const modalLevel = document.getElementById('modal-printer-battery-level');
+      if (modalLevel && printerBatteryPercent !== null) {
+        modalLevel.textContent = `${printerBatteryPercent}%`;
+      }
+    });
+  }
+
+  // Preset Buttons listeners
+  const presetBtns = document.querySelectorAll('#sheet-printer-battery .preset-btn');
+  presetBtns.forEach(btn => {
+    if (!btn.dataset.bound) {
+      btn.dataset.bound = 'true';
+      btn.addEventListener('click', (e) => {
+        const val = parseInt(e.target.dataset.value, 10);
+        localStorage.setItem('alwa_printer_battery_mode', 'manual');
+        localStorage.setItem('alwa_printer_battery_manual_val', val);
+        localStorage.setItem('alwa_printer_battery_percent', val);
+        printerBatteryPercent = val;
+        
+        const originalBg = btn.style.background;
+        btn.style.backgroundColor = 'rgba(45, 106, 79, 0.15)';
+        setTimeout(() => { btn.style.backgroundColor = ''; }, 300);
+
+        if (typeof window.updateDevicesStatus === 'function') {
+          window.updateDevicesStatus();
+        }
+        renderMode();
+        showToast(currentLanguage === 'ar' ? 'تم ضبط مستوى البطارية بنجاح!' : 'Battery level set successfully!', 'success');
+      });
+    }
+  });
+
+  // Save Button listener
+  const btnSave = document.getElementById('btn-save-battery-calibration');
+  if (btnSave && !btnSave.dataset.bound) {
+    btnSave.dataset.bound = 'true';
+    btnSave.addEventListener('click', () => {
+      closeBottomSheet('sheet-printer-battery');
+      showToast(currentLanguage === 'ar' ? 'تم حفظ وتثبيت معايرة البطارية الدقيقة بنجاح!' : 'Battery calibration saved successfully!', 'success');
+    });
+  }
+}
+
 
 // Global states for custom keypad
 let activeKeypadInput = null;

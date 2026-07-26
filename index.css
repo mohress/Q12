@@ -793,6 +793,78 @@ body.sheet-open {
   color: var(--color-primary);
 }
 
+/* Crop suggestions horizontal grid styling */
+.crop-autocomplete-dropdown {
+  display: none;
+  flex-direction: row;
+  gap: 8px;
+  padding: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--color-white, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  border: 1.5px solid rgba(82, 183, 136, 0.2);
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 520px;
+  max-width: calc(100vw - 48px);
+  z-index: 100;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary-light) transparent;
+}
+
+.crop-autocomplete-dropdown[style*="display: block"] {
+  display: flex !important;
+}
+
+.crop-autocomplete-dropdown::-webkit-scrollbar {
+  height: 6px;
+}
+.crop-autocomplete-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.crop-autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background-color: var(--color-primary-light);
+  border-radius: 3px;
+}
+
+.crop-grid-item {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 76px !important;
+  height: 76px !important;
+  flex-shrink: 0 !important;
+  border-radius: 12px !important;
+  border: 1.5px solid rgba(82, 183, 136, 0.15) !important;
+  background-color: var(--color-white, #ffffff) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-align: center !important;
+  padding: 6px !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.03) !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+}
+
+.crop-grid-item:hover {
+  background-color: rgba(82, 183, 136, 0.08) !important;
+  border-color: var(--color-primary) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(82, 183, 136, 0.15) !important;
+}
+
+.add-custom-crop-grid {
+  border: 1.5px dashed var(--color-primary) !important;
+}
+
+.add-custom-crop-grid:hover {
+  background-color: rgba(82, 183, 136, 0.08) !important;
+  border-color: var(--color-primary) !important;
+}
+
 /* Dynamic Add Item Row */
 .dynamic-row {
   border: 1.5px solid rgba(82, 183, 136, 0.22);
@@ -1583,24 +1655,51 @@ input:checked + .slider:before {
 
 /* Search bar filter inputs */
 .search-filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #ffffff !important;
+  padding: 8px 12px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(82, 183, 136, 0.12) !important;
+  box-shadow: 0 4px 18px rgba(27, 67, 50, 0.02) !important;
+  margin-bottom: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.search-filter-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+}
+
+.search-filter-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #52b788;
+  font-size: 16px;
+  pointer-events: none;
 }
 
 .search-filter-input {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1.5px solid rgba(0,0,0,0.08);
-  font-size: 12px;
-  outline: none;
-  background: var(--color-white);
-  transition: all 0.2s ease;
+  width: 100% !important;
+  padding: 8px 34px 8px 12px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid rgba(82, 183, 136, 0.12) !important;
+  font-size: 12px !important;
+  outline: none !important;
+  background: #fbfdfc !important;
+  transition: all 0.2s ease !important;
+  font-family: 'Cairo', sans-serif !important;
 }
 
 .search-filter-input:focus {
-  border-color: var(--color-primary-light);
+  border-color: #52b788 !important;
+  box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.1) !important;
+  background: #ffffff !important;
 }
 
 /* In-App Notifications Toast */
@@ -4820,12 +4919,16 @@ body.no-animations * {
 
 /* Premium Filter Chips Styles */
 .filter-chips-wrapper::-webkit-scrollbar,
-.filter-chips-wrapper-sales::-webkit-scrollbar {
+.filter-chips-wrapper-sales::-webkit-scrollbar,
+.filter-chips-wrapper-debts::-webkit-scrollbar,
+.filter-chips-wrapper-dues::-webkit-scrollbar {
   display: none; /* Safely hide standard scrollbar */
 }
 
 .filter-chip,
-.filter-chip-sales {
+.filter-chip-sales,
+.filter-chip-debts,
+.filter-chip-dues {
   padding: 6px 14px;
   border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.06);
@@ -4840,13 +4943,17 @@ body.no-animations * {
 }
 
 .filter-chip:hover,
-.filter-chip-sales:hover {
+.filter-chip-sales:hover,
+.filter-chip-debts:hover,
+.filter-chip-dues:hover {
   background: #f0f4f2;
   border-color: rgba(82, 183, 136, 0.2);
 }
 
 .filter-chip.active,
-.filter-chip-sales.active {
+.filter-chip-sales.active,
+.filter-chip-debts.active,
+.filter-chip-dues.active {
   border-color: #52b788 !important;
   background: #eafaf1 !important;
   color: #1b4332 !important;
@@ -4955,6 +5062,25 @@ body.no-animations * {
 .shake-error {
   animation: shake-error-anim 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
+
+/* Custom styling for the printer battery chip */
+div:nth-of-type(1) > header:nth-of-type(1) > div:nth-of-type(2) > div#printer-battery-chip:nth-of-type(3) {
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+div:nth-of-type(1) > header:nth-of-type(1) > div:nth-of-type(2) > div#printer-battery-chip:nth-of-type(3):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.12);
+  background-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(45, 106, 79, 0.4);
+}
+
+div:nth-of-type(1) > header:nth-of-type(1) > div:nth-of-type(2) > div#printer-battery-chip:nth-of-type(3):active {
+  transform: translateY(0) scale(0.97);
+}
+
 
 
 
