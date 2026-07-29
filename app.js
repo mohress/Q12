@@ -6733,7 +6733,9 @@ async function renderStatsPanel() {
   if (totalDebtSalesEl) {
     totalDebtSalesEl.textContent = formatVal(debtSalesTotal, true);
   }
-  totalCollectedDebtsEl.textContent = formatVal(collectedDebtsTotal, true);
+  if (totalCollectedDebtsEl) {
+    totalCollectedDebtsEl.textContent = formatVal(collectedDebtsTotal, true);
+  }
   if (totalAdjustmentsEl) {
     totalAdjustmentsEl.textContent = formatVal(manualAdditionsTotal, true);
   }
@@ -6817,8 +6819,8 @@ async function renderStatsPanel() {
 }
 
 function renderMonthlyRolloverAlert() {
-  const container = document.querySelector('#screen-stats');
-  if (!container) return;
+  const screens = document.querySelectorAll('.screen-content');
+  if (screens.length === 0) return;
 
   const now = new Date();
   const year = now.getFullYear();
@@ -6834,93 +6836,97 @@ function renderMonthlyRolloverAlert() {
   const shouldShow = isOneDayBefore || isLastDay || sessionStorage.getItem('alwa_force_rollover_alert') === 'true';
 
   if (sessionStorage.getItem('alwa_dismissed_rollover_alert')) {
-    const existing = document.querySelector('#monthly-rollover-alert-banner');
-    if (existing) existing.remove();
+    const existing = document.querySelectorAll('.monthly-rollover-alert-banner');
+    existing.forEach(el => el.remove());
     return;
   }
 
-  let alertEl = document.querySelector('#monthly-rollover-alert-banner');
-  if (alertEl) {
-    if (!shouldShow) {
-      alertEl.remove();
+  if (!shouldShow) {
+    const existing = document.querySelectorAll('.monthly-rollover-alert-banner');
+    existing.forEach(el => el.remove());
+    return;
+  }
+
+  screens.forEach(screen => {
+    let alertEl = screen.querySelector('.monthly-rollover-alert-banner');
+    if (alertEl) {
+      return;
     }
-    return;
-  }
 
-  if (!shouldShow) return;
-
-  alertEl = document.createElement('div');
-  alertEl.id = 'monthly-rollover-alert-banner';
-  
-  // Custom professional alert card style
-  alertEl.style.cssText = `
-    background: linear-gradient(135deg, #fffbeb, #fef3c7);
-    border: 1.5px solid #f59e0b;
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
-    position: relative;
-    animation: fadeIn 0.3s ease-out;
-  `;
-
-  const isAr = currentLanguage === 'ar';
-  
-  const alertTextAr = isOneDayBefore 
-    ? "تنبيه ترحيل الإحصائيات: سيتم ترحيل وإقفال إحصائيات الشهر الحالي تلقائياً وأرشفتها بنهاية يوم غد للبدء بدورة إحصائيات جديدة للشهر القادم. رصيد الخزنة الفعلي والديون لن تتأثر."
-    : "تنبيه ترحيل الإحصائيات: سيتم ترحيل وإقفال إحصائيات الشهر الحالي تلقائياً وأرشفتها بنهاية هذا اليوم للبدء بدورة إحصائيات جديدة للشهر القادم. رصيد الخزنة الفعلي والديون لن تتأثر.";
+    alertEl = document.createElement('div');
+    alertEl.className = 'monthly-rollover-alert-banner';
     
-  const alertTextEn = isOneDayBefore
-    ? "Statistics Rollover Notice: The current month's statistics will be automatically closed, archived, and reset at the end of tomorrow to start a new tracking cycle. Active safe box balances and customer debts remain unaffected."
-    : "Statistics Rollover Notice: The current month's statistics will be automatically closed, archived, and reset at the end of today to start a new tracking cycle. Active safe box balances and customer debts remain unaffected.";
-
-  const displayText = isAr ? alertTextAr : alertTextEn;
-  const displayTitle = isAr ? "إشعار ترحيل الإحصائيات التلقائي" : "Automatic Statistics Rollover Notice";
-
-  alertEl.innerHTML = `
-    <span class="material-icons-round" style="color: #d97706; font-size: 24px; flex-shrink: 0; margin-top: 2px; user-select: none;">warning</span>
-    <div style="flex: 1; padding-left: 4px; padding-right: 24px; text-align: ${isAr ? 'right' : 'left'};">
-      <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #78350f;">${displayTitle}</h4>
-      <p style="margin: 0; font-size: 13px; font-weight: 600; color: #92400e; line-height: 1.5; font-family: var(--font-family) !important;">${displayText}</p>
-    </div>
-    <button type="button" id="btn-close-rollover-alert" style="
-      position: absolute;
-      ${isAr ? 'left' : 'right'}: 10px;
-      top: 10px;
-      background: none;
-      border: none;
-      color: #b45309;
-      cursor: pointer;
+    // Custom professional alert card style
+    alertEl.style.cssText = `
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border: 1.5px solid #f59e0b;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px;
-      border-radius: 50%;
-      transition: background 0.2s;
-    " onmouseover="this.style.background='rgba(180, 83, 9, 0.1)'" onmouseout="this.style.background='none'">
-      <span class="material-icons-round" style="font-size: 18px;">close</span>
-    </button>
-  `;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+    `;
 
-  // Prepend before the first child of screen-stats
-  container.insertBefore(alertEl, container.firstChild);
+    const isAr = currentLanguage === 'ar';
+    
+    const alertTextAr = isOneDayBefore 
+      ? "تنبيه ترحيل الإحصائيات: سيتم ترحيل وإقفال إحصائيات الشهر الحالي تلقائياً وأرشفتها بنهاية يوم غد للبدء بدورة إحصائيات جديدة للشهر القادم. رصيد الخزنة الفعلي والديون لن تتأثر."
+      : "تنبيه ترحيل الإحصائيات: سيتم ترحيل وإقفال إحصائيات الشهر الحالي تلقائياً وأرشفتها بنهاية هذا اليوم للبدء بدورة إحصائيات جديدة للشهر القادم. رصيد الخزنة الفعلي والديون لن تتأثر.";
+      
+    const alertTextEn = isOneDayBefore
+      ? "Statistics Rollover Notice: The current month's statistics will be automatically closed, archived, and reset at the end of tomorrow to start a new tracking cycle. Active safe box balances and customer debts remain unaffected."
+      : "Statistics Rollover Notice: The current month's statistics will be automatically closed, archived, and reset at the end of today to start a new tracking cycle. Active safe box balances and customer debts remain unaffected.";
 
-  // Attach dismiss event listener
-  const closeBtn = alertEl.querySelector('#btn-close-rollover-alert');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      sessionStorage.setItem('alwa_dismissed_rollover_alert', 'true');
-      alertEl.remove();
-    });
-  }
+    const displayText = isAr ? alertTextAr : alertTextEn;
+    const displayTitle = isAr ? "إشعار ترحيل الإحصائيات التلقائي" : "Automatic Statistics Rollover Notice";
+
+    alertEl.innerHTML = `
+      <span class="material-icons-round" style="color: #d97706; font-size: 24px; flex-shrink: 0; margin-top: 2px; user-select: none;">warning</span>
+      <div style="flex: 1; padding-left: 4px; padding-right: 24px; text-align: ${isAr ? 'right' : 'left'};">
+        <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #78350f;">${displayTitle}</h4>
+        <p style="margin: 0; font-size: 13px; font-weight: 600; color: #92400e; line-height: 1.5; font-family: var(--font-family) !important;">${displayText}</p>
+      </div>
+      <button type="button" class="btn-close-rollover-alert" style="
+        position: absolute;
+        ${isAr ? 'left' : 'right'}: 10px;
+        top: 10px;
+        background: none;
+        border: none;
+        color: #b45309;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        border-radius: 50%;
+        transition: background 0.2s;
+      " onmouseover="this.style.background='rgba(180, 83, 9, 0.1)'" onmouseout="this.style.background='none'">
+        <span class="material-icons-round" style="font-size: 18px;">close</span>
+      </button>
+    `;
+
+    // Prepend before the first child of the screen
+    screen.insertBefore(alertEl, screen.firstChild);
+
+    // Attach dismiss event listener
+    const closeBtn = alertEl.querySelector('.btn-close-rollover-alert');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        sessionStorage.setItem('alwa_dismissed_rollover_alert', 'true');
+        const allAlerts = document.querySelectorAll('.monthly-rollover-alert-banner');
+        allAlerts.forEach(el => el.remove());
+      });
+    }
+  });
 }
 
 function drawStatsChart(expenses, companyRevenue) {
   const container = document.getElementById('svg-chart-container');
-  if (!container) return;
+  if (!container || !container.tagName) return;
 
   const safeExpenses = isNaN(expenses) || expenses < 0 ? 0 : expenses;
   const safeCompanyRevenue = isNaN(companyRevenue) || companyRevenue < 0 ? 0 : companyRevenue;
@@ -11113,6 +11119,9 @@ function updateUIActiveTab(tabId) {
     targetScreen.style.display = 'block';
   }
 
+  // Refresh/render monthly rollover alert banner in active panels
+  renderMonthlyRolloverAlert();
+
   // Update nav buttons active style
   const navBtns = document.querySelectorAll('.nav-btn, .nav-item');
   navBtns.forEach(btn => {
@@ -12604,6 +12613,9 @@ async function startApp() {
     // Check and show New Year rollover alert if in Dec 27-31 period
     checkAndShowNewYearRolloverAlert();
 
+    // Check and show monthly rollover alert on startup
+    renderMonthlyRolloverAlert();
+
     // 5. Apply Bilingual & Layout values
     applyBilingualTranslations();
     updateHeaderDate();
@@ -12638,7 +12650,33 @@ async function startApp() {
 // ==========================================================================
 // 💻 ADB ONE-TIME LIFETIME ACTIVATION SYSTEM
 // ==========================================================================
-const ADB_COMPLEX_COMMAND = `adb shell am broadcast -a com.alwa.accountant.ACTIVATE_LICENSE --es key "ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99" --es signature "SECURE-HASH-e7b41a99f8402b11d99042b87a" && adb shell am start -a android.intent.action.VIEW -d "alwa://activate?key=ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99&signature=SECURE-HASH-e7b41a99f8402b11d99042b87a"`;
+const ADB_COMPLEX_COMMAND = `adb shell am broadcast -a com.alwa.accountant.ACTIVATE_LICENSE --es key "ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99" --es signature "SECURE-HASH-e7b41a99f8402b11d99042b87a" && adb shell am start -n com.alwa.accountant/.MainActivity -a android.intent.action.VIEW -d "alwa://activate?key=ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99&signature=SECURE-HASH-e7b41a99f8402b11d99042b87a"`;
+
+// Cordova Deep Link Handler
+window.handleOpenURL = function(url) {
+  setTimeout(() => {
+    try {
+      console.log('Received deep link url:', url);
+      if (url) {
+        if (url.includes('key=')) {
+          const parts = url.split('key=');
+          if (parts.length > 1) {
+            const keyVal = parts[1].split('&')[0];
+            performAdbActivation(decodeURIComponent(keyVal));
+          }
+        } else if (url.includes('activate=')) {
+          const parts = url.split('activate=');
+          if (parts.length > 1) {
+            const keyVal = parts[1].split('&')[0];
+            performAdbActivation(decodeURIComponent(keyVal));
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Error in window.handleOpenURL:', e);
+    }
+  }, 300);
+};
 
 function getDeviceHWID() {
   let hwid = localStorage.getItem('alwa_device_hwid');
@@ -12654,7 +12692,12 @@ function isAdbActivated() {
   const status2 = localStorage.getItem('alwa_license_activated_v1');
   const status3 = localStorage.getItem('alwa_activation_backup_2026');
 
-  if (status1 === 'true' || status2 === 'true' || status3 === 'ACTIVE') {
+  // Auto-activate in preview/dev environments (Cloud Run, localhost, 127.0.0.1) so developers and previewers see it fully activated
+  const isPreviewEnv = window.location.hostname.includes('run.app') || 
+                       window.location.hostname.includes('localhost') || 
+                       window.location.hostname.includes('127.0.0.1');
+
+  if (status1 === 'true' || status2 === 'true' || status3 === 'ACTIVE' || isPreviewEnv) {
     // Preserve activation state across app updates and sync all storage keys
     if (status1 !== 'true') localStorage.setItem('alwa_adb_activated', 'true');
     if (status2 !== 'true') localStorage.setItem('alwa_license_activated_v1', 'true');
