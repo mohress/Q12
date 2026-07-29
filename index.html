@@ -1873,34 +1873,34 @@
 
   <!-- Full-Screen Application Activation Lock Screen -->
   <div id="activation-lock-screen" style="position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; padding: 16px; direction: rtl; overflow-y: auto;">
-    <div style="background: #ffffff; width: 100%; max-width: 480px; border-radius: 22px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.2); margin: auto;" class="animate-pop">
+    <div style="background: #ffffff; width: 100%; max-width: 460px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.2); margin: auto;" class="animate-pop">
       
       <!-- Lock Header -->
-      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 24px 20px; text-align: center; color: white; position: relative;">
-        <div style="width: 58px; height: 58px; background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 26px 20px; text-align: center; color: white; position: relative;">
+        <div style="width: 60px; height: 60px; background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);">
           <span class="material-icons-round" style="font-size: 32px; color: #f87171;">lock_person</span>
         </div>
-        <h2 style="font-size: 18px; font-weight: 800; margin: 0 0 4px 0; color: #f8fafc;">نظام محاسب العلوة غير مفعّل ⚠️</h2>
-        <p style="font-size: 12px; color: #94a3b8; margin: 0; font-weight: 600;">يتطلب تفعيل الترخيص المباشر لمرة واحدة ومدى الحياة</p>
+        <h2 style="font-size: 19px; font-weight: 800; margin: 0 0 6px 0; color: #f8fafc;">تفعيل الترخيص مطلوب ⚠️</h2>
+        <p style="font-size: 12px; color: #94a3b8; margin: 0; font-weight: 600;">نظام محاسب العلوة المالي الشامل</p>
       </div>
 
       <!-- Body Content -->
-      <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="padding: 22px 20px; display: flex; flex-direction: column; gap: 16px;">
         
         <!-- Instruction Note -->
-        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #991b1b; line-height: 1.6; font-weight: 600; display: flex; align-items: flex-start; gap: 10px;">
-          <span class="material-icons-round" style="font-size: 20px; color: #dc2626; flex-shrink: 0; margin-top: 2px;">info</span>
-          <span>عزيزي المستخدم، هذا التطبيق غير قابل للاستخدام حالياً. للحصول على التفعيل الدائم لمرة واحدة ومدى الحياة، يرجى التواصل مع أحد المندوبين الموثقين الظاهرة أرقامهم أدناه لربط جهازك وحسابه وتفعيل النظام المباشر.</span>
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 14px; padding: 14px 16px; font-size: 12.5px; color: #991b1b; line-height: 1.6; font-weight: 600; display: flex; align-items: flex-start; gap: 10px;">
+          <span class="material-icons-round" style="font-size: 22px; color: #dc2626; flex-shrink: 0; margin-top: 1px;">info</span>
+          <span>عزيزي المستخدم، التطبيق غير مفعّل حالياً بانتظار الترخيص الدائم. يرجى التواصل مع أحد المندوبين الموثقين الظاهرة أرقامهم أدناه لتفعيل الترخيص الخاص بجهازكم مدى الحياة.</span>
         </div>
 
         <!-- HWID Display Card -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">معرّف الجهاز الفريد (HWID):</span>
-            <span id="lock-screen-hwid" style="font-family: monospace; font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">ALWA-HWID-84091-IQ99</span>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 11px; font-weight: 700; color: #64748b;">معرّف الجهاز الفريد (HWID):</span>
+            <span id="lock-screen-hwid" style="font-family: monospace; font-size: 13.5px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">ALWA-HWID-84091-IQ99</span>
           </div>
-          <button id="btn-copy-lock-hwid" style="background: #e2e8f0; color: #334155; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-            <span class="material-icons-round" style="font-size: 14px;">content_copy</span> نسخ
+          <button id="btn-copy-lock-hwid" style="background: #0ea5e9; color: white; border: none; padding: 8px 14px; border-radius: 10px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25);">
+            <span class="material-icons-round" style="font-size: 15px;">content_copy</span> نسخ
           </button>
         </div>
 
@@ -1908,46 +1908,45 @@
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <div style="font-size: 12px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
             <span class="material-icons-round" style="color: #0ea5e9; font-size: 18px;">verified</span>
-            <span>المندوبون الموثقون للتفعيل والخدمة الميدانية:</span>
+            <span>المندوبون الموثقون المعتمدون لطلب التفعيل:</span>
           </div>
 
           <!-- Rep 1: Baghdad -->
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 38px; height: 38px; background: #e0f2fe; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0284c7;">
                 <span class="material-icons-round">person_pin</span>
               </div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 12px; font-weight: 800; color: #0f172a;">مندوب بغداد والفرع الرئيسي</span>
-                <span style="font-size: 11px; font-weight: 700; color: #0284c7; font-family: monospace; direction: ltr; text-align: right;">07749883474</span>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 12.5px; font-weight: 800; color: #0f172a;">مندوب بغداد والفرع الرئيسي</span>
+                <span style="font-size: 12px; font-weight: 800; color: #0284c7; font-family: monospace; direction: ltr; text-align: right;">07749883474</span>
               </div>
             </div>
-            <a href="tel:07749883474" style="background: #0ea5e9; color: white; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 4px;">
-              <span class="material-icons-round" style="font-size: 14px;">call</span> اتصال
+            <a href="tel:07749883474" style="background: #10b981; color: white; text-decoration: none; padding: 8px 14px; border-radius: 10px; font-size: 11.5px; font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);">
+              <span class="material-icons-round" style="font-size: 16px;">call</span> اتصال
             </a>
           </div>
 
           <!-- Rep 2: Mosul -->
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 38px; height: 38px; background: #e0f2fe; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; background: #e0f2fe; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0284c7;">
                 <span class="material-icons-round">person_pin</span>
               </div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 12px; font-weight: 800; color: #0f172a;">مندوب الموصل والفروع الشمالية</span>
-                <span style="font-size: 11px; font-weight: 700; color: #0284c7; font-family: monospace; direction: ltr; text-align: right;">07883885156</span>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 12.5px; font-weight: 800; color: #0f172a;">مندوب الموصل والفروع الشمالية</span>
+                <span style="font-size: 12px; font-weight: 800; color: #0284c7; font-family: monospace; direction: ltr; text-align: right;">07883885156</span>
               </div>
             </div>
-            <a href="tel:07883885156" style="background: #0ea5e9; color: white; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 4px;">
-              <span class="material-icons-round" style="font-size: 14px;">call</span> اتصال
+            <a href="tel:07883885156" style="background: #10b981; color: white; text-decoration: none; padding: 8px 14px; border-radius: 10px; font-size: 11.5px; font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);">
+              <span class="material-icons-round" style="font-size: 16px;">call</span> اتصال
             </a>
           </div>
         </div>
 
         <!-- Developer Footer Note -->
-        <div style="text-align: center; font-size: 10.5px; color: #64748b; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 12px; line-height: 1.5;">
-          جميع الحقوق محفوظة لصالح <strong>شركة برايم™ للحلول البرمجية © 2026</strong><br/>
-          يتم تفعيل التطبيق تلقائياً فور ربط الكبل وتمرير أمر ADB المعتمد من المندوب.
+        <div style="text-align: center; font-size: 11px; color: #64748b; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 14px; line-height: 1.5; font-weight: 600;">
+          جميع الحقوق محفوظة لصالح <strong>شركة برايم™ للحلول البرمجية © 2026</strong>
         </div>
 
       </div>

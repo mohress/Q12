@@ -12650,8 +12650,18 @@ function getDeviceHWID() {
 }
 
 function isAdbActivated() {
-  const status = localStorage.getItem('alwa_adb_activated');
-  return status === 'true';
+  const status1 = localStorage.getItem('alwa_adb_activated');
+  const status2 = localStorage.getItem('alwa_license_activated_v1');
+  const status3 = localStorage.getItem('alwa_activation_backup_2026');
+
+  if (status1 === 'true' || status2 === 'true' || status3 === 'ACTIVE') {
+    // Preserve activation state across app updates and sync all storage keys
+    if (status1 !== 'true') localStorage.setItem('alwa_adb_activated', 'true');
+    if (status2 !== 'true') localStorage.setItem('alwa_license_activated_v1', 'true');
+    if (status3 !== 'ACTIVE') localStorage.setItem('alwa_activation_backup_2026', 'ACTIVE');
+    return true;
+  }
+  return false;
 }
 
 function updateAdbSubscriptionUI() {
@@ -12700,6 +12710,8 @@ function updateAdbSubscriptionUI() {
 
 function performAdbActivation(key) {
   localStorage.setItem('alwa_adb_activated', 'true');
+  localStorage.setItem('alwa_license_activated_v1', 'true');
+  localStorage.setItem('alwa_activation_backup_2026', 'ACTIVE');
   localStorage.setItem('alwa_adb_key', key || 'ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99');
   localStorage.setItem('alwa_adb_activated_at', new Date().toISOString());
   updateAdbSubscriptionUI();
@@ -12710,7 +12722,7 @@ function performAdbActivation(key) {
 function copyAdbCommandToClipboard() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(ADB_COMPLEX_COMMAND).then(() => {
-      showToast(currentLanguage === 'ar' ? '📋 تم نسخ أمر التفعيل المعقد عبر ADB! الصقه في Terminal اللابتوب.' : '📋 ADB Activation command copied! Paste it in your laptop Terminal.', 'content_copy');
+      showToast(currentLanguage === 'ar' ? '📋 تم نسخ امر التفعيل بنجاح!' : '📋 Activation command copied!', 'content_copy');
     }).catch(() => {
       fallbackCopyAdbCommand();
     });
@@ -12726,7 +12738,7 @@ function fallbackCopyAdbCommand() {
   textArea.select();
   document.execCommand('copy');
   document.body.removeChild(textArea);
-  showToast(currentLanguage === 'ar' ? '📋 تم نسخ أمر التفعيل المعقد عبر ADB!' : '📋 ADB Activation command copied!', 'content_copy');
+  showToast(currentLanguage === 'ar' ? '📋 تم نسخ امر التفعيل بنجاح!' : '📋 Activation command copied!', 'content_copy');
 }
 
 function checkUrlAdbActivation() {
@@ -12737,7 +12749,7 @@ function checkUrlAdbActivation() {
       performAdbActivation(keyParam);
     }
   } catch (e) {
-    console.log('Error checking URL params for ADB activation:', e);
+    console.log('Error checking URL params for activation:', e);
   }
 }
 
@@ -12746,8 +12758,8 @@ function checkUrlAdbActivation() {
     if (badgeStatus) {
       badgeStatus.addEventListener('click', () => {
         const msg = currentLanguage === 'ar' 
-          ? '🛡️ الاشتراك الذهبي نشط ومفعل بالكامل مدى الحياة عبر ADB!' 
-          : '🛡️ Golden Subscription is active & fully enabled for lifetime via ADB!';
+          ? '🛡️ الاشتراك الذهبي نشط ومفعل بالكامل مدى الحياة!' 
+          : '🛡️ Golden Subscription is active & fully enabled for lifetime!';
         showToast(msg, 'verified_user');
       });
     }
