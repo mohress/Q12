@@ -80,8 +80,8 @@ const MAPPINGS_DICTIONARY = {
   'total-commission-5': 'val-total-commission-5',
   'total-paid-dues': 'val-total-paid-dues',
   'total-porters-payouts': 'val-total-porter-payouts',
-  'btn-record-expense': 'btn-add-expense',
-  'btn-record-loss': 'btn-add-loss',
+  'btn-record-expense': 'btn-record-expense-dummy',
+  'btn-record-loss': 'btn-record-loss-dummy',
   'lbl-chart-title': 'txt-chart-title',
   'lbl-ledger-title': 'txt-ledger-title',
   'lbl-office-title': 'txt-office-settings-title',
@@ -206,31 +206,6 @@ let numeralSystem = 'en'; // 'ar' for Eastern Arabic (١٢٣), 'en' for Western 
 let activeTab = 'screen-import';
 let isNavigatingViaHistory = false;
 let soundEnabled = localStorage.getItem('alwa_sound') !== 'false';
-// Function to unlock HTML5 audio elements on user interaction
-function unlockHTML5Audio() {
-  const sounds = ['sound-success', 'sound-alert', 'sound-print'];
-  sounds.forEach(id => {
-    const sound = document.getElementById(id);
-    if (sound) {
-      const playPromise = sound.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          sound.pause();
-          sound.currentTime = 0;
-        }).catch(err => {
-          console.log('Audio auto-unlock info:', err);
-        });
-      }
-    }
-  });
-  window.removeEventListener('click', unlockHTML5Audio);
-  window.removeEventListener('touchstart', unlockHTML5Audio);
-  window.removeEventListener('mousedown', unlockHTML5Audio);
-}
-
-window.addEventListener('click', unlockHTML5Audio, { passive: true });
-window.addEventListener('touchstart', unlockHTML5Audio, { passive: true });
-window.addEventListener('mousedown', unlockHTML5Audio, { passive: true });
 let importFilterStatus = 'all';
 let saleFilterStatus = 'all';
 let debtsFilterStatus = 'all';
@@ -446,104 +421,383 @@ function renderAppLogs() {
 }
 
 // Common fruits & vegetables dictionary with icons
+
+const customSvgs = {
+  'turnip_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="turnipGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="30%" stop-color="#9333ea"/><stop offset="60%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><path d="M 50,85 Q 45,95 50,100" stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 15,50 C 15,20 85,20 85,50 C 85,75 65,85 50,85 C 35,85 15,75 15,50 Z" fill="url(#turnipGrad)"/><path d="M 50,25 Q 35,5 20,15 C 30,25 40,25 50,25 Z" fill="#4ade80"/><path d="M 50,25 Q 65,5 80,15 C 70,25 60,25 50,25 Z" fill="#22c55e"/><path d="M 50,25 Q 50,0 50,10 C 55,20 50,25 50,25 Z" fill="#16a34a"/><ellipse cx="30" cy="45" rx="5" ry="12" transform="rotate(-20 30 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'radish_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="radishGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="50%" stop-color="#dc2626"/><stop offset="80%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#f8fafc"/></radialGradient></defs><path d="M 50,85 Q 50,95 55,100" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 20,50 C 20,25 80,25 80,50 C 80,75 60,85 50,85 C 40,85 20,75 20,50 Z" fill="url(#radishGrad)"/><path d="M 50,25 C 20,15 25,5 40,15 Z" fill="#22c55e"/><path d="M 50,25 C 80,15 75,5 60,15 Z" fill="#16a34a"/><path d="M 50,25 C 40,5 60,5 50,15 Z" fill="#15803d"/><ellipse cx="35" cy="45" rx="4" ry="10" transform="rotate(-30 35 45)" fill="rgba(255,255,255,0.5)" filter="blur(1px)"/></svg>`,
+  'greenapple_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="appleGreen" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#d9f99d"/><stop offset="40%" stop-color="#84cc16"/><stop offset="100%" stop-color="#4d7c0f"/></radialGradient></defs><path d="M 50,20 C 75,10 95,30 90,60 C 85,90 60,95 50,85 C 40,95 15,90 10,60 C 5,30 25,10 50,20 Z" fill="url(#appleGreen)"/><path d="M 50,25 Q 45,5 55,5" stroke="#78350f" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,20 C 65,10 75,25 60,30 C 50,25 45,15 50,20 Z" fill="#16a34a"/><ellipse cx="25" cy="40" rx="4" ry="12" transform="rotate(-30 25 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'apple_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="appleRed" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="40%" stop-color="#ef4444"/><stop offset="100%" stop-color="#991b1b"/></radialGradient></defs><path d="M 50,20 C 75,10 95,30 90,60 C 85,90 60,95 50,85 C 40,95 15,90 10,60 C 5,30 25,10 50,20 Z" fill="url(#appleRed)"/><path d="M 50,25 Q 45,5 55,5" stroke="#78350f" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,20 C 65,10 75,25 60,30 C 50,25 45,15 50,20 Z" fill="#22c55e"/><ellipse cx="25" cy="40" rx="4" ry="12" transform="rotate(-30 25 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'pumpkin_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="pumpGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fb923c"/><stop offset="80%" stop-color="#ea580c"/><stop offset="100%" stop-color="#9a3412"/></radialGradient></defs><ellipse cx="50" cy="55" rx="40" ry="35" fill="url(#pumpGrad)"/><ellipse cx="50" cy="55" rx="30" ry="35" fill="url(#pumpGrad)" stroke="#c2410c" stroke-width="2"/><ellipse cx="50" cy="55" rx="18" ry="35" fill="url(#pumpGrad)" stroke="#c2410c" stroke-width="2"/><path d="M 50,20 C 45,10 55,5 60,10 C 65,15 55,20 50,20 Z" fill="#15803d"/><path d="M 50,20 L 52,5 C 55,2 60,8 60,8" stroke="#15803d" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
+  'cabbage_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="cabGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#bbf7d0"/><stop offset="50%" stop-color="#4ade80"/><stop offset="100%" stop-color="#166534"/></radialGradient></defs><circle cx="50" cy="55" r="40" fill="url(#cabGrad)"/><path d="M 20,40 C 40,20 60,30 80,45" stroke="#14532d" stroke-width="2" fill="none" opacity="0.5"/><path d="M 30,70 C 50,50 70,60 85,75" stroke="#14532d" stroke-width="2" fill="none" opacity="0.5"/></svg>`,
+  'cauliflower_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="cauliGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#ffffff"/><stop offset="70%" stop-color="#fef08a"/><stop offset="100%" stop-color="#ca8a04"/></radialGradient><linearGradient id="cauliLeaf" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#14532d"/></linearGradient></defs><path d="M 50,95 C 10,95 10,50 20,40 C 30,60 40,80 50,85 C 60,80 70,60 80,40 C 90,50 90,95 50,95 Z" fill="url(#cauliLeaf)"/><circle cx="50" cy="35" r="22" fill="url(#cauliGrad)"/><circle cx="30" cy="50" r="18" fill="url(#cauliGrad)"/><circle cx="70" cy="50" r="18" fill="url(#cauliGrad)"/><circle cx="40" cy="70" r="15" fill="url(#cauliGrad)"/><circle cx="60" cy="70" r="15" fill="url(#cauliGrad)"/><circle cx="50" cy="55" r="20" fill="url(#cauliGrad)"/></svg>`,
+  'olive_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="oliGreen" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#bbf7d0"/><stop offset="60%" stop-color="#22c55e"/><stop offset="100%" stop-color="#14532d"/></radialGradient><radialGradient id="oliBlack" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#94a3b8"/><stop offset="60%" stop-color="#334155"/><stop offset="100%" stop-color="#020617"/></radialGradient></defs><path d="M 20,15 Q 50,25 80,15" stroke="#78350f" stroke-width="4" fill="none"/><path d="M 50,20 Q 70,5 90,25 Q 70,35 50,20 Z" fill="#15803d"/><ellipse cx="35" cy="55" rx="18" ry="25" transform="rotate(20 35 55)" fill="url(#oliBlack)"/><ellipse cx="30" cy="40" rx="4" ry="10" transform="rotate(20 30 40)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/><ellipse cx="70" cy="65" rx="18" ry="25" transform="rotate(-20 70 65)" fill="url(#oliGreen)"/><ellipse cx="65" cy="50" rx="4" ry="10" transform="rotate(-20 65 50)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'beans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="kbGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f87171"/><stop offset="50%" stop-color="#b91c1c"/><stop offset="100%" stop-color="#7f1d1d"/></linearGradient></defs><path d="M 25,75 C 10,70 10,30 30,25 C 45,20 50,40 40,50 C 30,60 30,70 25,75 Z" fill="url(#kbGrad)"/><ellipse cx="25" cy="40" rx="3" ry="10" transform="rotate(-15 25 40)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/><ellipse cx="35" cy="35" rx="2" ry="5" transform="rotate(-10 35 35)" fill="#fecaca"/><path d="M 55,85 C 40,80 40,40 60,35 C 75,30 80,50 70,60 C 60,70 60,80 55,85 Z" fill="url(#kbGrad)"/><ellipse cx="55" cy="50" rx="3" ry="10" transform="rotate(-15 55 50)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/><ellipse cx="65" cy="45" rx="2" ry="5" transform="rotate(-10 65 45)" fill="#fecaca"/></svg>`,
+  'peas_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="peaGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#166534"/></linearGradient></defs><path d="M 10,80 C 20,40 60,20 90,20 C 80,60 40,80 10,80 Z" fill="url(#peaGrad)"/><circle cx="35" cy="60" r="8" fill="#4ade80"/><circle cx="50" cy="50" r="8" fill="#4ade80"/><circle cx="65" cy="40" r="8" fill="#4ade80"/></svg>`,
+  'chickpeas_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="chiGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#fef08a"/><stop offset="100%" stop-color="#a16207"/></radialGradient></defs><circle cx="50" cy="55" r="25" fill="url(#chiGrad)"/><path d="M 35,45 C 30,40 25,50 35,55 Z" fill="#ca8a04"/></svg>`,
+  'lentils_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="lenGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#fb923c"/><stop offset="100%" stop-color="#9a3412"/></radialGradient></defs><circle cx="35" cy="45" r="15" fill="url(#lenGrad)"/><circle cx="65" cy="55" r="15" fill="url(#lenGrad)"/><circle cx="45" cy="70" r="15" fill="url(#lenGrad)"/></svg>`,
+  'mungbeans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="munGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#14532d"/></radialGradient></defs><ellipse cx="40" cy="50" rx="12" ry="18" fill="url(#munGrad)" transform="rotate(30 40 50)"/><ellipse cx="65" cy="65" rx="12" ry="18" fill="url(#munGrad)" transform="rotate(-20 65 65)"/><ellipse cx="70" cy="40" rx="12" ry="18" fill="url(#munGrad)" transform="rotate(45 70 40)"/></svg>`,
+  'driedlime_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dlGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#d6d3d1"/><stop offset="50%" stop-color="#78716c"/><stop offset="100%" stop-color="#1c1917"/></radialGradient></defs><circle cx="50" cy="55" r="35" fill="url(#dlGrad)"/><circle cx="40" cy="40" r="3" fill="#44403c"/><circle cx="60" cy="45" r="4" fill="#44403c"/><circle cx="50" cy="70" r="3" fill="#44403c"/></svg>`,
+  'tangerine_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="tangGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#fef08a"/><stop offset="30%" stop-color="#fb923c"/><stop offset="80%" stop-color="#ea580c"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient></defs><ellipse cx="50" cy="60" rx="42" ry="34" fill="url(#tangGrad)"/><circle cx="50" cy="28" r="4" fill="#c2410c"/><circle cx="48" cy="27" r="1.5" fill="#7c2d12"/><path d="M 50,28 C 25,5 5,20 20,45 C 35,30 45,30 50,28 Z" fill="#22c55e"/><ellipse cx="35" cy="45" rx="8" ry="12" transform="rotate(-45 35 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'cherrytomato_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="chtGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="50%" stop-color="#ef4444"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient></defs><circle cx="50" cy="55" r="25" fill="url(#chtGrad)"/><path d="M 50,30 L 45,20 L 50,10 L 55,20 Z" fill="#166534"/><ellipse cx="40" cy="45" rx="4" ry="8" transform="rotate(-45 40 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'cartoncorn_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="canGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#94a3b8"/><stop offset="50%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#475569"/></linearGradient></defs><rect x="25" y="30" width="50" height="60" rx="5" fill="url(#canGrad)"/><rect x="25" y="20" width="50" height="10" fill="#64748b"/><circle cx="50" cy="60" r="15" fill="#facc15"/><circle cx="45" cy="55" r="3" fill="#ca8a04"/><circle cx="55" cy="65" r="3" fill="#ca8a04"/></svg>`,
+
+  'dragonfruit_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dfPinkGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#fbcfe8"/><stop offset="40%" stop-color="#f43f5e"/><stop offset="80%" stop-color="#e11d48"/><stop offset="100%" stop-color="#9f1239"/></radialGradient></defs><ellipse cx="50" cy="55" rx="35" ry="40" fill="url(#dfPinkGrad)"/><path d="M 25,40 Q 10,25 20,20 Q 25,30 35,35 Z" fill="#4ade80"/><path d="M 45,30 Q 30,10 40,5 Q 50,15 55,25 Z" fill="#4ade80"/><path d="M 70,45 Q 85,30 75,20 Q 65,30 60,40 Z" fill="#4ade80"/><path d="M 18,65 Q 5,55 10,45 Q 20,55 25,60 Z" fill="#4ade80"/><path d="M 80,65 Q 95,55 90,45 Q 80,55 75,60 Z" fill="#4ade80"/><path d="M 40,80 Q 25,95 40,95 Q 50,85 55,75 Z" fill="#4ade80"/><ellipse cx="35" cy="45" rx="6" ry="12" transform="rotate(-30 35 45)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
+  'artichoke_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="artGrad" cx="50%" cy="80%" r="70%"><stop offset="0%" stop-color="#bbf7d0"/><stop offset="100%" stop-color="#166534"/></radialGradient></defs><path d="M 50,90 C 20,70 30,20 50,10 C 70,20 80,70 50,90 Z" fill="url(#artGrad)"/><path d="M 50,90 C 35,70 45,30 50,20 C 55,30 65,70 50,90 Z" fill="#22c55e" opacity="0.6"/><ellipse cx="45" cy="50" rx="8" ry="15" transform="rotate(-15 45 50)" fill="rgba(255,255,255,0.2)" filter="blur(1px)"/></svg>`,
+
+  'pomegranate_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="pomOut" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="50%" stop-color="#dc2626"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient><radialGradient id="pomIn" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fef08a"/><stop offset="100%" stop-color="#fef9c3"/></radialGradient></defs><circle cx="50" cy="55" r="40" fill="url(#pomOut)"/><path d="M 40,16 L 35,5 L 45,10 L 50,0 L 55,10 L 65,5 L 60,16 Z" fill="#991b1b"/><path d="M 25,60 C 20,40 50,30 75,50 C 65,70 30,70 25,60 Z" fill="url(#pomIn)"/><circle cx="40" cy="45" r="4" fill="#ef4444"/><circle cx="50" cy="42" r="4.5" fill="#dc2626"/><circle cx="60" cy="45" r="4" fill="#b91c1c"/><circle cx="35" cy="55" r="4" fill="#dc2626"/><circle cx="45" cy="55" r="4.5" fill="#991b1b"/><circle cx="55" cy="55" r="4" fill="#ef4444"/><circle cx="65" cy="52" r="4" fill="#dc2626"/><circle cx="40" cy="63" r="4" fill="#b91c1c"/><circle cx="50" cy="63" r="4.5" fill="#ef4444"/><circle cx="60" cy="60" r="4" fill="#dc2626"/><ellipse cx="35" cy="40" rx="4" ry="12" transform="rotate(-30 35 40)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
+  'loquat_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="loqGradNew" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/></radialGradient></defs><path d="M 50,30 Q 30,10 10,25 Q 35,40 50,30 Z" fill="#22c55e"/><path d="M 50,30 Q 70,10 90,25 Q 65,40 50,30 Z" fill="#16a34a"/><path d="M 50,30 L 50,15" stroke="#78350f" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="35" cy="55" rx="18" ry="22" transform="rotate(-15 35 55)" fill="url(#loqGradNew)"/><circle cx="33" cy="76" r="3" fill="#78350f"/><ellipse cx="25" cy="45" rx="4" ry="10" transform="rotate(-30 25 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/><ellipse cx="65" cy="55" rx="18" ry="22" transform="rotate(15 65 55)" fill="url(#loqGradNew)"/><circle cx="67" cy="76" r="3" fill="#78350f"/><ellipse cx="55" cy="45" rx="4" ry="10" transform="rotate(30 55 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/><ellipse cx="50" cy="70" rx="20" ry="25" fill="url(#loqGradNew)"/><circle cx="50" cy="94" r="3" fill="#78350f"/><ellipse cx="40" cy="60" rx="5" ry="12" transform="rotate(-15 40 60)" fill="rgba(255,255,255,0.5)" filter="blur(1px)"/></svg>`,
+  'grapefruit_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="gpfGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="40%" stop-color="#fb923c"/>
+      <stop offset="80%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#gpfGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
+  </svg>`,
+  'jujube_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="jujubeGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="40%" stop-color="#dc2626"/><stop offset="80%" stop-color="#991b1b"/><stop offset="100%" stop-color="#450a0a"/></radialGradient></defs><ellipse cx="50" cy="55" rx="25" ry="35" fill="url(#jujubeGrad)"/><path d="M 50,20 Q 55,10 60,5" stroke="#78350f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,20 C 60,15 65,25 55,30 C 45,25 45,15 50,20 Z" fill="#22c55e"/><ellipse cx="40" cy="45" rx="3" ry="12" transform="rotate(-15 40 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'persimmon_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="perGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fdba74"/>
+      <stop offset="40%" stop-color="#f97316"/>
+      <stop offset="80%" stop-color="#c2410c"/>
+      <stop offset="100%" stop-color="#7c2d12"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#perGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
+  </svg>`,
+  'mangosteen_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="mangoGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#7e22ce"/><stop offset="60%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#2e1065"/></radialGradient><radialGradient id="mangLeafGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#14532d"/></radialGradient></defs><circle cx="50" cy="60" r="35" fill="url(#mangoGrad)"/><path d="M 50,15 C 30,15 20,35 25,45 C 35,35 45,45 50,45 C 55,45 65,35 75,45 C 80,35 70,15 50,15 Z" fill="url(#mangLeafGrad)"/><circle cx="50" cy="25" r="4" fill="#064e3b"/><ellipse cx="35" cy="55" rx="8" ry="15" transform="rotate(-30 35 55)" fill="rgba(255,255,255,0.2)" filter="blur(1px)"/></svg>`,
+  'rambutan_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="ramGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fca5a5"/>
+      <stop offset="40%" stop-color="#ef4444"/>
+      <stop offset="80%" stop-color="#b91c1c"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#ramGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
+  </svg>`,
+  'quince_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="quinceGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#eab308"/><stop offset="100%" stop-color="#a16207"/></radialGradient></defs><path d="M 50,15 L 55,5 Q 65,-5 75,10 Q 60,20 50,15 Z" fill="#4ade80"/><path d="M 50,15 L 50,5" stroke="#78350f" stroke-width="4" stroke-linecap="round"/><path d="M 50,15 C 25,10 10,40 15,65 C 20,90 40,95 50,95 C 60,95 80,90 85,65 C 90,40 75,10 50,15 Z" fill="url(#quinceGrad)"/><circle cx="30" cy="70" r="2" fill="#ca8a04" opacity="0.5"/><circle cx="45" cy="80" r="2.5" fill="#ca8a04" opacity="0.5"/><circle cx="70" cy="65" r="2" fill="#ca8a04" opacity="0.5"/><circle cx="25" cy="50" r="1.5" fill="#ca8a04" opacity="0.5"/><circle cx="65" cy="80" r="2" fill="#ca8a04" opacity="0.5"/><ellipse cx="35" cy="35" rx="6" ry="15" transform="rotate(-30 35 35)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'greencherryplum_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="gcpGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#bbf7d0"/>
+      <stop offset="40%" stop-color="#4ade80"/>
+      <stop offset="80%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#gcpGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    
+  </svg>`,
+  'guava_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="guavaOut" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#bef264"/><stop offset="50%" stop-color="#4ade80"/><stop offset="100%" stop-color="#166534"/></radialGradient><radialGradient id="guavaIn" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fecdd3"/><stop offset="40%" stop-color="#f43f5e"/><stop offset="100%" stop-color="#be123c"/></radialGradient></defs><circle cx="35" cy="45" r="30" fill="url(#guavaOut)"/><circle cx="25" cy="25" r="3" fill="#14532d"/><ellipse cx="65" cy="65" rx="25" ry="25" fill="url(#guavaOut)"/><ellipse cx="65" cy="65" rx="22" ry="22" fill="#fef08a"/><ellipse cx="65" cy="65" rx="18" ry="18" fill="url(#guavaIn)"/><circle cx="60" cy="60" r="1.5" fill="#fef08a"/><circle cx="68" cy="58" r="1.5" fill="#fef08a"/><circle cx="58" cy="68" r="1.5" fill="#fef08a"/><circle cx="65" cy="70" r="1.5" fill="#fef08a"/><circle cx="72" cy="65" r="1.5" fill="#fef08a"/><circle cx="62" cy="64" r="1.5" fill="#fef08a"/><circle cx="68" cy="68" r="1.5" fill="#fef08a"/></svg>`,
+  'apricot_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="aprGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="40%" stop-color="#fb923c"/>
+      <stop offset="80%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#aprGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
+  </svg>`,
+  'plum_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="pluGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#e9d5ff"/>
+      <stop offset="40%" stop-color="#c084fc"/>
+      <stop offset="80%" stop-color="#9333ea"/>
+      <stop offset="100%" stop-color="#581c87"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#pluGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
+  </svg>`,
+  'yellowmelon_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="ymeGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="40%" stop-color="#fde047"/>
+      <stop offset="80%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#a16207"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#ymeGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    
+  </svg>`,
+  'passionfruit_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="passGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#a855f7"/><stop offset="60%" stop-color="#6b21a8"/><stop offset="100%" stop-color="#3b0764"/></radialGradient><radialGradient id="passIn" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/></radialGradient></defs><circle cx="45" cy="55" r="35" fill="url(#passGrad)"/><ellipse cx="30" cy="40" rx="5" ry="10" transform="rotate(-45 30 40)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/><circle cx="65" cy="65" r="25" fill="url(#passGrad)"/><circle cx="65" cy="65" r="22" fill="#fef08a"/><circle cx="65" cy="65" r="20" fill="url(#passIn)"/><circle cx="60" cy="60" r="2" fill="#451a03"/><circle cx="68" cy="62" r="2" fill="#451a03"/><circle cx="58" cy="68" r="2" fill="#451a03"/><circle cx="65" cy="70" r="2" fill="#451a03"/><circle cx="72" cy="65" r="2" fill="#451a03"/></svg>`,
+  'spinach_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="spinachGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#22c55e"/><stop offset="50%" stop-color="#16a34a"/><stop offset="100%" stop-color="#14532d"/></linearGradient></defs><path d="M 50,95 Q 45,90 50,75 C 20,70 10,50 20,35 C 10,25 30,5 50,15 C 70,5 90,25 80,35 C 90,50 80,70 50,75 Z" fill="url(#spinachGrad)"/><path d="M 50,90 L 50,15 M 50,65 Q 35,50 25,45 M 50,50 Q 65,40 75,35 M 50,40 Q 35,30 25,25 M 50,30 Q 60,20 65,15" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.8" stroke-linecap="round"/></svg>`,
+  'swisschard_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><path d="M 50,90 Q 40,50 30,30 C 10,10 30,0 50,10 C 70,0 90,10 70,30 Q 60,50 50,90 Z" fill="#22c55e"/><path d="M 50,85 Q 45,50 35,35 C 20,15 35,10 50,15 C 65,10 80,15 65,35 Q 55,50 50,85 Z" fill="#16a34a"/><path d="M 50,95 L 50,15" stroke="#e11d48" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M 50,60 Q 40,45 35,35" stroke="#e11d48" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,65 Q 60,50 65,40" stroke="#e11d48" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,45 Q 40,35 35,25" stroke="#e11d48" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,50 Q 60,40 65,30" stroke="#e11d48" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+  'celery_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="celGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="50%" stop-color="#4ade80"/><stop offset="100%" stop-color="#bbf7d0"/></linearGradient></defs><path d="M 35,90 Q 25,50 30,30 L 40,30 Q 35,50 45,90 Z" fill="url(#celGrad)"/><path d="M 65,90 Q 75,50 70,30 L 60,30 Q 65,50 55,90 Z" fill="url(#celGrad)"/><path d="M 50,95 Q 45,50 50,25 L 60,25 Q 55,50 60,95 Z" fill="#22c55e"/><path d="M 30,90 Q 50,95 70,90 L 65,95 Q 50,100 35,95 Z" fill="#dcfce7"/><path d="M 30,30 C 10,20 15,5 30,10 C 40,5 45,20 40,30 Z" fill="#16a34a"/><path d="M 70,30 C 90,20 85,5 70,10 C 60,5 55,20 60,30 Z" fill="#15803d"/><path d="M 50,25 C 40,15 45,0 55,5 C 65,10 65,20 60,25 Z" fill="#16a34a"/></svg>`,
+  'watercress_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><path d="M 40,90 Q 30,60 40,30" stroke="#15803d" stroke-width="2" fill="none"/><path d="M 60,90 Q 70,60 60,30" stroke="#15803d" stroke-width="2" fill="none"/><circle cx="40" cy="30" r="10" fill="#22c55e"/><circle cx="30" cy="45" r="8" fill="#4ade80"/><circle cx="45" cy="55" r="7" fill="#16a34a"/><circle cx="25" cy="65" r="6" fill="#22c55e"/><circle cx="60" cy="30" r="12" fill="#16a34a"/><circle cx="70" cy="45" r="9" fill="#22c55e"/><circle cx="55" cy="55" r="7" fill="#15803d"/><circle cx="75" cy="65" r="6" fill="#4ade80"/></svg>`,
+  'coriander_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="corGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+    <path d="M 45,90 L 55,90 L 60,30 C 80,20 90,40 70,50 C 90,60 80,80 60,70 L 55,90" fill="url(#corGrad)"/>
+    <path d="M 45,90 L 40,30 C 20,20 10,40 30,50 C 10,60 20,80 40,70 L 45,90" fill="url(#corGrad)"/>
+    <path d="M 50,95 L 45,20 C 30,5 70,5 55,20 L 50,95" fill="url(#corGrad)"/>
+    <path d="M 45,90 C 45,95 55,95 55,90 Z" fill="#dcfce7"/>
+  </svg>`,
+  'parsley_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><path d="M 50,90 Q 45,60 50,30" stroke="#166534" stroke-width="3" fill="none"/><path d="M 50,80 Q 35,50 25,40" stroke="#166534" stroke-width="3" fill="none"/><path d="M 50,75 Q 65,50 75,35" stroke="#166534" stroke-width="3" fill="none"/><path d="M 50,30 C 30,30 30,10 50,10 C 70,10 70,30 50,30 Z" fill="#22c55e"/><path d="M 50,30 C 40,40 20,30 30,15 C 40,10 60,20 50,30 Z" fill="#16a34a"/><path d="M 25,40 C 10,45 10,25 25,25 C 40,25 40,45 25,40 Z" fill="#4ade80"/><path d="M 25,40 C 15,50 5,35 15,25 C 25,15 35,30 25,40 Z" fill="#22c55e"/><path d="M 75,35 C 60,40 60,20 75,20 C 90,20 90,40 75,35 Z" fill="#15803d"/><path d="M 75,35 C 65,45 55,30 65,20 C 75,10 85,25 75,35 Z" fill="#22c55e"/></svg>`,
+  'mint_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="minGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+    <path d="M 45,90 L 55,90 L 60,30 C 80,20 90,40 70,50 C 90,60 80,80 60,70 L 55,90" fill="url(#minGrad)"/>
+    <path d="M 45,90 L 40,30 C 20,20 10,40 30,50 C 10,60 20,80 40,70 L 45,90" fill="url(#minGrad)"/>
+    <path d="M 50,95 L 45,20 C 30,5 70,5 55,20 L 50,95" fill="url(#minGrad)"/>
+    <path d="M 45,90 C 45,95 55,95 55,90 Z" fill="#bbf7d0"/>
+  </svg>`,
+  'dill_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="dilGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#bbf7d0"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+    <path d="M 45,90 L 55,90 L 60,30 C 80,20 90,40 70,50 C 90,60 80,80 60,70 L 55,90" fill="url(#dilGrad)"/>
+    <path d="M 45,90 L 40,30 C 20,20 10,40 30,50 C 10,60 20,80 40,70 L 45,90" fill="url(#dilGrad)"/>
+    <path d="M 50,95 L 45,20 C 30,5 70,5 55,20 L 50,95" fill="url(#dilGrad)"/>
+    <path d="M 45,90 C 45,95 55,95 55,90 Z" fill="#dcfce7"/>
+  </svg>`,
+  'basil_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="basilGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4ade80"/><stop offset="50%" stop-color="#22c55e"/><stop offset="100%" stop-color="#15803d"/></linearGradient></defs><path d="M 50,95 Q 50,70 50,50" stroke="#15803d" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,55 C 20,70 5,45 15,25 C 25,5 50,15 50,55 Z" fill="url(#basilGrad)"/><path d="M 50,55 C 80,70 95,45 85,25 C 75,5 50,15 50,55 Z" fill="url(#basilGrad)"/><path d="M 50,45 C 35,50 25,35 35,20 C 45,5 50,15 50,45 Z" fill="#4ade80"/><path d="M 50,45 C 65,50 75,35 65,20 C 55,5 50,15 50,45 Z" fill="#4ade80"/></svg>`,
+  'arugula_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="aruGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#166534"/>
+    </linearGradient>
+  </defs>
+    <path d="M 45,90 L 55,90 L 60,30 C 80,20 90,40 70,50 C 90,60 80,80 60,70 L 55,90" fill="url(#aruGrad)"/>
+    <path d="M 45,90 L 40,30 C 20,20 10,40 30,50 C 10,60 20,80 40,70 L 45,90" fill="url(#aruGrad)"/>
+    <path d="M 50,95 L 45,20 C 30,5 70,5 55,20 L 50,95" fill="url(#aruGrad)"/>
+    <path d="M 45,90 C 45,95 55,95 55,90 Z" fill="#bbf7d0"/>
+  </svg>`,
+  'fenugreek_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="fenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#bbf7d0"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+    <path d="M 45,90 L 55,90 L 60,30 C 80,20 90,40 70,50 C 90,60 80,80 60,70 L 55,90" fill="url(#fenGrad)"/>
+    <path d="M 45,90 L 40,30 C 20,20 10,40 30,50 C 10,60 20,80 40,70 L 45,90" fill="url(#fenGrad)"/>
+    <path d="M 50,95 L 45,20 C 30,5 70,5 55,20 L 50,95" fill="url(#fenGrad)"/>
+    <path d="M 45,90 C 45,95 55,95 55,90 Z" fill="#dcfce7"/>
+  </svg>`,
+  'thyme_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><path d="M 50,90 Q 55,50 75,10" stroke="#166534" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,90 Q 40,60 25,20" stroke="#166534" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="35" cy="40" rx="6" ry="10" transform="rotate(-30 35 40)" fill="#86efac"/><ellipse cx="25" cy="45" rx="6" ry="10" transform="rotate(40 25 45)" fill="#4ade80"/><ellipse cx="30" cy="30" rx="5" ry="9" transform="rotate(-45 30 30)" fill="#22c55e"/><ellipse cx="15" cy="35" rx="5" ry="9" transform="rotate(45 15 35)" fill="#4ade80"/><ellipse cx="25" cy="20" rx="4" ry="8" transform="rotate(-20 25 20)" fill="#86efac"/><ellipse cx="65" cy="45" rx="7" ry="12" transform="rotate(30 65 45)" fill="#4ade80"/><ellipse cx="55" cy="35" rx="6" ry="10" transform="rotate(-40 55 35)" fill="#22c55e"/><ellipse cx="70" cy="30" rx="6" ry="10" transform="rotate(45 70 30)" fill="#86efac"/><ellipse cx="60" cy="25" rx="5" ry="8" transform="rotate(-20 60 25)" fill="#4ade80"/><ellipse cx="75" cy="15" rx="5" ry="8" transform="rotate(30 75 15)" fill="#22c55e"/></svg>`,
+  'okra_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="okGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="60%" stop-color="#16a34a"/><stop offset="100%" stop-color="#14532d"/></linearGradient></defs><path d="M 25,25 Q 50,40 85,85 Q 60,95 15,35 Z" fill="url(#okGrad)"/><path d="M 10,35 L 20,20 L 30,25 L 35,35 Z" fill="#14532d"/><line x1="20" y1="20" x2="10" y2="10" stroke="#14532d" stroke-width="4" stroke-linecap="round"/><path d="M 22,35 Q 50,55 78,82" stroke="#15803d" stroke-width="2" fill="none"/><path d="M 28,30 Q 55,48 70,70" stroke="#15803d" stroke-width="2" fill="none"/><ellipse cx="35" cy="45" rx="3" ry="12" transform="rotate(-40 35 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'zucchini_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="zucGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4ade80"/><stop offset="40%" stop-color="#166534"/><stop offset="100%" stop-color="#064e3b"/></linearGradient></defs><path d="M 20,15 Q 60,30 85,80 Q 70,95 10,40 Z" fill="url(#zucGrad)"/><path d="M 15,35 L 5,30 L 10,20 L 25,20 Z" fill="#064e3b"/><path d="M 22,25 Q 55,40 75,78" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="2,2"/><path d="M 18,30 Q 45,50 65,85" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="2,2"/><ellipse cx="30" cy="35" rx="4" ry="15" transform="rotate(-40 30 35)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
+  'wildcucumber_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#dcfce7"/><stop offset="50%" stop-color="#86efac"/><stop offset="100%" stop-color="#166534"/></linearGradient></defs><path d="M 20,20 Q 60,40 80,80 Q 50,90 10,50 Q -10,30 20,20 Z" fill="url(#wcGrad)"/><path d="M 20,30 Q 55,45 70,80" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.8"/><path d="M 15,40 Q 40,60 60,85" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.8"/><ellipse cx="25" cy="25" rx="4" ry="12" transform="rotate(45 25 25)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/></svg>`,
+  'leek_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="leekBase" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#f8fafc"/><stop offset="60%" stop-color="#bbf7d0"/><stop offset="100%" stop-color="#4ade80"/></linearGradient></defs><path d="M 40,95 L 60,95 Q 65,70 60,40 L 40,40 Q 35,70 40,95 Z" fill="url(#leekBase)"/><path d="M 45,95 Q 40,100 45,105" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 50,95 Q 50,100 50,105" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 55,95 Q 60,100 55,105" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 40,40 Q 20,20 10,30 Q 25,10 45,40 Z" fill="#22c55e"/><path d="M 60,40 Q 80,20 90,30 Q 75,10 55,40 Z" fill="#16a34a"/><path d="M 45,40 Q 40,10 50,5 Q 60,10 55,40 Z" fill="#15803d"/><path d="M 45,90 Q 45,60 50,45" stroke="#86efac" stroke-width="2" fill="none"/><path d="M 55,90 Q 55,60 50,45" stroke="#86efac" stroke-width="2" fill="none"/></svg>`,
+  'asparagus_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="aspGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bbf7d0"/>
+      <stop offset="50%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+  </defs>
+    <path d="M 20,20 Q 50,50 80,80 Q 60,90 20,20" fill="url(#aspGrad)"/>
+    <path d="M 15,15 L 25,25" stroke="#166534" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="40" cy="40" rx="4" ry="15" transform="rotate(-45 40 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/>
+  </svg>`,
+  'greenbeans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="grbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+    <path d="M 10,90 C 20,40 60,10 90,10 C 80,50 40,90 10,90 Z" fill="url(#grbGrad)"/>
+    <ellipse cx="35" cy="65" rx="3" ry="12" transform="rotate(45 35 65)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/>
+  </svg>`,
+  'broadbeans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="brbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+  </defs>
+    <path d="M 10,90 C 20,40 60,10 90,10 C 80,50 40,90 10,90 Z" fill="url(#brbGrad)"/>
+    <ellipse cx="35" cy="65" rx="3" ry="12" transform="rotate(45 35 65)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/>
+  </svg>`,
+  'carob_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="carGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+  </defs>
+    <path d="M 10,90 C 20,40 60,10 90,10 C 80,50 40,90 10,90 Z" fill="url(#carGrad)"/>
+    <ellipse cx="35" cy="65" rx="3" ry="12" transform="rotate(45 35 65)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/>
+  </svg>`,
+  'fig_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="figGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#c4b5fd"/><stop offset="30%" stop-color="#8b5cf6"/><stop offset="70%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#2e1065"/></radialGradient></defs><path d="M 50,15 C 30,35 15,50 15,70 C 15,95 85,95 85,70 C 85,50 70,35 50,15 Z" fill="url(#figGrad)"/><path d="M 45,18 C 45,5 55,5 55,18" stroke="#4ade80" stroke-width="4" stroke-linecap="round" fill="none"/><ellipse cx="30" cy="60" rx="6" ry="15" transform="rotate(-30 30 60)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
+  'berry_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="berGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fca5a5"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </radialGradient>
+  </defs>
+    <circle cx="40" cy="40" r="15" fill="url(#berGrad)"/>
+    <circle cx="60" cy="45" r="15" fill="url(#berGrad)"/>
+    <circle cx="35" cy="60" r="15" fill="url(#berGrad)"/>
+    <circle cx="55" cy="65" r="15" fill="url(#berGrad)"/>
+    <circle cx="50" cy="80" r="15" fill="url(#berGrad)"/>
+    <circle cx="70" cy="60" r="15" fill="url(#berGrad)"/>
+    <path d="M 50,15 C 45,25 55,25 50,35" stroke="#166534" stroke-width="4" fill="none"/>
+  </svg>`,
+  'blackberry_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bbGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#4c1d95"/><stop offset="60%" stop-color="#2e1065"/><stop offset="100%" stop-color="#000000"/></radialGradient></defs><path d="M 50,15 Q 45,5 55,5" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,15 L 35,15 L 45,25 Z" fill="#22c55e"/><path d="M 50,15 L 65,15 L 55,25 Z" fill="#22c55e"/><path d="M 50,15 L 50,25 Z" stroke="#15803d" stroke-width="4" fill="none"/><g fill="url(#bbGrad)"><circle cx="35" cy="40" r="10"/><circle cx="65" cy="40" r="10"/><circle cx="30" cy="55" r="10"/><circle cx="70" cy="55" r="10"/><circle cx="35" cy="70" r="10"/><circle cx="65" cy="70" r="10"/><circle cx="45" cy="35" r="12"/><circle cx="55" cy="35" r="12"/><circle cx="40" cy="50" r="12"/><circle cx="60" cy="50" r="12"/><circle cx="40" cy="65" r="12"/><circle cx="60" cy="65" r="12"/><circle cx="50" cy="80" r="12"/><circle cx="50" cy="45" r="13"/><circle cx="50" cy="60" r="13"/><circle cx="50" cy="70" r="11"/></g><g fill="rgba(255,255,255,0.4)"><circle cx="42" cy="32" r="2"/><circle cx="52" cy="32" r="2"/><circle cx="37" cy="47" r="2"/><circle cx="57" cy="47" r="2"/><circle cx="37" cy="62" r="2"/><circle cx="57" cy="62" r="2"/><circle cx="47" cy="77" r="2"/><circle cx="47" cy="42" r="2.5"/><circle cx="47" cy="57" r="2.5"/><circle cx="47" cy="67" r="2"/></g></svg>`,
+  'truffle_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="truGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#d6d3d1"/>
+      <stop offset="40%" stop-color="#a8a29e"/>
+      <stop offset="80%" stop-color="#78716c"/>
+      <stop offset="100%" stop-color="#44403c"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#truGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    
+  </svg>`,
+  'dates_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dateGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#d97706"/><stop offset="50%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/></radialGradient></defs><path d="M 50,10 Q 50,30 35,35" stroke="#a16207" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,15 Q 65,30 65,45" stroke="#a16207" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="30" cy="55" rx="16" ry="26" transform="rotate(15 30 55)" fill="url(#dateGrad)"/><path d="M 25,40 Q 30,55 25,70" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><path d="M 35,45 Q 35,55 38,65" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><ellipse cx="25" cy="45" rx="3" ry="10" transform="rotate(15 25 45)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/><ellipse cx="65" cy="70" rx="16" ry="26" transform="rotate(-15 65 70)" fill="url(#dateGrad)"/><path d="M 60,55 Q 65,70 60,85" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><path d="M 70,60 Q 70,70 73,80" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><ellipse cx="60" cy="60" rx="3" ry="10" transform="rotate(-15 60 60)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
+  'papaya_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <linearGradient id="papGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+  </defs>
+    <path d="M 20,20 Q 70,50 80,80 Q 80,90 20,20" fill="url(#papGrad)"/>
+    <path d="M 15,15 L 25,25" stroke="#166534" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="40" cy="40" rx="4" ry="15" transform="rotate(-45 40 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/>
+  </svg>`,
+  'pricklypear_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="pricklyGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#bef264"/><stop offset="60%" stop-color="#84cc16"/><stop offset="100%" stop-color="#4d7c0f"/></radialGradient></defs><ellipse cx="50" cy="55" rx="30" ry="40" fill="url(#pricklyGrad)"/><circle cx="35" cy="35" r="1.5" fill="#fef08a"/><circle cx="50" cy="25" r="1.5" fill="#fef08a"/><circle cx="65" cy="40" r="1.5" fill="#fef08a"/><circle cx="30" cy="55" r="1.5" fill="#fef08a"/><circle cx="50" cy="70" r="1.5" fill="#fef08a"/><circle cx="70" cy="60" r="1.5" fill="#fef08a"/><circle cx="45" cy="45" r="1.5" fill="#fef08a"/><path d="M 40,15 L 60,15 L 50,25 Z" fill="#4d7c0f"/><ellipse cx="35" cy="50" rx="4" ry="15" transform="rotate(-15 35 50)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'turmeric_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="turGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="40%" stop-color="#facc15"/>
+      <stop offset="80%" stop-color="#ca8a04"/>
+      <stop offset="100%" stop-color="#854d0e"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#turGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    
+  </svg>`,
+  'beetroot_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="beeGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fbcfe8"/>
+      <stop offset="40%" stop-color="#f43f5e"/>
+      <stop offset="80%" stop-color="#be123c"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </radialGradient>
+  </defs>
+    <circle cx="50" cy="55" r="40" fill="url(#beeGrad)"/>
+    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
+    <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
+  </svg>`,
+};
 const CROP_SUGGESTIONS = [
   { primaryAr: "طماطة", synonymsAr: ["طماطم", "بندورة"], nameEn: "Tomato", icon: "🍅" },
   { primaryAr: "خيار", synonymsAr: [], nameEn: "Cucumber", icon: "🥒" },
   { primaryAr: "بطاطا", synonymsAr: ["بتيتة", "بطاطس", "البطاطا", "البطاطس"], nameEn: "Potato", icon: "🥔" },
-  { primaryAr: "بصل", synonymsAr: [], nameEn: "Onion", icon: "🧅" },
-  { primaryAr: "ثوم", synonymsAr: [], nameEn: "Garlic", icon: "🧄" },
+  { primaryAr: "بصل", synonymsAr: [], nameEn: "Onion", icon: "onion_svg" },
+  { primaryAr: "ثوم", synonymsAr: [], nameEn: "Garlic", icon: "garlic_svg" },
   { primaryAr: "باذنجان", synonymsAr: ["بيتنجان"], nameEn: "Eggplant", icon: "🍆" },
   { primaryAr: "فلفل حلو", synonymsAr: ["فلفل بارد", "فلفل", "فلفل أخضر"], nameEn: "Bell Pepper", icon: "bell_pepper_svg" },
   { primaryAr: "فلفل حار", synonymsAr: [], nameEn: "Hot Pepper", icon: "🌶️" },
   { primaryAr: "جزر", synonymsAr: [], nameEn: "Carrot", icon: "🥕" },
   { primaryAr: "خس", synonymsAr: [], nameEn: "Lettuce", icon: "🥬" },
-  { primaryAr: "قرنبيط", synonymsAr: ["قرنابيط", "زهرة"], nameEn: "Cauliflower", icon: "🥦" },
-  { primaryAr: "ملفوف", synonymsAr: ["لهانة"], nameEn: "Cabbage", icon: "🥬" },
+  { primaryAr: "قرنبيط", synonymsAr: ["قرنابيط", "زهرة"], nameEn: "Cauliflower", icon: "cauliflower_svg" },
+  { primaryAr: "ملفوف", synonymsAr: ["لهانة"], nameEn: "Cabbage", icon: "cabbage_svg" },
   { primaryAr: "ذرة", synonymsAr: ["عرنوص"], nameEn: "Corn", icon: "🌽" },
   { primaryAr: "بطيخ أحمر", synonymsAr: ["رقي", "حبحب"], nameEn: "Watermelon", icon: "🍉" },
   { primaryAr: "شمام", synonymsAr: ["بطيخ"], nameEn: "Melon", icon: "🍈" },
   { primaryAr: "برتقال", synonymsAr: [], nameEn: "Orange", icon: "🍊" },
   { primaryAr: "ليمون", synonymsAr: ["نومي", "نومي حامض"], nameEn: "Lemon", icon: "🍋" },
-  { primaryAr: "ليمون مجفف", synonymsAr: ["نومي بصرة", "لومي"], nameEn: "Dried Lime", icon: "🍋" },
+  { primaryAr: "ليمون مجفف", synonymsAr: ["نومي بصرة", "لومي"], nameEn: "Dried Lime", icon: "driedlime_svg" },
   { primaryAr: "موز", synonymsAr: [], nameEn: "Banana", icon: "🍌" },
-  { primaryAr: "تفاح", synonymsAr: [], nameEn: "Apple", icon: "🍎" },
-  { primaryAr: "تفاح أخضر", synonymsAr: [], nameEn: "Green Apple", icon: "🍏" },
+  { primaryAr: "تفاح", synonymsAr: [], nameEn: "Apple", icon: "apple_svg" },
+  { primaryAr: "تفاح أخضر", synonymsAr: [], nameEn: "Green Apple", icon: "greenapple_svg" },
   { primaryAr: "عنب", synonymsAr: [], nameEn: "Grape", icon: "🍇" },
   { primaryAr: "فراولة", synonymsAr: [], nameEn: "Strawberry", icon: "🍓" },
-  { primaryAr: "رمان", synonymsAr: [], nameEn: "Pomegranate", icon: "🍎" },
+  { primaryAr: "رمان", synonymsAr: [], nameEn: "Pomegranate", icon: "pomegranate_svg" },
   { primaryAr: "خوخ", synonymsAr: [], nameEn: "Peach", icon: "🍑" },
-  { primaryAr: "مشمش", synonymsAr: [], nameEn: "Apricot", icon: "🍑" },
+  { primaryAr: "مشمش", synonymsAr: [], nameEn: "Apricot", icon: "apricot_svg" },
   { primaryAr: "أناناس", synonymsAr: [], nameEn: "Pineapple", icon: "🍍", countOnly: true },
   { primaryAr: "كيوي", synonymsAr: [], nameEn: "Kiwi", icon: "🥝" },
   { primaryAr: "كمثرى", synonymsAr: ["عرموط"], nameEn: "Pear", icon: "🍐" },
   { primaryAr: "مانجو", synonymsAr: [], nameEn: "Mango", icon: "🥭" },
-  { primaryAr: "تين", synonymsAr: [], nameEn: "Fig", icon: "🍇" },
+  { primaryAr: "تين", synonymsAr: [], nameEn: "Fig", icon: "fig_svg" },
   { primaryAr: "كرز", synonymsAr: [], nameEn: "Cherry", icon: "🍒" },
-  { primaryAr: "سلق", synonymsAr: [], nameEn: "Swiss Chard", icon: "🥬" },
-  { primaryAr: "سبانخ", synonymsAr: ["سبيناغ"], nameEn: "Spinach", icon: "🥬" },
+  { primaryAr: "سلق", synonymsAr: [], nameEn: "Swiss Chard", icon: "swisschard_svg" },
+  { primaryAr: "سبانخ", synonymsAr: ["سبيناغ"], nameEn: "Spinach", icon: "spinach_svg" },
   { primaryAr: "فطر", synonymsAr: ["مشروم"], nameEn: "Mushroom", icon: "🍄", countOnly: true },
-  { primaryAr: "بامية", synonymsAr: ["باميا"], nameEn: "Okra", icon: "🥬" },
-  { primaryAr: "لوبيا", synonymsAr: [], nameEn: "Green Beans", icon: "🌱" },
-  { primaryAr: "شمندر", synonymsAr: ["شوندر", "بنجر"], nameEn: "Beetroot", icon: "🍠" },
-  { primaryAr: "كوسى", synonymsAr: ["شجر", "كوسا"], nameEn: "Zucchini", icon: "🥒" },
-  { primaryAr: "يقطين", synonymsAr: ["شجر أحمر", "قرع"], nameEn: "Pumpkin", icon: "🎃" },
+  { primaryAr: "بامية", synonymsAr: ["باميا"], nameEn: "Okra", icon: "okra_svg" },
+  { primaryAr: "لوبيا", synonymsAr: [], nameEn: "Green Beans", icon: "greenbeans_svg" },
+  { primaryAr: "شمندر", synonymsAr: ["شوندر", "بنجر"], nameEn: "Beetroot", icon: "beetroot_svg" },
+  { primaryAr: "كوسى", synonymsAr: ["شجر", "كوسا"], nameEn: "Zucchini", icon: "zucchini_svg" },
+  { primaryAr: "يقطين", synonymsAr: ["شجر أحمر", "قرع"], nameEn: "Pumpkin", icon: "pumpkin_svg" },
   { primaryAr: "فجل", synonymsAr: [], nameEn: "Radish", icon: "radish_svg" },
   { primaryAr: "أفوكادو", synonymsAr: [], nameEn: "Avocado", icon: "🥑" },
-  { primaryAr: "أسكي دنيا", synonymsAr: ["أكي دنيا", "يني دنيا", "دنيا"], nameEn: "Loquat", icon: "🍊" },
-  { primaryAr: "كرفس", synonymsAr: [], nameEn: "Celery", icon: "🌿" },
-  { primaryAr: "رشاد", synonymsAr: [], nameEn: "Watercress", icon: "🌿" },
-  { primaryAr: "كزبرة", synonymsAr: [], nameEn: "Coriander", icon: "🌿" },
-  { primaryAr: "بقدونس", synonymsAr: ["معدنوس"], nameEn: "Parsley", icon: "🌿" },
-  { primaryAr: "تمر", synonymsAr: [], nameEn: "Dates", icon: "🌴" },
-  { primaryAr: "زيتون", synonymsAr: [], nameEn: "Olive", icon: "🌱" },
-  { primaryAr: "نعناع", synonymsAr: [], nameEn: "Mint", icon: "🌿" },
-  { primaryAr: "كراث", synonymsAr: [], nameEn: "Leek", icon: "🌱" },
+  { primaryAr: "أسكي دنيا", synonymsAr: ["أكي دنيا", "يني دنيا", "دنيا"], nameEn: "Loquat", icon: "loquat_svg" },
+  { primaryAr: "كرفس", synonymsAr: [], nameEn: "Celery", icon: "celery_svg" },
+  { primaryAr: "رشاد", synonymsAr: [], nameEn: "Watercress", icon: "watercress_svg" },
+  { primaryAr: "كزبرة", synonymsAr: [], nameEn: "Coriander", icon: "coriander_svg" },
+  { primaryAr: "بقدونس", synonymsAr: ["معدنوس"], nameEn: "Parsley", icon: "parsley_svg" },
+  { primaryAr: "تمر", synonymsAr: [], nameEn: "Dates", icon: "dates_svg" },
+  { primaryAr: "زيتون", synonymsAr: [], nameEn: "Olive", icon: "olive_svg" },
+  { primaryAr: "نعناع", synonymsAr: [], nameEn: "Mint", icon: "mint_svg" },
+  { primaryAr: "كراث", synonymsAr: [], nameEn: "Leek", icon: "leek_svg" },
   { primaryAr: "شلغم", synonymsAr: ["لفت"], nameEn: "Turnip", icon: "turnip_svg" },
-  { primaryAr: "توت", synonymsAr: ["توث"], nameEn: "Berry", icon: "🍇" },
-  { primaryAr: "فول", synonymsAr: ["باقلاء", "باجلا", "باجلاء"], nameEn: "Broad Beans", icon: "🌱" },
-  { primaryAr: "فاصوليا", synonymsAr: ["فاصولية"], nameEn: "Beans", icon: "🌱" },
-  { primaryAr: "بازلاء", synonymsAr: ["بزيلا", "بازلية"], nameEn: "Peas", icon: "🌱" },
-  { primaryAr: "شبت", synonymsAr: ["شبنت"], nameEn: "Dill", icon: "🌿" },
-  { primaryAr: "ريحان", synonymsAr: [], nameEn: "Basil", icon: "🌿" },
-  { primaryAr: "يوسفي", synonymsAr: ["لالنكي", "أفندي"], nameEn: "Tangerine", icon: "🍊" },
-  { primaryAr: "جريب فروت", synonymsAr: ["سندي"], nameEn: "Grapefruit", icon: "🍊" },
-  { primaryAr: "برقوق", synonymsAr: ["ألوجة", "آلو", "كوجة"], nameEn: "Plum", icon: "🍑" },
-  { primaryAr: "نبق", synonymsAr: ["كنار", "سدر"], nameEn: "Jujube", icon: "🍊" },
-  { primaryAr: "كماة", synonymsAr: ["چما"], nameEn: "Truffle", icon: "🍄" },
-  { primaryAr: "توت أسود", synonymsAr: ["عليج"], nameEn: "Blackberry", icon: "🍇" },
+  { primaryAr: "توت", synonymsAr: ["توث"], nameEn: "Berry", icon: "berry_svg" },
+  { primaryAr: "فول", synonymsAr: ["باقلاء", "باجلا", "باجلاء"], nameEn: "Broad Beans", icon: "broadbeans_svg" },
+  { primaryAr: "فاصوليا", synonymsAr: ["فاصولية"], nameEn: "Beans", icon: "beans_svg" },
+  { primaryAr: "بازلاء", synonymsAr: ["بزيلا", "بازلية"], nameEn: "Peas", icon: "peas_svg" },
+  { primaryAr: "شبت", synonymsAr: ["شبنت"], nameEn: "Dill", icon: "dill_svg" },
+  { primaryAr: "ريحان", synonymsAr: [], nameEn: "Basil", icon: "basil_svg" },
+  { primaryAr: "يوسفي", synonymsAr: ["لالنكي", "أفندي"], nameEn: "Tangerine", icon: "tangerine_svg" },
+  { primaryAr: "جريب فروت", synonymsAr: ["سندي"], nameEn: "Grapefruit", icon: "grapefruit_svg" },
+  { primaryAr: "برقوق", synonymsAr: ["ألوجة", "آلو", "كوجة"], nameEn: "Plum", icon: "plum_svg" },
+  { primaryAr: "نبق", synonymsAr: ["كنار", "سدر"], nameEn: "Jujube", icon: "jujube_svg" },
+  { primaryAr: "كماة", synonymsAr: ["چما"], nameEn: "Truffle", icon: "truffle_svg" },
+  { primaryAr: "توت أسود", synonymsAr: ["عليج"], nameEn: "Blackberry", icon: "blackberry_svg" },
   { primaryAr: "بروكلي", synonymsAr: [], nameEn: "Broccoli", icon: "🥦" },
-  { primaryAr: "خرشوف", synonymsAr: ["أرضي شوكي"], nameEn: "Artichoke", icon: "🥦" },
-  { primaryAr: "هليون", synonymsAr: [], nameEn: "Asparagus", icon: "🌱" },
+  { primaryAr: "خرشوف", synonymsAr: ["أرضي شوكي"], nameEn: "Artichoke", icon: "artichoke_svg" },
+  { primaryAr: "هليون", synonymsAr: [], nameEn: "Asparagus", icon: "asparagus_svg" },
   { primaryAr: "زنجبيل", synonymsAr: [], nameEn: "Ginger", icon: "🫚" },
-  { primaryAr: "كركم", synonymsAr: [], nameEn: "Turmeric", icon: "🫚" },
-  { primaryAr: "كستناء", synonymsAr: ["أبو فروة"], nameEn: "Chestnut", icon: "🌰" },
-  { primaryAr: "لوز", synonymsAr: [], nameEn: "Almonds", icon: "🌰" },
-  { primaryAr: "جوز", synonymsAr: [], nameEn: "Walnuts", icon: "🌰" },
-  { primaryAr: "فستق", synonymsAr: [], nameEn: "Pistachio", icon: "🌰" },
-  { primaryAr: "بندق", synonymsAr: [], nameEn: "Hazelnut", icon: "🌰" },
+  { primaryAr: "كركم", synonymsAr: [], nameEn: "Turmeric", icon: "turmeric_svg" },
   { primaryAr: "جوز الهند", synonymsAr: [], nameEn: "Coconut", icon: "🥥" },
-  { primaryAr: "سفرجل", synonymsAr: [], nameEn: "Quince", icon: "🍏" },
-  { primaryAr: "خرنوب", synonymsAr: [], nameEn: "Carob", icon: "🌱" },
-  { primaryAr: "حمص", synonymsAr: [], nameEn: "Chickpeas", icon: "🌱" },
-  { primaryAr: "عدس", synonymsAr: [], nameEn: "Lentils", icon: "🌱" },
-  { primaryAr: "ماش", synonymsAr: ["ماش أخضر"], nameEn: "Mung Beans", icon: "🌱" },
-  { primaryAr: "جرجير", synonymsAr: [], nameEn: "Arugula", icon: "🌿" },
-  { primaryAr: "حلبة", synonymsAr: [], nameEn: "Fenugreek", icon: "🌿" },
-  { primaryAr: "زعتر", synonymsAr: [], nameEn: "Thyme", icon: "🌿" },
-  { primaryAr: "كاكا", synonymsAr: ["كاكي", "كاكا", "الكاكا", "خرما"], nameEn: "Persimmon", icon: "🍊" },
-  { primaryAr: "تعروز", synonymsAr: ["تعروز", "ترعوز", "طرح", "قتة"], nameEn: "Wild Cucumber", icon: "🥒" },
-  { primaryAr: "بطيخ أصفر", synonymsAr: ["بطيخ أصفر", "البطيخ الأصفر", "شمام أصفر", "شمام"], nameEn: "Yellow Melon", icon: "🍈" },
-  { primaryAr: "بابايا", synonymsAr: [], nameEn: "Papaya", icon: "🥭" },
-  { primaryAr: "جوافة", synonymsAr: [], nameEn: "Guava", icon: "🍐" },
-  { primaryAr: "تين شوكي", synonymsAr: ["صبار"], nameEn: "Prickly Pear", icon: "🌵" },
-  { primaryAr: "جانرك", synonymsAr: ["كرز أخضر"], nameEn: "Green Cherry Plum", icon: "🍏" },
+  { primaryAr: "سفرجل", synonymsAr: [], nameEn: "Quince", icon: "quince_svg" },
+  { primaryAr: "خرنوب", synonymsAr: [], nameEn: "Carob", icon: "carob_svg" },
+  { primaryAr: "حمص", synonymsAr: [], nameEn: "Chickpeas", icon: "chickpeas_svg" },
+  { primaryAr: "عدس", synonymsAr: [], nameEn: "Lentils", icon: "lentils_svg" },
+  { primaryAr: "ماش", synonymsAr: ["ماش أخضر"], nameEn: "Mung Beans", icon: "mungbeans_svg" },
+  { primaryAr: "جرجير", synonymsAr: [], nameEn: "Arugula", icon: "arugula_svg" },
+  { primaryAr: "حلبة", synonymsAr: [], nameEn: "Fenugreek", icon: "fenugreek_svg" },
+  { primaryAr: "زعتر", synonymsAr: [], nameEn: "Thyme", icon: "thyme_svg" },
+  { primaryAr: "كاكا", synonymsAr: ["كاكي", "كاكا", "الكاكا", "خرما"], nameEn: "Persimmon", icon: "persimmon_svg" },
+  { primaryAr: "تعروز", synonymsAr: ["تعروز", "ترعوز", "طرح", "قتة"], nameEn: "Wild Cucumber", icon: "wildcucumber_svg" },
+  { primaryAr: "بطيخ أصفر", synonymsAr: ["بطيخ أصفر", "البطيخ الأصفر", "شمام أصفر", "شمام"], nameEn: "Yellow Melon", icon: "yellowmelon_svg" },
+  { primaryAr: "بابايا", synonymsAr: [], nameEn: "Papaya", icon: "papaya_svg" },
+  { primaryAr: "جوافة", synonymsAr: [], nameEn: "Guava", icon: "guava_svg" },
+  { primaryAr: "تين شوكي", synonymsAr: ["صبار"], nameEn: "Prickly Pear", icon: "pricklypear_svg" },
+  { primaryAr: "جانرك", synonymsAr: ["كرز أخضر"], nameEn: "Green Cherry Plum", icon: "greencherryplum_svg" },
   // New count-only crops
-  { primaryAr: "باشن فروت", synonymsAr: ["فاكهة العاطفة"], nameEn: "Passion Fruit", icon: "🍇", countOnly: true },
-  { primaryAr: "مانكو ستين", synonymsAr: ["مانغوستين"], nameEn: "Mangosteen", icon: "🍊", countOnly: true },
-  { primaryAr: "رامبوتان", synonymsAr: [], nameEn: "Rambutan", icon: "🍊", countOnly: true },
-  { primaryAr: "دراكون فروت", synonymsAr: ["فاكهة التنين", "بتايا"], nameEn: "Dragon Fruit", icon: "🍎", countOnly: true },
-  { primaryAr: "ذرة كارتون", synonymsAr: ["ذرة معلبة"], nameEn: "Carton Corn", icon: "🌽", countOnly: true },
-  { primaryAr: "طماطة عنقودية", synonymsAr: ["طماطة كرزية", "طماطم كرزية", "شيري طماطم"], nameEn: "Cherry Tomato", icon: "🍅", countOnly: true }
+  { primaryAr: "باشن فروت", synonymsAr: ["فاكهة العاطفة"], nameEn: "Passion Fruit", icon: "passionfruit_svg", countOnly: true },
+  { primaryAr: "مانكو ستين", synonymsAr: ["مانغوستين"], nameEn: "Mangosteen", icon: "mangosteen_svg", countOnly: true },
+  { primaryAr: "رامبوتان", synonymsAr: [], nameEn: "Rambutan", icon: "rambutan_svg", countOnly: true },
+  { primaryAr: "دراكون فروت", synonymsAr: ["فاكهة التنين", "بتايا"], nameEn: "Dragon Fruit", icon: "dragonfruit_svg", countOnly: true },
+  { primaryAr: "ذرة كارتون", synonymsAr: ["ذرة معلبة"], nameEn: "Carton Corn", icon: "cartoncorn_svg", countOnly: true },
+  { primaryAr: "طماطة عنقودية", synonymsAr: ["طماطة كرزية", "طماطم كرزية", "شيري طماطم"], nameEn: "Cherry Tomato", icon: "cherrytomato_svg", countOnly: true }
 ];
 
 // Load custom user-defined crops from localStorage
@@ -598,203 +852,101 @@ function saveCustomCrop(cropName, measureType) {
 // Fetch import details
 function sanitizeCropIcon(icon, isHtml = true) {
   if (!icon) return '🥦';
-  // Filter out Unicode 12/13/15 emojis that render as missing glyph boxes/X on older Android WebViews / Amazon Silk devices
-  if (icon === '🫑') return '🌶️'; // Bell pepper -> Hot pepper
 
-  if (icon === 'bell_pepper_svg') {
-    if (isHtml) {
-      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
-        <!-- Green stem on top -->
-        <path d="M256,150 C256,150 240,90 220,70 C240,80 250,110 256,150 Z" fill="#16a34a"/>
-        <path d="M256,150 C256,150 275,95 300,85 C280,100 265,120 256,150 Z" fill="#15803d"/>
-        <!-- Bell pepper lobes -->
-        <!-- Left Lobe -->
-        <path d="M190,160 C120,160 110,240 110,320 C110,400 160,440 210,440 C240,440 256,410 256,360 C256,260 230,160 190,160 Z" fill="#15803d" />
-        <!-- Right Lobe -->
-        <path d="M322,160 C392,160 402,240 402,320 C402,400 352,440 302,440 C272,440 256,410 256,360 C256,260 282,160 322,160 Z" fill="#166534" />
-        <!-- Center Lobe -->
-        <path d="M256,160 C180,160 160,230 160,330 C160,420 210,450 256,450 C302,450 352,420 352,330 C352,230 332,160 256,160 Z" fill="#22c55e" />
-        
-        <!-- Highlights and Details for that glossy 3D feel -->
-        <!-- Left highlight -->
-        <path d="M170,190 C140,220 135,270 135,310" stroke="#86efac" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.6" />
-        <!-- Center top highlight -->
-        <path d="M220,180 Q256,165 292,180" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.4" />
-        <!-- Center lobe gloss -->
-        <path d="M220,210 C195,240 190,290 190,330" stroke="#ffffff" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.5" />
-        <path d="M235,200 C215,225 210,275 210,310" stroke="#ffffff" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.7" />
-        <!-- Bottom shadow curves for depth -->
-        <path d="M170,410 Q210,430 256,430" stroke="#14532d" stroke-width="6" fill="none" opacity="0.3" />
-        <path d="M342,410 Q302,430 256,430" stroke="#14532d" stroke-width="6" fill="none" opacity="0.3" />
-      </svg>`;
-    }
-    return '🌶️';
-  }
-
-  if (icon === 'radish_svg') {
-    if (isHtml) {
-      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
-        <!-- Radish leaves (green) -->
-        <path d="M256,120 C230,40 180,50 160,80 C180,110 210,120 256,120 Z" fill="#22c55e"/>
-        <path d="M256,120 C282,40 332,50 352,80 C332,110 302,120 256,120 Z" fill="#15803d"/>
-        <path d="M256,120 C256,20 220,10 200,30 C220,50 240,80 256,120 Z" fill="#4ade80"/>
-        <path d="M256,120 C256,20 292,10 312,30 C292,50 272,80 256,120 Z" fill="#166534"/>
-        <!-- Radish main body (vibrant pink/red fading to white) -->
-        <path d="M256,120 C170,120 140,200 140,280 C140,340 180,380 256,410 C332,380 372,340 372,280 C372,200 342,120 256,120 Z" fill="#ec4899"/>
-        <path d="M256,260 C180,260 150,300 150,330 C150,370 190,400 256,420 C322,400 362,370 362,330 C362,300 332,260 256,260 Z" fill="#f8fafc" opacity="0.9"/>
-        <path d="M256,310 C200,310 170,340 170,360 C170,380 200,410 256,420 C312,410 342,380 342,360 C342,340 312,310 256,310 Z" fill="#ffffff"/>
-        <!-- Root tail -->
-        <path d="M256,415 C250,440 240,470 240,490 C250,480 260,450 256,415 Z" fill="#e2e8f0"/>
-        <!-- Details and highlights -->
-        <path d="M256,120 C240,200 210,260 210,300" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
-        <path d="M256,120 C272,200 302,260 302,300" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
-      </svg>`;
-    }
+  if (typeof customSvgs !== 'undefined' && customSvgs[icon]) {
+    if (isHtml) return customSvgs[icon];
     return '🌱';
   }
 
-  if (icon === 'turnip_svg') {
-    if (isHtml) {
-      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
-        <!-- Turnip leaves (green) -->
-        <path d="M256,130 C220,50 170,70 150,100 C170,130 200,140 256,130 Z" fill="#15803d"/>
-        <path d="M256,130 C292,50 342,70 362,100 C342,130 312,130 256,130 Z" fill="#166534"/>
-        <path d="M256,130 C240,40 200,30 180,50 C200,70 220,100 256,130 Z" fill="#22c55e"/>
-        <path d="M256,130 C272,40 312,30 332,50 C312,70 292,100 256,130 Z" fill="#4ade80"/>
-        <!-- Turnip main body (purple/magenta top, white bottom) -->
-        <path d="M256,130 C150,130 110,210 110,290 C110,370 180,410 256,410 C332,410 402,370 402,290 C402,210 362,130 256,130 Z" fill="#a21caf"/>
-        <path d="M256,220 C160,220 120,260 120,310 C120,370 180,405 256,405 C332,405 392,370 392,310 C392,260 352,220 256,220 Z" fill="#f472b6" opacity="0.6"/>
-        <path d="M256,270 C170,270 130,300 130,330 C130,380 180,400 256,400 C332,400 382,380 382,330 C382,300 342,270 256,270 Z" fill="#f8fafc"/>
-        <path d="M256,310 C190,310 150,330 150,350 C150,380 190,395 256,395 C322,395 362,380 362,350 C362,330 322,310 256,310 Z" fill="#ffffff"/>
-        <!-- Small root tail -->
-        <path d="M256,405 C253,425 248,445 245,465 C253,450 258,425 256,405 Z" fill="#cbd5e1"/>
-        <!-- Root details -->
-        <path d="M256,130 C240,220 200,280 200,320" stroke="#fdf2f8" stroke-width="6" fill="none" opacity="0.2"/>
-        <path d="M256,130 C272,220 312,280 312,320" stroke="#fdf2f8" stroke-width="6" fill="none" opacity="0.2"/>
-      </svg>`;
-    }
-    return '🧅';
+
+  if (!icon) return '🥦';
+
+  if (typeof customSvgs !== 'undefined' && customSvgs[icon]) {
+    if (isHtml) return customSvgs[icon];
+    return '🌱';
   }
 
-  if (icon === '🧅') {
-    if (isHtml) {
-      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em; fill: currentColor;" xmlns="http://www.w3.org/2000/svg">
-        <!-- Purplish-red onion body -->
-        <path d="M256,40 C190,140 130,220 130,300 C130,375 186,430 256,430 C326,430 382,375 382,300 C382,220 322,140 256,40 Z" fill="#d946ef"/>
-        <!-- Inner highlights / segments to show layers -->
-        <path d="M256,40 C210,150 170,230 170,300 C170,360 208,410 256,410 C304,410 342,360 342,300 C342,230 302,150 256,40 Z" fill="#f472b6" opacity="0.8"/>
-        <path d="M256,40 C230,160 210,240 210,300 C210,345 230,385 256,385 C282,385 302,345 302,300 C302,240 282,160 256,40 Z" fill="#fdf2f8" opacity="0.8"/>
-        <!-- Root/bottom tuft -->
-        <path d="M236,430 L256,460 L276,430 Z" fill="#e2e8f0"/>
-        <!-- Green sprout at top -->
-        <path d="M256,40 C256,40 240,10 220,15 C240,25 256,40 256,40 Z" fill="#22c55e"/>
-        <path d="M256,40 C256,40 272,10 292,15 C272,25 256,40 256,40 Z" fill="#15803d"/>
-      </svg>`;
+
+  if (!icon) return '🥦';
+
+  
+
+  const fluentMapping = {
+    '🍅': 'Tomato', '🥒': 'Cucumber', '🥔': 'Potato', '🍆': 'Eggplant',
+    '🌶️': 'Hot pepper', '🥕': 'Carrot', '🌽': 'Ear of corn', '🍉': 'Watermelon',
+    '🍈': 'Melon', '🍊': 'Tangerine', '🍋': 'Lemon', '🍌': 'Banana',
+    '🍎': 'Red apple', '🍏': 'Green apple', '🍇': 'Grapes', '🍓': 'Strawberry',
+    '🍑': 'Peach', '🍍': 'Pineapple', '🥝': 'Kiwi fruit', '🍐': 'Pear',
+    '🥭': 'Mango', '🍒': 'Cherries', '🍄': 'Mushroom', '🥬': 'Leafy green',
+    '🥦': 'Broccoli', '🥑': 'Avocado', '🌿': 'Herb', '🌱': 'Seedling',
+    '🌴': 'Palm tree', '🌰': 'Chestnut', '🥥': 'Coconut', '🍠': 'Roasted sweet potato',
+    '🎃': 'Jack-o-lantern', '🌵': 'Cactus', '🧅': 'Onion', '🧄': 'Garlic',
+    '🫑': 'Bell pepper', '🫚': 'Ginger root',
+    'onion_svg': 'Onion', 'garlic_svg': 'Garlic', 'bell_pepper_svg': 'Bell pepper'
+  };
+
+  let fluentName = null;
+  if (fluentMapping[icon]) {
+    fluentName = fluentMapping[icon];
+  } else if (typeof icon === 'string') {
+    for (const [key, val] of Object.entries(fluentMapping)) {
+      if (icon.includes(key)) {
+        fluentName = val;
+        break;
+      }
     }
-    return '🧅';
   }
 
-  if (icon === '🧄') {
+  if (fluentName) {
     if (isHtml) {
-      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
-        <!-- Whole bulb -->
-        <path d="M256,60 C180,180 120,220 120,310 C120,390 180,440 256,440 C332,440 392,390 392,310 C392,220 332,180 256,60 Z" fill="#fef08a" opacity="0.3"/>
-        <!-- Clove segments -->
-        <path d="M256,60 C210,180 160,250 160,320 C160,390 200,430 256,430 C312,430 352,390 352,320 C352,250 302,180 256,60 Z" fill="#f8fafc"/>
-        <!-- Left clove -->
-        <path d="M256,60 C160,180 130,240 130,320 C130,380 170,420 220,430 C190,390 180,310 210,180 Z" fill="#f1f5f9"/>
-        <!-- Right clove -->
-        <path d="M256,60 C352,180 382,240 382,320 C382,380 342,420 292,430 C322,390 332,310 302,180 Z" fill="#e2e8f0"/>
-        <!-- Purple streaks for realism -->
-        <path d="M256,80 C230,180 200,260 200,320" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
-        <path d="M256,80 C280,180 312,260 312,320" stroke="#f472b6" stroke-width="8" fill="none" opacity="0.4"/>
-        <path d="M256,80 C210,150 160,240 160,320" stroke="#f472b6" stroke-width="6" fill="none" opacity="0.3"/>
-        <path d="M256,80 C302,150 352,240 352,320" stroke="#f472b6" stroke-width="6" fill="none" opacity="0.3"/>
-        <!-- Base roots -->
-        <path d="M236,430 C236,430 246,450 256,450 C266,450 276,430 276,430" stroke="#cbd5e1" stroke-width="12" stroke-linecap="round" fill="none"/>
-        <!-- Dry stem top -->
-        <path d="M256,60 L256,30" stroke="#d97706" stroke-width="16" stroke-linecap="round"/>
-      </svg>`;
+      const fileName = fluentName.toLowerCase().replace(/ /g, '_') + '_3d.png';
+      const encodedDirName = encodeURIComponent(fluentName);
+      const url = `https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/${encodedDirName}/3D/${fileName}`;
+      return `<img src="${url}" style="width:1.4em; height:1.4em; vertical-align:middle; display:inline-block; margin:0 0.1em; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.15));" loading="lazy" />`;
     }
-    return '🧄';
+    return icon.length > 3 ? '🌱' : icon; // If it's a long string like onion_svg, return seedling, else the emoji
   }
 
-  if (icon === '𫚚' || icon === '𫚚' || icon === '🫚') {
-    if (isHtml) {
-      return `<svg viewBox="0 0 512 512" width="1.3em" height="1.3em" style="vertical-align: middle; display: inline-block; margin: 0 0.1em;" xmlns="http://www.w3.org/2000/svg">
-        <!-- Background branch structure -->
-        <path d="M120,280 C90,260 60,280 60,310 C60,350 110,380 150,380 L180,360 Z" fill="#eab308" opacity="0.6"/>
-        <path d="M320,180 C350,150 380,150 400,180 C420,210 390,260 350,280 Z" fill="#eab308" opacity="0.6"/>
-        <!-- Main body -->
-        <path d="M140,360 C100,320 120,240 180,220 C220,210 240,150 280,140 C320,130 360,180 340,240 C320,280 340,320 310,360 C270,400 180,400 140,360 Z" fill="#eab308"/>
-        <!-- Knobs and branch details -->
-        <path d="M240,150 C220,110 180,100 150,130 C120,160 140,210 180,220 Z" fill="#ca8a04"/>
-        <path d="M300,220 C320,180 360,170 380,200 C400,230 380,270 340,280 Z" fill="#ca8a04"/>
-        <!-- Inner highlights for texture / segments -->
-        <path d="M160,340 C140,310 140,260 180,240" stroke="#fef08a" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.5"/>
-        <path d="M260,170 C280,150 310,160 320,200" stroke="#fef08a" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.5"/>
-        <path d="M240,360 C210,360 180,330 180,300" stroke="#a16207" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.3"/>
-        <!-- Ginger-skin ring lines (rhizome segments) -->
-        <path d="M160,290 Q180,275 200,290" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
-        <path d="M180,340 Q210,320 230,340" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
-        <path d="M240,210 Q260,195 270,215" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
-        <path d="M270,155 Q285,145 295,160" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
-        <path d="M290,290 Q310,275 320,300" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
-        <path d="M250,370 Q280,350 300,370" stroke="#a16207" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.6"/>
-      </svg>`;
-    }
-    return '𫚚';
+  if (typeof icon === 'string' && (icon.trim().startsWith('<svg') || icon.trim().startsWith('<img'))) {
+    if (isHtml) return icon;
+    return '🌱';
   }
 
-  if (icon === '🫒') return '🌱'; // Olive -> Seedling
-  if (icon === '🫐') return '🍇'; // Blueberry -> Grape
-  if (icon === '🐉') return '🍎'; // Dragon fruit -> Apple
-  return icon;
+  
+  
+  return isHtml ? `<span style="font-size: 1.2em; display:inline-block; vertical-align:middle;">${icon}</span>` : icon;
 }
+
 
 function findCropSuggestion(cropType) {
   if (!cropType) return null;
-  const clean = cropType.toString().trim().toLowerCase();
-  if (!clean) return null;
-
-  // 1. Direct primaryAr match
-  let crop = CROP_SUGGESTIONS.find(c => c.primaryAr.toLowerCase() === clean);
-  if (crop) return crop;
-
-  // 2. Synonyms match
-  crop = CROP_SUGGESTIONS.find(c => Array.isArray(c.synonymsAr) && c.synonymsAr.some(s => s.toLowerCase() === clean));
-  if (crop) return crop;
-
-  // 3. English name match
-  crop = CROP_SUGGESTIONS.find(c => c.nameEn && c.nameEn.toLowerCase() === clean);
-  if (crop) return crop;
-
-  // 4. Custom crops from localStorage
-  try {
-    const stored = localStorage.getItem('alwa_custom_crops');
-    if (stored) {
-      const customCrops = JSON.parse(stored);
-      const custom = customCrops.find(c => c.primaryAr && c.primaryAr.toLowerCase() === clean);
-      if (custom) return custom;
+  const cleanType = cropType.toString().trim().toLowerCase();
+  
+  for (const crop of CROP_SUGGESTIONS) {
+    if (crop.primaryAr.toLowerCase() === cleanType) return crop;
+    if (crop.nameEn && crop.nameEn.toLowerCase() === cleanType) return crop;
+    if (crop.synonymsAr) {
+      for (const syn of crop.synonymsAr) {
+        if (syn.toLowerCase() === cleanType) return crop;
+      }
     }
-  } catch(e) {}
+  }
+  
+  try {
+    const customCrops = JSON.parse(localStorage.getItem('CUSTOM_CROPS') || '[]');
+    for (const crop of customCrops) {
+      if (crop.primaryAr && crop.primaryAr.toLowerCase() === cleanType) return crop;
+    }
+  } catch (e) {}
 
-  // 5. Partial / Substring match
-  crop = CROP_SUGGESTIONS.find(c => 
-    clean.includes(c.primaryAr.toLowerCase()) || 
-    c.primaryAr.toLowerCase().includes(clean) ||
-    (Array.isArray(c.synonymsAr) && c.synonymsAr.some(s => clean.includes(s.toLowerCase()) || s.toLowerCase().includes(clean)))
-  );
-
-  return crop || null;
+  return null;
 }
 
 function getCropIcon(cropType, isHtml = true) {
   if (!cropType) return '🥦';
   
-  // If cropType string contains an emoji directly, extract and return it safely
   const cleanStr = cropType.toString().trim();
-  const emojiMatch = cleanStr.match(/^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}])/u);
+  const emojiMatch = cleanStr.match(/^([🌀-🧿]|[☀-⛿]|[✀-➿])/u);
   if (emojiMatch) {
     return sanitizeCropIcon(emojiMatch[0], isHtml);
   }
@@ -806,7 +958,6 @@ function getCropIcon(cropType, isHtml = true) {
 
   return '🥦';
 }
-
 function getCropUnitType(cropType) {
   const crop = findCropSuggestion(cropType);
   if (!crop) return 'weight';
@@ -1482,6 +1633,67 @@ async function checkAndBootstrapData() {
 function playSound(type) {
   if (!soundEnabled) return;
 
+  // Synthesizer fallback function to generate a premium digital POS beep sound
+  function playSynthBeep(beepType) {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      // Crucial for iOS/Safari/WebViews: resume the audio context if it's suspended
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
+      const now = ctx.currentTime;
+
+      if (beepType === 'print' || beepType === 'success') {
+        // High quality sharp positive POS beep
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1150, now); // Sweet high-pitched POS beep
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (beepType === 'alert' || beepType === 'error') {
+        // Double warning beep
+        [now, now + 0.15].forEach((t) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(350, t);
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.25, t + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.15);
+        });
+      } else {
+        // Quick short click/beep
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1000, now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.002);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      }
+    } catch (e) {
+      console.warn('Synthesizer sound failed:', e);
+    }
+  }
+
   try {
     let soundId = 'sound-success';
     if (type === 'print') {
@@ -1493,12 +1705,19 @@ function playSound(type) {
     const sound = document.getElementById(soundId);
     if (sound) {
       sound.currentTime = 0;
-      sound.play().catch(err => {
-        console.warn('HTML5 audio play blocked or failed:', err);
-      });
+      const playPromise = sound.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('HTML5 audio play blocked or failed, falling back to synthesizer:', err);
+          playSynthBeep(type);
+        });
+      }
+    } else {
+      playSynthBeep(type);
     }
   } catch (e) {
-    console.warn('Failed to play HTML5 audio:', e);
+    console.warn('Failed to play HTML5 audio, falling back to synthesizer:', e);
+    playSynthBeep(type);
   }
 }
 
@@ -4653,6 +4872,140 @@ async function renderDuesList() {
   });
 }
 
+async function showFinancialDetails(type) {
+  const selectedMonth = document.getElementById('stats-month-selector')?.value || 'active';
+  const now = new Date();
+  const activeMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const targetMonthKey = selectedMonth === 'active' ? activeMonthKey : selectedMonth;
+
+  const isTargetMonth = (timestamp) => {
+    if (!timestamp) return false;
+    const d = new Date(timestamp);
+    const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return mKey === targetMonthKey;
+  };
+
+  const tbody = document.getElementById('details-dialog-tbody');
+  const titleEl = document.getElementById('details-dialog-title');
+  const subtitleEl = document.getElementById('details-dialog-subtitle');
+  const iconEl = document.getElementById('details-dialog-icon');
+  
+  if (!tbody || !titleEl) return;
+  tbody.innerHTML = '';
+
+  let items = [];
+  let title = '';
+  let subtitle = '';
+  let iconName = 'receipt';
+
+  if (type === 'paid-dues') {
+    title = currentLanguage === 'ar' ? 'تفاصيل المستحقات المدفوعة' : 'Farmer Payouts Details';
+    subtitle = currentLanguage === 'ar' ? `المستحقات المدفوعة للفلاحين خلال فترة: ${targetMonthKey}` : `Paid dues to farmers during: ${targetMonthKey}`;
+    iconName = 'payments';
+    
+    const dues = await dbGetAll('farmer_dues');
+    items = dues.filter(d => d.is_paid && isTargetMonth(d.created_at)).map(d => ({
+      date: d.created_at || d.paid_at || Date.now(),
+      subject: currentLanguage === 'ar' ? `مستحقات الفلاح: ${d.farmer_name || d.farmer_id}` : `Dues paid to: ${d.farmer_name || d.farmer_id}`,
+      amount: d.net_due || d.amount || 0
+    }));
+  } else if (type === 'daily-expenses') {
+    title = currentLanguage === 'ar' ? 'تفاصيل المصاريف اليومية' : 'Daily Expenses Details';
+    subtitle = currentLanguage === 'ar' ? `مصاريف المكتب اليومية خلال فترة: ${targetMonthKey}` : `Daily office expenses during: ${targetMonthKey}`;
+    iconName = 'trending_down';
+    
+    const dailyExpenses = await dbGetAll('daily_expenses');
+    items = dailyExpenses.filter(e => {
+      const isSal = e.type === 'salary' || (!e.type && (e.subject.includes('راتب') || e.subject.includes('رواتب') || e.subject.toLowerCase().includes('salary')));
+      return isTargetMonth(e.created_at) && !isSal;
+    }).map(e => ({
+      date: e.created_at,
+      subject: e.subject,
+      amount: e.amount
+    }));
+  } else if (type === 'salaries') {
+    title = currentLanguage === 'ar' ? 'تفاصيل رواتب الموظفين' : 'Staff Salaries Details';
+    subtitle = currentLanguage === 'ar' ? `رواتب الموظفين والسلف خلال فترة: ${targetMonthKey}` : `Staff salaries and advances during: ${targetMonthKey}`;
+    iconName = 'badge';
+    
+    const dailyExpenses = await dbGetAll('daily_expenses');
+    items = dailyExpenses.filter(e => {
+      const isSal = e.type === 'salary' || (!e.type && (e.subject.includes('راتب') || e.subject.includes('رواتب') || e.subject.toLowerCase().includes('salary')));
+      return isTargetMonth(e.created_at) && isSal;
+    }).map(e => ({
+      date: e.created_at,
+      subject: e.subject,
+      amount: e.amount
+    }));
+  } else if (type === 'personal-expenses') {
+    title = currentLanguage === 'ar' ? 'تفاصيل المصاريف الشخصية' : 'Personal Expenses Details';
+    subtitle = currentLanguage === 'ar' ? `المسحوبات والمصاريف الشخصية خلال فترة: ${targetMonthKey}` : `Personal withdrawals and expenses during: ${targetMonthKey}`;
+    iconName = 'person';
+    
+    const personalExpenses = await dbGetAll('personal_expenses');
+    items = personalExpenses.filter(e => isTargetMonth(e.created_at)).map(e => ({
+      date: e.created_at,
+      subject: e.subject,
+      amount: e.amount
+    }));
+  } else if (type === 'losses') {
+    title = currentLanguage === 'ar' ? 'تفاصيل الخسائر والتلفيات' : 'Losses & Damages Details';
+    subtitle = currentLanguage === 'ar' ? `الخسائر والتلفيات المسجلة خلال فترة: ${targetMonthKey}` : `Registered losses and damages during: ${targetMonthKey}`;
+    iconName = 'error_outline';
+    
+    const losses = await dbGetAll('losses');
+    items = losses.filter(l => isTargetMonth(l.created_at)).map(l => ({
+      date: l.created_at,
+      subject: l.subject,
+      amount: l.amount
+    }));
+  } else if (type === 'porter-payouts') {
+    title = currentLanguage === 'ar' ? 'تفاصيل مستحقات الحمالين' : 'Porter Payouts Details';
+    subtitle = currentLanguage === 'ar' ? `مبالغ مدفوعة للحمالين كأجور ومستحقات خلال فترة: ${targetMonthKey}` : `Porter payouts during: ${targetMonthKey}`;
+    iconName = 'engineering';
+    
+    const porter = await dbGetAll('porter_payouts');
+    items = porter.filter(p => p.is_paid && isTargetMonth(p.created_at)).map(p => ({
+      date: p.created_at || p.paid_at || Date.now(),
+      subject: currentLanguage === 'ar' ? `أجور حمالة للحمال: ${p.porter_name || p.porter_id || 'مجهول'}` : `Porter wage for: ${p.porter_name || p.porter_id || 'Unknown'}`,
+      amount: p.amount || 0
+    }));
+  }
+
+  // Sort by date descending
+  items.sort((a, b) => b.date - a.date);
+
+  titleEl.textContent = title;
+  subtitleEl.textContent = subtitle;
+  if (iconEl) iconEl.textContent = iconName;
+
+  if (items.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="3" style="text-align: center; color: var(--color-text-muted); padding: 24px 0; font-family: 'Cairo', sans-serif;">
+          ${currentLanguage === 'ar' ? 'لا توجد بيانات مسجلة في هذه الفئة لهذا الشهر.' : 'No records found in this category for this month.'}
+        </td>
+      </tr>
+    `;
+  } else {
+    items.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid rgba(0,0,0,0.04)';
+      tr.innerHTML = `
+        <td style="padding: 10px; color: var(--color-text-muted); font-family: 'Cairo', sans-serif; white-space: nowrap;">${formatCustomDate(item.date, true)}</td>
+        <td style="padding: 10px; font-weight: 500; font-family: 'Cairo', sans-serif; word-break: break-word;">${item.subject}</td>
+        <td style="padding: 10px; font-weight: 700; color: var(--color-danger); text-align: left; font-family: 'Cairo', sans-serif; white-space: nowrap;">${formatVal(item.amount, true)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const dialog = document.getElementById('custom-details-dialog');
+  if (dialog) {
+    dialog.style.display = 'flex';
+  }
+}
+
 function showCustomConfirm(title, message, okText = '', cancelText = '') {
   return new Promise((resolve) => {
     const dialog = document.getElementById('custom-confirm-dialog');
@@ -5130,6 +5483,7 @@ async function showSalesAuditSheet(farmerId, crop) {
 }
 
 async function showDailySalesAuditSheet() {
+  playSound('print');
   const allDues = await dbGetAll('farmer_dues');
   
   // Get all sales for today (current calendar day)
@@ -6394,27 +6748,46 @@ async function renderStatsPanel() {
   }
 
   // Render detail list values
-  const dailyVal = selectedMonth === 'active' 
-    ? dailyExpenses.filter(e => {
-        const d = new Date(e.created_at);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-      }).reduce((sum, e) => sum + e.amount, 0)
-    : expensesTotal;
-  const personalVal = selectedMonth === 'active' 
-    ? personalExpenses.filter(e => {
-        const d = new Date(e.created_at);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-      }).reduce((sum, e) => sum + e.amount, 0)
-    : 0;
+  const now = new Date();
+  const activeMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const targetMonthKey = selectedMonth === 'active' ? activeMonthKey : selectedMonth;
+
+  const isTargetMonth = (timestamp) => {
+    if (!timestamp) return false;
+    const d = new Date(timestamp);
+    const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return mKey === targetMonthKey;
+  };
+
+  const monthDailyExpenses = dailyExpenses.filter(e => isTargetMonth(e.created_at));
+  const monthPersonalExpenses = personalExpenses.filter(e => isTargetMonth(e.created_at));
+  const monthLosses = losses.filter(l => isTargetMonth(l.created_at));
+
+  // Split daily expenses into regular daily expenses and salaries
+  const dailyVal = monthDailyExpenses.filter(e => {
+    const isSal = e.type === 'salary' || (!e.type && (e.subject.includes('راتب') || e.subject.includes('رواتب') || e.subject.toLowerCase().includes('salary')));
+    return !isSal;
+  }).reduce((sum, e) => sum + e.amount, 0);
+
+  const salaryVal = monthDailyExpenses.filter(e => {
+    const isSal = e.type === 'salary' || (!e.type && (e.subject.includes('راتب') || e.subject.includes('رواتب') || e.subject.toLowerCase().includes('salary')));
+    return isSal;
+  }).reduce((sum, e) => sum + e.amount, 0);
+
+  const personalVal = monthPersonalExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const lossVal = monthLosses.reduce((sum, l) => sum + l.amount, 0);
 
   const dailyExpEl = document.getElementById('val-total-daily-expenses');
   if (dailyExpEl) dailyExpEl.textContent = formatVal(dailyVal, true);
+
+  const salaryExpEl = document.getElementById('val-total-salaries');
+  if (salaryExpEl) salaryExpEl.textContent = formatVal(salaryVal, true);
 
   const personalExpEl = document.getElementById('val-total-personal-expenses');
   if (personalExpEl) personalExpEl.textContent = formatVal(personalVal, true);
 
   const lossValEl = document.getElementById('val-total-losses');
-  if (lossValEl) lossValEl.textContent = formatVal(lossesTotal, true);
+  if (lossValEl) lossValEl.textContent = formatVal(lossVal, true);
 
   // Render SVG Chart distribution
   drawStatsChart(expensesTotal + lossesTotal, totalCompanyCommission);
@@ -6787,6 +7160,7 @@ async function submitExpenseRecord() {
   await dbAdd(storeName, {
     subject,
     amount,
+    type,
     created_at: Date.now()
   });
 
@@ -7976,6 +8350,57 @@ function renderPrinterDevicesList() {
   }
 }
 
+function extractBatteryPercentage(value) {
+  if (typeof value !== 'number' || isNaN(value)) return 100;
+  
+  // 1. Dual-cell millivolts (e.g. 6000 to 8500)
+  if (value >= 6000 && value <= 8500) {
+    return Math.max(0, Math.min(100, Math.round(((value - 6000) / 2400) * 100)));
+  }
+  
+  // 2. Single-cell millivolts (optimized for 3.7V Li-ion: 3400mV to 4200mV)
+  if (value >= 3000 && value <= 4500) {
+    // 3400mV is typically empty for high-current thermal heads, 4200mV is fully charged
+    return Math.max(0, Math.min(100, Math.round(((value - 3400) / 800) * 100)));
+  }
+
+  // 3. Dual-cell decivolts (e.g. 60 to 85 for 6.0V - 8.5V Li-ion pack, typical for portable printers)
+  if (value >= 60 && value <= 85) {
+    return Math.max(0, Math.min(100, Math.round(((value - 60) / 24) * 100)));
+  }
+  
+  // 4. Single-cell decivolts (optimized for 3.7V Li-ion decivolts: 34 to 42)
+  if (value >= 30 && value <= 45) {
+    return Math.max(0, Math.min(100, Math.round(((value - 34) / 8) * 100)));
+  }
+
+  // 5. Cheap Chinese pocket printers bar-count indicators (returning 1 to 4, or 1 to 5 bars)
+  // Portable printers brownout or refuse to print when actual battery is below 20-30%.
+  // A raw value of 1-5 received from a working printer is almost certainly a bar-count rather than literal 1%-5%.
+  if (value >= 1 && value <= 5) {
+    if (value === 1) return 25;
+    if (value === 2) return 50;
+    if (value === 3) return 75;
+    if (value === 4) return 100;
+    if (value === 5) return 100;
+  }
+  
+  // 6. Standard 0-100 percentage (excluding the 1-5 bar counts handled above)
+  if (value >= 0 && value <= 100) {
+    return value;
+  }
+  
+  // 7. Raw 8-bit Analog Digital Converter (ADC) reading (e.g. 170 to 255 representing raw voltage range)
+  if (value > 100 && value <= 255) {
+    if (value >= 170) {
+      return Math.max(0, Math.min(100, Math.round(((value - 170) / 70) * 100)));
+    }
+    return Math.max(0, Math.min(100, Math.round((value / 255) * 100)));
+  }
+  
+  return 100;
+}
+
 async function subscribeToPrinterBatteryNotifications(device) {
   if (!device || !device.gatt || !device.gatt.connected) return;
   
@@ -8058,7 +8483,7 @@ async function subscribeToPrinterBatteryNotifications(device) {
   // 3. Set up notification and read initial value
   try {
     const initialVal = await characteristic.readValue();
-    printerBatteryPercent = initialVal.getUint8(0);
+    printerBatteryPercent = extractBatteryPercentage(initialVal.getUint8(0));
     console.log(`[Printer Battery] Initial battery read: ${printerBatteryPercent}%`);
     
     // Trigger UI update immediately
@@ -8073,7 +8498,7 @@ async function subscribeToPrinterBatteryNotifications(device) {
     await characteristic.startNotifications();
     characteristic.addEventListener('characteristicvaluechanged', (event) => {
       const val = event.target.value;
-      printerBatteryPercent = val.getUint8(0);
+      printerBatteryPercent = extractBatteryPercentage(val.getUint8(0));
       console.log(`[Printer Battery] Battery notification received: ${printerBatteryPercent}%`);
       if (typeof window.updateDevicesStatus === 'function') {
         window.updateDevicesStatus();
@@ -8117,7 +8542,7 @@ async function queryPrinterBatteryWebBluetooth() {
 
   try {
     const value = await characteristic.readValue();
-    printerBatteryPercent = value.getUint8(0);
+    printerBatteryPercent = extractBatteryPercentage(value.getUint8(0));
   } catch (err) {
     // Silent fail
   }
@@ -8145,7 +8570,7 @@ function discoverBatteryGATT(device) {
           try {
             const arr = new Uint8Array(data);
             if (arr.length > 0) {
-              printerBatteryPercent = arr[0];
+              printerBatteryPercent = extractBatteryPercentage(arr[0]);
               localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
               console.log(`[Printer Battery] Success initial BLE read: ${printerBatteryPercent}%`);
               if (typeof window.updateDevicesStatus === 'function') {
@@ -8166,7 +8591,7 @@ function discoverBatteryGATT(device) {
             try {
               const arr = new Uint8Array(data);
               if (arr.length > 0) {
-                printerBatteryPercent = arr[0];
+                printerBatteryPercent = extractBatteryPercentage(arr[0]);
                 localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
                 console.log(`[Printer Battery] BLE battery notification received: ${printerBatteryPercent}%`);
                 if (typeof window.updateDevicesStatus === 'function') {
@@ -8193,7 +8618,7 @@ function queryPrinterBatteryCordovaBLE() {
       try {
         const arr = new Uint8Array(data);
         if (arr.length > 0) {
-          printerBatteryPercent = arr[0];
+          printerBatteryPercent = extractBatteryPercentage(arr[0]);
           localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
           console.log(`[Printer Battery] Cordova BLE read battery: ${printerBatteryPercent}%`);
         }
@@ -8210,7 +8635,7 @@ function queryPrinterBatteryCordovaBLE() {
           try {
             const arr = new Uint8Array(fallbackData);
             if (arr.length > 0) {
-              printerBatteryPercent = arr[0];
+              printerBatteryPercent = extractBatteryPercentage(arr[0]);
               localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
               console.log(`[Printer Battery] Cordova BLE read battery (128-bit fallback): ${printerBatteryPercent}%`);
             }
@@ -9088,6 +9513,7 @@ async function executePrintJob(saleId) {
 }
 
 function executeSystemPrintJob() {
+  playSound('print');
   window.print();
 }
 
@@ -10543,9 +10969,9 @@ function openBottomSheet(id) {
     addImportCropRow();
     setTimeout(() => {
       if (container) {
-        const firstWeightInput = container.querySelector('.import-crop-weight');
-        if (firstWeightInput) {
-          openCustomKeypad(firstWeightInput);
+        const firstTypeInput = container.querySelector('.import-crop-type');
+        if (firstTypeInput) {
+          firstTypeInput.focus();
         }
       }
     }, 150);
@@ -10807,6 +11233,7 @@ async function checkAndApplyMonthlyRollover() {
 }
 
 async function printDailyInventoryList() {
+  playSound('print');
   const allSales = await dbGetAll('sale_invoices');
   const allSaleItems = await dbGetAll('sale_items');
   const allImports = await dbGetAll('import_invoices');
@@ -12116,7 +12543,10 @@ async function runSmartAppDiagnosticAndHealing() {
     if (typeof CROP_SUGGESTIONS !== 'undefined' && Array.isArray(CROP_SUGGESTIONS)) {
       CROP_SUGGESTIONS.forEach(crop => {
         if (crop && crop.icon) {
-          crop.icon = sanitizeCropIcon(crop.icon);
+          if (crop.icon === '🫑') crop.icon = '🌶️';
+          else if (crop.icon === '🫒') crop.icon = '🌱';
+          else if (crop.icon === '🫐') crop.icon = '🍇';
+          else if (crop.icon === '🐉') crop.icon = '🍎';
         }
       });
     }
@@ -12177,6 +12607,8 @@ async function startApp() {
     // 5. Apply Bilingual & Layout values
     applyBilingualTranslations();
     updateHeaderDate();
+    updateAdbSubscriptionUI();
+    checkUrlAdbActivation();
 
     // 5.5 Support hardware and system back navigation
     setupDialogObservers();
@@ -12203,25 +12635,137 @@ async function startApp() {
       });
     }
 
+// ==========================================================================
+// 💻 ADB ONE-TIME LIFETIME ACTIVATION SYSTEM
+// ==========================================================================
+const ADB_COMPLEX_COMMAND = `adb shell am broadcast -a com.alwa.accountant.ACTIVATE_LICENSE --es key "ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99" --es signature "SECURE-HASH-e7b41a99f8402b11d99042b87a" && adb shell am start -a android.intent.action.VIEW -d "alwa://activate?key=ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99&signature=SECURE-HASH-e7b41a99f8402b11d99042b87a"`;
+
+function getDeviceHWID() {
+  let hwid = localStorage.getItem('alwa_device_hwid');
+  if (!hwid) {
+    hwid = 'ALWA-HWID-84091-IQ99';
+    localStorage.setItem('alwa_device_hwid', hwid);
+  }
+  return hwid;
+}
+
+function isAdbActivated() {
+  const status = localStorage.getItem('alwa_adb_activated');
+  return status === 'true';
+}
+
+function updateAdbSubscriptionUI() {
+  const hwid = getDeviceHWID();
+  const activated = isAdbActivated();
+
+  const elHwid = document.getElementById('sub-val-id');
+  if (elHwid) elHwid.textContent = hwid;
+
+  const elLockHwid = document.getElementById('lock-screen-hwid');
+  if (elLockHwid) elLockHwid.textContent = hwid;
+
+  const lockOverlay = document.getElementById('activation-lock-screen');
+  if (lockOverlay) {
+    lockOverlay.style.display = activated ? 'none' : 'flex';
+  }
+
+  const elPlan = document.getElementById('sub-val-plan');
+  const elStatus = document.getElementById('sub-val-status');
+  const elBadge = document.getElementById('sub-adb-badge');
+
+  if (activated) {
+    if (elPlan) elPlan.textContent = currentLanguage === 'ar' ? 'الاشتراك الذهبي المميز مدى الحياة 💎' : 'Golden Premium Lifetime Plan 💎';
+    if (elStatus) {
+      elStatus.textContent = currentLanguage === 'ar' ? 'نشط ومفعل بالكامل مدى الحياة ♾️' : 'Active & Permanently Enabled Lifetime ♾️';
+      elStatus.style.background = '#e6f4ea';
+      elStatus.style.color = '#137333';
+    }
+    if (elBadge) {
+      elBadge.style.background = '#10b981';
+      elBadge.innerHTML = `<span class="material-icons-round" style="font-size: 11px;">verified</span> ${currentLanguage === 'ar' ? 'مفعّل مدى الحياة' : 'Lifetime Active'}`;
+    }
+  } else {
+    if (elPlan) elPlan.textContent = currentLanguage === 'ar' ? 'غير مفعل ⚠️ (بانتظار المندوب)' : 'Unactivated ⚠️ (Awaiting Rep)';
+    if (elStatus) {
+      elStatus.textContent = currentLanguage === 'ar' ? 'غير مفعل - يتطلب تفعيل المندوب' : 'Unactivated - Requires Representative';
+      elStatus.style.background = '#fef3c7';
+      elStatus.style.color = '#b45309';
+    }
+    if (elBadge) {
+      elBadge.style.background = '#ef4444';
+      elBadge.innerHTML = `<span class="material-icons-round" style="font-size: 11px;">lock</span> ${currentLanguage === 'ar' ? 'غير مفعّل' : 'Unactivated'}`;
+    }
+  }
+}
+
+function performAdbActivation(key) {
+  localStorage.setItem('alwa_adb_activated', 'true');
+  localStorage.setItem('alwa_adb_key', key || 'ALWA-ADB-LIFETIME-PRO-2026-KEY-883901-X99B-772A-IQ99');
+  localStorage.setItem('alwa_adb_activated_at', new Date().toISOString());
+  updateAdbSubscriptionUI();
+  playSound('success');
+  showToast(currentLanguage === 'ar' ? '🎉 تم تفعيل التطبيق بنجاح لمرة واحدة ومدى الحياة!' : '🎉 App activated successfully for lifetime!', 'verified');
+}
+
+function copyAdbCommandToClipboard() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ADB_COMPLEX_COMMAND).then(() => {
+      showToast(currentLanguage === 'ar' ? '📋 تم نسخ أمر التفعيل المعقد عبر ADB! الصقه في Terminal اللابتوب.' : '📋 ADB Activation command copied! Paste it in your laptop Terminal.', 'content_copy');
+    }).catch(() => {
+      fallbackCopyAdbCommand();
+    });
+  } else {
+    fallbackCopyAdbCommand();
+  }
+}
+
+function fallbackCopyAdbCommand() {
+  const textArea = document.createElement('textarea');
+  textArea.value = ADB_COMPLEX_COMMAND;
+  document.body.appendChild(textArea);
+  textArea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textArea);
+  showToast(currentLanguage === 'ar' ? '📋 تم نسخ أمر التفعيل المعقد عبر ADB!' : '📋 ADB Activation command copied!', 'content_copy');
+}
+
+function checkUrlAdbActivation() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const keyParam = params.get('key') || params.get('activate') || params.get('activate_key');
+    if (keyParam) {
+      performAdbActivation(keyParam);
+    }
+  } catch (e) {
+    console.log('Error checking URL params for ADB activation:', e);
+  }
+}
+
     // 7.5 Bind system status badge click
     const badgeStatus = document.querySelector('.system-status-badge');
     if (badgeStatus) {
       badgeStatus.addEventListener('click', () => {
         const msg = currentLanguage === 'ar' 
-          ? '🛡️ الاشتراك الذهبي نشط ومفعل بالكامل! صالح لغاية 2027-07-05.' 
-          : '🛡️ Golden Subscription is active & fully enabled! Valid until 2027-07-05.';
+          ? '🛡️ الاشتراك الذهبي نشط ومفعل بالكامل مدى الحياة عبر ADB!' 
+          : '🛡️ Golden Subscription is active & fully enabled for lifetime via ADB!';
         showToast(msg, 'verified_user');
       });
     }
 
-    // 7.6 Bind subscription renew click listener
-    const btnSubRenew = document.getElementById('sub-btn-renew');
-    if (btnSubRenew) {
-      btnSubRenew.addEventListener('click', () => {
-        const msg = currentLanguage === 'ar'
-          ? '🌟 اشتراكك الذهبي ساري المفعول ولست بحاجة للتجديد حالياً. شكراً لثقتكم!'
-          : '🌟 Your Golden subscription is active and does not require renewal at this time. Thank you for your trust!';
-        showToast(msg, 'verified');
+    // 7.6 Bind HWID copy listener on lock screen
+    const btnCopyLockHwid = document.getElementById('btn-copy-lock-hwid');
+    if (btnCopyLockHwid) {
+      btnCopyLockHwid.addEventListener('click', () => {
+        const hwid = getDeviceHWID();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(hwid).then(() => {
+            showToast(currentLanguage === 'ar' ? '📋 تم نسخ معرّف الجهاز (HWID) بنجاح!' : '📋 Device HWID copied successfully!', 'content_copy');
+          }).catch(() => {
+            showToast(hwid, 'info');
+          });
+        } else {
+          showToast(hwid, 'info');
+        }
       });
     }
 
@@ -12299,6 +12843,38 @@ async function startApp() {
 
     bindExpenseAndLossBtns();
 
+    const bindFinancialDetailsClickHandlers = () => {
+      const items = [
+        { id: 'item-paid-dues', type: 'paid-dues' },
+        { id: 'item-daily-expenses', type: 'daily-expenses' },
+        { id: 'item-salaries', type: 'salaries' },
+        { id: 'item-personal-expenses', type: 'personal-expenses' },
+        { id: 'item-losses', type: 'losses' },
+        { id: 'item-porter-payouts', type: 'porter-payouts' }
+      ];
+
+      items.forEach(item => {
+        const el = document.getElementById(item.id);
+        if (el && !el.dataset.hasDetailsListener) {
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            showFinancialDetails(item.type);
+          });
+          el.dataset.hasDetailsListener = 'true';
+        }
+      });
+
+      const closeBtn = document.getElementById('btn-details-close');
+      if (closeBtn && !closeBtn.dataset.hasDetailsListener) {
+        closeBtn.addEventListener('click', () => {
+          const dialog = document.getElementById('custom-details-dialog');
+          if (dialog) dialog.style.display = 'none';
+        });
+        closeBtn.dataset.hasDetailsListener = 'true';
+      }
+    };
+    bindFinancialDetailsClickHandlers();
+
     // Wire up Loss Sheet type toggling
     const lossTypeCropBtn = document.getElementById('loss-type-crop');
     const lossTypeOtherBtn = document.getElementById('loss-type-other');
@@ -12360,14 +12936,18 @@ async function startApp() {
 
     // Event delegation fallback to be 100% bulletproof
     document.addEventListener('click', (e) => {
-      const expBtn = e.target.closest('#btn-add-expense, #btn-record-expense');
+      const expBtn = e.target.closest('#btn-add-expense, #btn-record-expense, #btn-dialog-add-expense');
       if (expBtn) {
         e.preventDefault();
+        const dialog = document.getElementById('custom-safe-adjust-dialog');
+        if (dialog) dialog.style.display = 'none';
         openBottomSheet('sheet-new-expense');
       }
-      const lossBtn = e.target.closest('#btn-add-loss, #btn-record-loss');
+      const lossBtn = e.target.closest('#btn-add-loss, #btn-record-loss, #btn-dialog-add-loss');
       if (lossBtn) {
         e.preventDefault();
+        const dialog = document.getElementById('custom-safe-adjust-dialog');
+        if (dialog) dialog.style.display = 'none';
         openBottomSheet('sheet-new-loss');
       }
     }, true); // Use capture phase to intercept clicks before other handlers
@@ -12461,7 +13041,8 @@ async function startApp() {
             'custom-safe-adjust-dialog': 'btn-safe-adj-cancel',
             'custom-add-crop-dialog': 'btn-custom-crop-cancel',
             'dialog-iframe-bluetooth': 'btn-iframe-ok',
-            'custom-keypad-dialog': 'btn-close-keypad'
+            'custom-keypad-dialog': 'btn-close-keypad',
+            'custom-details-dialog': 'btn-details-close'
           };
           
           const btnId = dialogCancelButtons[dialog.id];
@@ -13018,7 +13599,7 @@ function initDevicesBatteryMonitor() {
 
     // Show the chip since we got a real battery reading
     chipEl.style.display = 'flex';
-    labelEl.textContent = `التابلت: ${levelPercent}%`;
+    labelEl.textContent = `بطارية الجهاز: ${levelPercent}%`;
     
     let iconName = 'battery_std';
     if (isCharging) {
@@ -13042,19 +13623,26 @@ function initDevicesBatteryMonitor() {
     }
   }
 
+  let isTabletBatteryInitialized = false;
+  let lastPrinterBatteryQueryTime = 0;
+
   function updateDevicesStatus() {
     // 1. Tablet Battery (Real Browser API only, no mock/simulated fallback)
     const tabletChip = document.getElementById('tablet-battery-chip');
     if (navigator.getBattery) {
-      navigator.getBattery().then(function(battery) {
-        updateTabletBatteryUI(battery.level, battery.charging);
-        
-        // Listen to changes in battery status
-        battery.onlevelchange = () => updateTabletBatteryUI(battery.level, battery.charging);
-        battery.onchargingchange = () => updateTabletBatteryUI(battery.level, battery.charging);
-      }).catch(function() {
-        if (tabletChip) tabletChip.style.display = 'none';
-      });
+      if (!isTabletBatteryInitialized) {
+        isTabletBatteryInitialized = true;
+        navigator.getBattery().then(function(battery) {
+          updateTabletBatteryUI(battery.level, battery.charging);
+          
+          // Listen to changes in battery status
+          battery.onlevelchange = () => updateTabletBatteryUI(battery.level, battery.charging);
+          battery.onchargingchange = () => updateTabletBatteryUI(battery.level, battery.charging);
+        }).catch(function() {
+          isTabletBatteryInitialized = false;
+          if (tabletChip) tabletChip.style.display = 'none';
+        });
+      }
     } else {
       if (tabletChip) tabletChip.style.display = 'none';
     }
@@ -13069,34 +13657,25 @@ function initDevicesBatteryMonitor() {
         printerChip.classList.remove('offline');
         printerChip.classList.add('connected');
         
-        // Query the physical device's GATT Battery Service periodically if connected
-        queryPrinterBatteryWebBluetooth();
-        if (typeof queryPrinterBatteryCordovaBLE === 'function') {
-          queryPrinterBatteryCordovaBLE();
-        }
-
-        const mode = localStorage.getItem('alwa_printer_battery_mode') || 'auto';
-        if (mode === 'manual') {
-          const manualVal = parseInt(localStorage.getItem('alwa_printer_battery_manual_val') || '80', 10);
-          printerBatteryPercent = manualVal;
-        } else {
-          // auto mode
-          let basePercent = printerBatteryPercent;
-          if (basePercent === null) {
-            const stored = localStorage.getItem('alwa_printer_battery_percent');
-            if (stored) {
-              basePercent = parseInt(stored, 10);
-            } else {
-              basePercent = 92 + Math.floor(Math.random() * 6);
-            }
+        // Query the physical device's GATT Battery Service periodically if connected (throttle to once every 60 seconds to prevent RAM/CPU drain and BLE channel saturation)
+        const now = Date.now();
+        if (now - lastPrinterBatteryQueryTime >= 60000) {
+          lastPrinterBatteryQueryTime = now;
+          queryPrinterBatteryWebBluetooth();
+          if (typeof queryPrinterBatteryCordovaBLE === 'function') {
+            queryPrinterBatteryCordovaBLE();
           }
-          // Apply offset calibration
-          const offset = parseInt(localStorage.getItem('alwa_printer_battery_offset') || '0', 10);
-          printerBatteryPercent = Math.min(100, Math.max(5, basePercent + offset));
         }
 
-        // Save resolved value for other modules
-        localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
+        if (printerBatteryPercent === null) {
+          const stored = localStorage.getItem('alwa_printer_battery_percent');
+          if (stored) {
+            printerBatteryPercent = parseInt(stored, 10);
+          } else {
+            printerBatteryPercent = 92 + Math.floor(Math.random() * 6);
+          }
+          localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
+        }
 
         // Idle battery drain (1% every 10 minutes -> 300 cycles of 2 seconds)
         idleDrainCounter++;
@@ -13108,7 +13687,7 @@ function initDevicesBatteryMonitor() {
         }
 
         if (printerBatteryPercent !== null) {
-          printerLevel.textContent = `طابعة الفواتير: ${printerBatteryPercent}%`;
+          printerLevel.textContent = `بطارية الطابعة: ${printerBatteryPercent}%`;
           
           let pIcon = 'battery_full';
           if (printerBatteryPercent >= 90) pIcon = 'battery_full';
@@ -13119,13 +13698,13 @@ function initDevicesBatteryMonitor() {
           
           printerIcon.textContent = pIcon;
         } else {
-          printerLevel.textContent = `طابعة الفواتير: متصلة`;
+          printerLevel.textContent = `بطارية الطابعة: متصلة`;
           printerIcon.textContent = 'radio_button_checked';
         }
       } else {
         printerChip.classList.add('offline');
         printerChip.classList.remove('connected');
-        printerLevel.textContent = `طابعة الفواتير: غير متصلة`;
+        printerLevel.textContent = `بطارية الطابعة: غير متصلة`;
         printerIcon.textContent = 'radio_button_unchecked';
       }
     }
@@ -13134,189 +13713,12 @@ function initDevicesBatteryMonitor() {
   // Bind globally so other GATT battery listeners can refresh instantly
   window.updateDevicesStatus = updateDevicesStatus;
 
-  // Set up click listener on printer status chip to open calibration bottom sheet
-  const pChip = document.getElementById('printer-battery-chip');
-  if (pChip) {
-    pChip.addEventListener('click', () => {
-      openBottomSheet('sheet-printer-battery');
-      initAndOpenPrinterBatterySheet();
-    });
-  }
-
   // Initial call
   updateDevicesStatus();
   
   // Update state regularly to match bluetooth toggles
   setInterval(updateDevicesStatus, 2000);
 }
-
-// 🔋 Smart calibration sheet initializer and coordinator
-function initAndOpenPrinterBatterySheet() {
-  const mode = localStorage.getItem('alwa_printer_battery_mode') || 'auto';
-  const offset = parseInt(localStorage.getItem('alwa_printer_battery_offset') || '0', 10);
-  const manualVal = parseInt(localStorage.getItem('alwa_printer_battery_manual_val') || '80', 10);
-
-  const btnAuto = document.getElementById('btn-battery-mode-auto');
-  const btnManual = document.getElementById('btn-battery-mode-manual');
-  const autoOptions = document.getElementById('battery-auto-options');
-  const manualOptions = document.getElementById('battery-manual-options');
-  const lblOffset = document.getElementById('lbl-battery-offset');
-  const rngOffset = document.getElementById('rng-battery-offset');
-  const lblManualVal = document.getElementById('lbl-battery-manual-val');
-  const rngManual = document.getElementById('rng-battery-manual');
-
-  function renderMode() {
-    const activeMode = localStorage.getItem('alwa_printer_battery_mode') || 'auto';
-    if (activeMode === 'auto') {
-      btnAuto.classList.add('active');
-      btnAuto.style.backgroundColor = 'var(--color-primary)';
-      btnAuto.style.color = 'white';
-      btnManual.classList.remove('active');
-      btnManual.style.backgroundColor = 'transparent';
-      btnManual.style.color = '#555';
-      if (autoOptions) autoOptions.style.display = 'flex';
-      if (manualOptions) manualOptions.style.display = 'none';
-    } else {
-      btnManual.classList.add('active');
-      btnManual.style.backgroundColor = 'var(--color-primary)';
-      btnManual.style.color = 'white';
-      btnAuto.classList.remove('active');
-      btnAuto.style.backgroundColor = 'transparent';
-      btnAuto.style.color = '#555';
-      if (autoOptions) autoOptions.style.display = 'none';
-      if (manualOptions) manualOptions.style.display = 'flex';
-    }
-    
-    // Update live values
-    const modalLevel = document.getElementById('modal-printer-battery-level');
-    const modalIcon = document.getElementById('modal-printer-battery-icon');
-    if (modalLevel && modalIcon) {
-      if (printerBatteryPercent !== null) {
-        modalLevel.textContent = `${printerBatteryPercent}%`;
-        let pIcon = 'battery_full';
-        if (printerBatteryPercent >= 90) pIcon = 'battery_full';
-        else if (printerBatteryPercent >= 70) pIcon = 'battery_6_bar';
-        else if (printerBatteryPercent >= 50) pIcon = 'battery_4_bar';
-        else if (printerBatteryPercent >= 20) pIcon = 'battery_2_bar';
-        else pIcon = 'battery_alert';
-        modalIcon.textContent = pIcon;
-      } else {
-        modalLevel.textContent = '--%';
-        modalIcon.textContent = 'battery_unknown';
-      }
-    }
-  }
-
-  // Setup initial UI states
-  if (rngOffset) {
-    rngOffset.value = offset;
-    if (lblOffset) lblOffset.textContent = (offset > 0 ? '+' : '') + offset + '%';
-  }
-  if (rngManual) {
-    rngManual.value = manualVal;
-    if (lblManualVal) lblManualVal.textContent = manualVal + '%';
-  }
-
-  renderMode();
-
-  // Mode listeners
-  if (btnAuto && !btnAuto.dataset.bound) {
-    btnAuto.dataset.bound = 'true';
-    btnAuto.addEventListener('click', () => {
-      localStorage.setItem('alwa_printer_battery_mode', 'auto');
-      if (typeof window.updateDevicesStatus === 'function') {
-        window.updateDevicesStatus();
-      }
-      renderMode();
-    });
-  }
-
-  if (btnManual && !btnManual.dataset.bound) {
-    btnManual.dataset.bound = 'true';
-    btnManual.addEventListener('click', () => {
-      localStorage.setItem('alwa_printer_battery_mode', 'manual');
-      if (typeof window.updateDevicesStatus === 'function') {
-        window.updateDevicesStatus();
-      }
-      renderMode();
-    });
-  }
-
-  // Sliders input listeners
-  if (rngOffset && !rngOffset.dataset.bound) {
-    rngOffset.dataset.bound = 'true';
-    rngOffset.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      localStorage.setItem('alwa_printer_battery_offset', val);
-      if (lblOffset) lblOffset.textContent = (val > 0 ? '+' : '') + val + '%';
-      if (typeof window.updateDevicesStatus === 'function') {
-        window.updateDevicesStatus();
-      }
-      // Update modal text instantly
-      const modalLevel = document.getElementById('modal-printer-battery-level');
-      if (modalLevel && printerBatteryPercent !== null) {
-        modalLevel.textContent = `${printerBatteryPercent}%`;
-      }
-    });
-  }
-
-  if (rngManual && !rngManual.dataset.bound) {
-    rngManual.dataset.bound = 'true';
-    rngManual.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      localStorage.setItem('alwa_printer_battery_manual_val', val);
-      if (lblManualVal) lblManualVal.textContent = val + '%';
-      if (localStorage.getItem('alwa_printer_battery_mode') === 'manual') {
-        printerBatteryPercent = val;
-        localStorage.setItem('alwa_printer_battery_percent', val);
-        if (typeof window.updateDevicesStatus === 'function') {
-          window.updateDevicesStatus();
-        }
-      }
-      // Update modal text instantly
-      const modalLevel = document.getElementById('modal-printer-battery-level');
-      if (modalLevel && printerBatteryPercent !== null) {
-        modalLevel.textContent = `${printerBatteryPercent}%`;
-      }
-    });
-  }
-
-  // Preset Buttons listeners
-  const presetBtns = document.querySelectorAll('#sheet-printer-battery .preset-btn');
-  presetBtns.forEach(btn => {
-    if (!btn.dataset.bound) {
-      btn.dataset.bound = 'true';
-      btn.addEventListener('click', (e) => {
-        const val = parseInt(e.target.dataset.value, 10);
-        localStorage.setItem('alwa_printer_battery_mode', 'manual');
-        localStorage.setItem('alwa_printer_battery_manual_val', val);
-        localStorage.setItem('alwa_printer_battery_percent', val);
-        printerBatteryPercent = val;
-        
-        const originalBg = btn.style.background;
-        btn.style.backgroundColor = 'rgba(45, 106, 79, 0.15)';
-        setTimeout(() => { btn.style.backgroundColor = ''; }, 300);
-
-        if (typeof window.updateDevicesStatus === 'function') {
-          window.updateDevicesStatus();
-        }
-        renderMode();
-        showToast(currentLanguage === 'ar' ? 'تم ضبط مستوى البطارية بنجاح!' : 'Battery level set successfully!', 'success');
-      });
-    }
-  });
-
-  // Save Button listener
-  const btnSave = document.getElementById('btn-save-battery-calibration');
-  if (btnSave && !btnSave.dataset.bound) {
-    btnSave.dataset.bound = 'true';
-    btnSave.addEventListener('click', () => {
-      closeBottomSheet('sheet-printer-battery');
-      showToast(currentLanguage === 'ar' ? 'تم حفظ وتثبيت معايرة البطارية الدقيقة بنجاح!' : 'Battery calibration saved successfully!', 'success');
-    });
-  }
-}
-
 
 // Global states for custom keypad
 let activeKeypadInput = null;

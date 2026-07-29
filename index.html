@@ -108,7 +108,6 @@
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <h1 id="txt-app-title" style="margin: 0;">محاسب العلوة</h1>
           </div>
-          <p id="txt-app-subtitle">نظام ادارة العلوة الذكي</p>
         </div>
       </div>
 
@@ -123,16 +122,14 @@
           <button id="btn-brightness-inc" style="background: white; border: 1px solid rgba(45, 106, 79, 0.25); width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: all 0.2s; color: var(--color-primary-dark); font-size: 14px; line-height: 1; padding: 0; outline: none;" onmouseover="this.style.background='rgba(45, 106, 79, 0.08)'" onmouseout="this.style.background='white'">+</button>
         </div>
         <!-- Tablet Battery Status (Visible only if supported by browser) -->
-        <div class="device-status-chip" id="tablet-battery-chip" title="حالة بطارية التابلت" style="display: none;">
-          <span class="material-icons-round device-icon">tablet_android</span>
+        <div class="device-status-chip" id="tablet-battery-chip" title="حالة بطارية الجهاز" style="display: none;">
           <span class="material-icons-round battery-icon" id="tablet-battery-icon">battery_std</span>
-          <span class="device-value" id="tablet-battery-level">التابلت: --%</span>
+          <span class="device-value" id="tablet-battery-level">بطارية الجهاز: --%</span>
         </div>
         <!-- Thermal Printer Status (Real connection state) -->
         <div class="device-status-chip offline" id="printer-battery-chip" title="حالة اتصال طابعة الفواتير رقم ٢ بالبلوتوث">
-          <span class="material-icons-round device-icon">print</span>
           <span class="material-icons-round battery-icon" id="printer-battery-icon">radio_button_unchecked</span>
-          <span class="device-value" id="printer-battery-level">طابعة الفواتير: غير متصلة</span>
+          <span class="device-value" id="printer-battery-level">بطارية الطابعة: غير متصلة</span>
         </div>
       </div>
 
@@ -210,8 +207,8 @@
       <div class="accent-card" id="import-accent-card" style="position: relative; background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #1b4332 100%); border-radius: 24px; padding: 24px; color: #ffffff; border: 1px solid rgba(82, 183, 136, 0.25); box-shadow: 0 12px 30px rgba(27, 67, 50, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15); display: flex; flex-direction: column; gap: 18px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
         
         <!-- Animated glowing vector blobs in background -->
-        <div style="position: absolute; top: -50px; left: -50px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(82, 183, 136, 0.25) 0%, transparent 70%); pointer-events: none; animation: floatGlow1 12s ease-in-out infinite alternate;"></div>
-        <div style="position: absolute; bottom: -80px; right: -40px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(116, 198, 157, 0.18) 0%, transparent 75%); pointer-events: none; animation: floatGlow2 15s ease-in-out infinite alternate;"></div>
+        <div style="position: absolute; top: -50px; left: -50px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(82, 183, 136, 0.25) 0%, transparent 70%); pointer-events: none; animation: none;"></div>
+        <div style="position: absolute; bottom: -80px; right: -40px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(116, 198, 157, 0.18) 0%, transparent 75%); pointer-events: none; animation: none;"></div>
 
         <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; position: relative; z-index: 2;">
           <div style="display: flex; flex-direction: column; gap: 6px; text-align: right; flex: 1;">
@@ -264,8 +261,8 @@
       <div class="accent-card" id="sales-accent-card" style="position: relative; background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #1b4332 100%); border-radius: 24px; padding: 24px; color: #ffffff; border: 1px solid rgba(82, 183, 136, 0.25); box-shadow: 0 12px 30px rgba(27, 67, 50, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15); display: flex; flex-direction: column; gap: 18px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
         
         <!-- Animated glowing vector blobs in background -->
-        <div style="position: absolute; top: -50px; left: -50px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(82, 183, 136, 0.25) 0%, transparent 70%); pointer-events: none; animation: floatGlow1 12s ease-in-out infinite alternate;"></div>
-        <div style="position: absolute; bottom: -80px; right: -40px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(116, 198, 157, 0.18) 0%, transparent 75%); pointer-events: none; animation: floatGlow2 15s ease-in-out infinite alternate;"></div>
+        <div style="position: absolute; top: -50px; left: -50px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(82, 183, 136, 0.25) 0%, transparent 70%); pointer-events: none; animation: none;"></div>
+        <div style="position: absolute; bottom: -80px; right: -40px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(116, 198, 157, 0.18) 0%, transparent 75%); pointer-events: none; animation: none;"></div>
 
         <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; position: relative; z-index: 2;">
           <div style="display: flex; flex-direction: column; gap: 6px; text-align: right; flex: 1;">
@@ -404,25 +401,57 @@
       <!-- Grid for Safe Box & Profits -->
       <div class="stats-top-grid">
         <!-- Card 1: Smart Cash Box -->
-        <div class="stats-summary-card safe-card">
-          <div class="stats-card-header">
-            <div class="icon-badge-round">
-              <span class="material-icons-round">account_balance_wallet</span>
+        <div class="stats-summary-card safe-card" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-height: 120px; padding: 20px;">
+          <!-- Right side: Label & Value -->
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div class="stats-card-header" style="margin-bottom: 0;">
+              <div class="icon-badge-round">
+                <span class="material-icons-round">account_balance_wallet</span>
+              </div>
+              <span class="safe-balance-label" id="txt-safe-box-label">رصيد الخزنة الحالي</span>
             </div>
-            <span class="safe-balance-label" id="txt-safe-box-label">رصيد الخزنة الحالي</span>
+            <div class="safe-balance-value" id="val-safe-box" style="margin-top: 4px;">0 دينار</div>
           </div>
-          <div class="safe-balance-value" id="val-safe-box">0 دينار</div>
+          
+          <!-- Left side: Square buttons with labels below them -->
+          <div style="display: flex; flex-direction: row; gap: 14px; align-items: center; direction: rtl;">
+            <!-- Expense Button -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <button class="btn-stats-action expense" id="btn-add-expense" title="تسجيل مصاريف" style="width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(82, 183, 136, 0.4); cursor: pointer; color: white !important; padding: 0; margin: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); min-width: 52px; background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%); box-shadow: 0 4px 12px rgba(27, 67, 50, 0.2); font-size: 0 !important;" onmouseover="this.style.transform='translateY(-3px)'; this.style.filter='brightness(1.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.filter='brightness(1)';">
+                <span class="material-icons-round" style="font-size: 24px !important; color: white !important; display: inline-block !important;">receipt_long</span>
+              </button>
+              <span id="txt-add-expense" style="font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.95); text-shadow: 0 1px 2px rgba(0,0,0,0.3); white-space: nowrap; font-family: 'Cairo', sans-serif;">مصاريف</span>
+            </div>
+
+            <!-- Loss Button -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <button class="btn-stats-action loss" id="btn-add-loss" title="تسجيل خسائر" style="width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(229, 56, 59, 0.4); cursor: pointer; color: white !important; padding: 0; margin: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); min-width: 52px; background: linear-gradient(135deg, #a4161a 0%, #ba181b 100%); box-shadow: 0 4px 12px rgba(164, 22, 26, 0.2); font-size: 0 !important;" onmouseover="this.style.transform='translateY(-3px)'; this.style.filter='brightness(1.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.filter='brightness(1)';">
+                <span class="material-icons-round" style="font-size: 24px !important; color: white !important; display: inline-block !important;">trending_down</span>
+              </button>
+              <span id="txt-add-loss" style="font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.95); text-shadow: 0 1px 2px rgba(0,0,0,0.3); white-space: nowrap; font-family: 'Cairo', sans-serif;">خسائر</span>
+            </div>
+
+            <!-- Deposit Button -->
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <button id="btn-add-safe-liquidity" class="btn-premium-liquidity" title="إيداع سيولة جديدة" style="width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(16, 185, 129, 0.4); cursor: pointer; color: white !important; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.22); padding: 0; margin: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); min-width: 52px; font-size: 0 !important;" onmouseover="this.style.transform='translateY(-3px)'; this.style.filter='brightness(1.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.filter='brightness(1)';">
+                <span class="material-icons-round" style="font-size: 24px !important; color: white !important; display: inline-block !important;">add</span>
+              </button>
+              <span id="txt-add-liquidity-btn-lbl" style="font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.95); text-shadow: 0 1px 2px rgba(0,0,0,0.3); white-space: nowrap; font-family: 'Cairo', sans-serif;">إيداع سيولة</span>
+            </div>
+          </div>
         </div>
         
         <!-- Card 2: Net Office Profits -->
-        <div class="stats-summary-card profit-card">
-          <div class="stats-card-header">
-            <div class="icon-badge-round">
-              <span class="material-icons-round">trending_up</span>
+        <div class="stats-summary-card profit-card" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; min-height: 100px; padding: 20px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div class="stats-card-header" style="margin-bottom: 0;">
+              <div class="icon-badge-round">
+                <span class="material-icons-round">trending_up</span>
+              </div>
+              <span class="safe-balance-label" id="txt-profit-label">صافي أرباح المكتب</span>
             </div>
-            <span class="safe-balance-label" id="txt-profit-label">صافي أرباح المكتب</span>
+            <div class="safe-balance-value" id="val-net-profit" style="margin-top: 4px;">0 دينار</div>
           </div>
-          <div class="safe-balance-value" id="val-net-profit">0 دينار</div>
         </div>
       </div>
 
@@ -480,81 +509,39 @@
             <span>المدفوعات والمصاريف الخارجة</span>
           </h3>
           <div class="financial-list">
-            <div class="financial-item outflow">
-              <div class="financial-label-group">
-                <span class="financial-label-icon">🧑‍🌾</span>
-                <span class="financial-label">مستحقات مدفوعة</span>
-              </div>
-              <span class="financial-value" id="val-total-paid-dues">0 د.ع</span>
-            </div>
-            <div class="financial-item outflow">
+            <div class="financial-item outflow" id="item-daily-expenses" style="cursor: pointer; transition: all 0.2s; border-radius: 8px; padding: 4px 8px;" onmouseover="this.style.background='rgba(0,0,0,0.04)'; this.style.transform='scale(1.01)';" onmouseout="this.style.background='transparent'; this.style.transform='scale(1)';" title="اضغط لعرض التفاصيل | Click to show details">
               <div class="financial-label-group">
                 <span class="financial-label-icon">📉</span>
                 <span class="financial-label">مصاريف يومية</span>
               </div>
               <span class="financial-value" id="val-total-daily-expenses">0 د.ع</span>
             </div>
-            <div class="financial-item outflow">
+            <div class="financial-item outflow" id="item-salaries" style="cursor: pointer; transition: all 0.2s; border-radius: 8px; padding: 4px 8px;" onmouseover="this.style.background='rgba(0,0,0,0.04)'; this.style.transform='scale(1.01)';" onmouseout="this.style.background='transparent'; this.style.transform='scale(1)';" title="اضغط لعرض التفاصيل | Click to show details">
               <div class="financial-label-group">
                 <span class="financial-label-icon">💼</span>
                 <span class="financial-label">رواتب الموظفين</span>
               </div>
               <span class="financial-value" id="val-total-salaries">0 د.ع</span>
             </div>
-            <div class="financial-item outflow">
+            <div class="financial-item outflow" id="item-personal-expenses" style="cursor: pointer; transition: all 0.2s; border-radius: 8px; padding: 4px 8px;" onmouseover="this.style.background='rgba(0,0,0,0.04)'; this.style.transform='scale(1.01)';" onmouseout="this.style.background='transparent'; this.style.transform='scale(1)';" title="اضغط لعرض التفاصيل | Click to show details">
               <div class="financial-label-group">
                 <span class="financial-label-icon">👤</span>
                 <span class="financial-label">مصاريف شخصية</span>
               </div>
               <span class="financial-value" id="val-total-personal-expenses">0 د.ع</span>
             </div>
-            <div class="financial-item outflow">
+            <div class="financial-item outflow" id="item-losses" style="cursor: pointer; transition: all 0.2s; border-radius: 8px; padding: 4px 8px;" onmouseover="this.style.background='rgba(0,0,0,0.04)'; this.style.transform='scale(1.01)';" onmouseout="this.style.background='transparent'; this.style.transform='scale(1)';" title="اضغط لعرض التفاصيل | Click to show details">
               <div class="financial-label-group">
                 <span class="financial-label-icon">🚨</span>
                 <span class="financial-label">خسائر وتلفيات</span>
               </div>
               <span class="financial-value" id="val-total-losses">0 د.ع</span>
             </div>
-            <div class="financial-item outflow">
-              <div class="financial-label-group">
-                <span class="financial-label-icon">👷</span>
-                <span class="financial-label" id="lbl-total-porter-payouts">مستحقات الحمالين</span>
-              </div>
-              <span class="financial-value" id="val-total-porter-payouts">0 د.ع</span>
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Quick Action Buttons for Expenses/Losses -->
-      <div class="summary-grid">
-        <button class="btn-stats-action expense" id="btn-add-expense">
-          <span class="material-icons-round" style="font-size: 16px;">receipt_long</span>
-          <span id="txt-add-expense">تسجيل مصاريف</span>
-        </button>
-        <button class="btn-stats-action loss" id="btn-add-loss">
-          <span class="material-icons-round" style="font-size: 16px;">trending_down</span>
-          <span id="txt-add-loss">تسجيل خسائر</span>
-        </button>
-      </div>
 
-      <!-- Redesigned High-End Unconventional Liquidity Management Card -->
-      <div class="liquidity-panel-container">
-        <div class="liquidity-panel-content">
-          <div class="liquidity-panel-icon-wrap">
-            <span class="material-icons-round liquidity-pulse-icon">account_balance</span>
-            <span class="material-icons-round liquidity-add-badge">add</span>
-          </div>
-          <div class="liquidity-panel-text">
-            <h4 id="txt-add-liquidity-title">إيداع سيولة نقدية جديدة</h4>
-            <p id="txt-add-liquidity-desc">حقن أموال إضافية مباشرة إلى رصيد الخزنة لتسوية الحسابات</p>
-          </div>
-          <button id="btn-add-safe-liquidity" class="btn-premium-liquidity">
-            <span id="txt-add-liquidity-btn-lbl">إيداع سيولة</span>
-            <span class="material-icons-round">bolt</span>
-          </button>
-        </div>
-      </div>
 
       <!-- Expense Statistics SVG Chart -->
       <div class="premium-card chart-card">
@@ -774,9 +761,14 @@
             <span class="material-icons-round" style="font-size: 20px; color: #D4A373; transform: translate(3px, 3px);">workspace_premium</span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="material-icons-round" style="color: #FFB703; font-size: 22px;">stars</span>
-            <h3 id="sub-card-title" style="font-size: 14px; font-weight: 800; color: #B58410;">اشتراك النظام</h3>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="material-icons-round" style="color: #FFB703; font-size: 22px;">stars</span>
+              <h3 id="sub-card-title" style="font-size: 14px; font-weight: 800; color: #B58410;">اشتراك النظام</h3>
+            </div>
+            <span id="sub-adb-badge" style="background: #10b981; color: white; padding: 2px 8px; border-radius: 6px; font-size: 9.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+              <span class="material-icons-round" style="font-size: 11px;">verified</span> مفعل مدى الحياة
+            </span>
           </div>
           
           <p id="sub-card-desc" style="font-size: 11px; color: #A0720F; margin-top: -6px; font-weight: 600;">تتبع حالة ونوع اشتراكك في نظام محاسب العلوة واستعرض الميزات المفعّلة لحسابك.</p>
@@ -786,19 +778,19 @@
             <!-- Plan Name -->
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px dashed #fef3c7; padding-bottom: 6px;">
               <span id="sub-label-plan" style="font-weight: 700; color: #78350f;">باقة الاشتراك الحالي:</span>
-              <span id="sub-val-plan" style="font-weight: 800; color: #b45309;">الاشتراك الذهبي المميز السنوي 💎</span>
+              <span id="sub-val-plan" style="font-weight: 800; color: #b45309;">الاشتراك الذهبي المميز مدى الحياة 💎</span>
             </div>
 
             <!-- Plan Status -->
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px dashed #fef3c7; padding-bottom: 6px;">
               <span id="sub-label-status" style="font-weight: 700; color: #78350f;">حالة الاشتراك:</span>
-              <span id="sub-val-status" class="subscription-status-badge-inline" style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800;">نشط ومفعل بالكامل (صالح لغاية 2027-07-05)</span>
+              <span id="sub-val-status" class="subscription-status-badge-inline" style="background: #e6f4ea; color: #137333; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800;">نشط ومفعل بالكامل مدى الحياة ♾️</span>
             </div>
 
             <!-- Subscriber ID -->
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b;">
               <span id="sub-label-id" style="font-weight: 700;">رقم المشترك (المعرف الفريد):</span>
-              <span id="sub-val-id" style="font-family: monospace; font-weight: 700; color: #334155; letter-spacing: 0.5px;">SUB-84091-IQ</span>
+              <span id="sub-val-id" style="font-family: monospace; font-weight: 700; color: #334155; letter-spacing: 0.5px;">ALWA-HWID-84091-IQ99</span>
             </div>
           </div>
 
@@ -806,14 +798,11 @@
           <div style="display: flex; flex-direction: column; gap: 6px; padding: 2px;">
             <span id="sub-label-features" style="font-size: 11px; font-weight: 800; color: #78350f;">الميزات والخصائص المفعّلة:</span>
             <div style="display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
-              <div id="sub-feat-1" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ طباعة حرارية (Bluetooth BLE) لجميع فواتير البيع والاستيراد والتقارير.</div>
-              <div id="sub-feat-2" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ حسابات دقيقة وتلقائية لعمولات المكاتب وأجور التحميل والأكياس.</div>
-              <div id="sub-feat-3" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ تصدير واستيراد قواعد بيانات المبيعات والاستيراد (Room/IndexedDB) بلمسة واحدة.</div>
+              <div id="sub-feat-1" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ تفعيل دائم ومباشر لجميع ميزات النظام وإدارة الحسابات.</div>
+              <div id="sub-feat-2" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ طباعة حرارية (Bluetooth BLE) لجميع فواتير البيع والاستيراد والتقارير.</div>
+              <div id="sub-feat-3" style="font-size: 10.5px; color: #451a03; font-weight: 600;">✓ تصدير واستيراد قواعد بيانات المبيعات والاستيراد (Room/IndexedDB) أوفلاين.</div>
             </div>
           </div>
-
-          <!-- Renewal / Manage Subscription Plan Button -->
-          <button id="sub-btn-renew" class="btn-primary" style="padding: 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #FFB703 0%, #D4A373 100%); color: #451a03; border: none; box-shadow: 0 4px 12px rgba(212, 163, 115, 0.25); border-radius: 10px;">تجديد أو ترقية باقة الاشتراك</button>
         </div>
 
 
@@ -1541,109 +1530,6 @@
       </div>
     </div>
 
-
-    <!-- 🔋 Thermal Printer Battery Calibration & Diagnostic Sheet -->
-    <div id="sheet-printer-battery" class="bottom-sheet">
-      <div class="bottom-sheet-drag-handle"></div>
-      <div class="bottom-sheet-header">
-        <h3 style="font-size: 16px; font-weight: 700; color: var(--color-primary); display: flex; align-items: center; gap: 8px;">
-          <span class="material-icons-round" style="color: var(--color-primary);">battery_charging_full</span>
-          <span>معايرة ودقة بطارية الطابعة الحرارية</span>
-        </h3>
-        <button class="icon-btn" id="btn-close-printer-battery-sheet"><span class="material-icons-round">close</span></button>
-      </div>
-      <div class="bottom-sheet-body" style="gap: 20px; max-height: 75vh; overflow-y: auto; padding: 16px 20px 32px 20px; display: flex; flex-direction: column; direction: rtl; text-align: right;">
-        
-        <!-- Quick Status Card -->
-        <div style="background: rgba(45, 106, 79, 0.05); border: 1px solid rgba(45, 106, 79, 0.1); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 700; font-size: 14px; color: var(--color-primary-dark);">مستوى شحن البطارية الحالي:</span>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="material-icons-round" id="modal-printer-battery-icon" style="color: var(--color-primary); font-size: 24px;">battery_full</span>
-              <strong id="modal-printer-battery-level" style="font-size: 20px; color: var(--color-primary-dark); font-family: 'Cairo', sans-serif;">--%</strong>
-            </div>
-          </div>
-          <p style="font-size: 12.5px; color: #555; line-height: 1.6; margin: 0;">
-            يقوم هذا النظام بقراءة مستوى البطارية من طابعة الفواتير رقم ٢ المتصلة لاسلكياً، أو محاكاتها بدقة وفقاً لمعدل الاستهلاك الفعلي.
-          </p>
-        </div>
-
-        <!-- Mode Selector -->
-        <div>
-          <label style="font-size: 13.5px; font-weight: 700; color: var(--color-primary-dark); display: block; margin-bottom: 8px;">طريقة تحديد نسبة البطارية:</label>
-          <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.03); padding: 4px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);">
-            <button id="btn-battery-mode-auto" style="flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.2s;" class="active">قراءة تلقائية / ذكية</button>
-            <button id="btn-battery-mode-manual" style="flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.2s;">تحديد يدوي دقيق (معايرة)</button>
-          </div>
-        </div>
-
-        <!-- Auto Mode Options (Calibration Offset) -->
-        <div id="battery-auto-options" style="display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; font-weight: 700; color: var(--color-primary-dark);">إزاحة المعايرة الذكية (Calibration Offset):</span>
-              <strong id="lbl-battery-offset" style="color: var(--color-primary); font-size: 13px;">0%</strong>
-            </div>
-            <p style="font-size: 11.5px; color: #666; margin: 0; line-height: 1.5;">
-              إذا كانت النسبة الموضحة تختلف قليلاً عن النسبة الحقيقية على شاشة الطابعة، يمكنك إزاحة القيمة (بالزيادة أو النقصان) لمطابقتها تماماً.
-            </p>
-            <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px;">
-              <span style="font-size: 11px; color: #888;">-30%</span>
-              <input type="range" id="rng-battery-offset" min="-30" max="30" value="0" style="flex: 1; accent-color: var(--color-primary);" />
-              <span style="font-size: 11px; color: #888;">+30%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Manual Mode Options (Direct Value Override) -->
-        <div id="battery-manual-options" style="display: none; flex-direction: column; gap: 12px;">
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; font-weight: 700; color: var(--color-primary-dark);">تحديد نسبة البطارية يدوياً:</span>
-              <strong id="lbl-battery-manual-val" style="color: var(--color-primary); font-size: 15px;">80%</strong>
-            </div>
-            <p style="font-size: 11.5px; color: #666; margin: 0; line-height: 1.5;">
-              اسحب لتثبيت النسبة التي ترغب بعرضها في واجهة النظام للطابعة الحرارية بدقة مطلقة.
-            </p>
-            <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px;">
-              <span style="font-size: 11px; color: #888;">5%</span>
-              <input type="range" id="rng-battery-manual" min="5" max="100" value="80" style="flex: 1; accent-color: var(--color-primary);" />
-              <span style="font-size: 11px; color: #888;">100%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Calibration Presets -->
-        <div>
-          <span style="font-size: 13px; font-weight: 700; color: var(--color-primary-dark); display: block; margin-bottom: 8px;">مستوى شحن سريع (تصفير ومعايرة):</span>
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-            <button class="preset-btn" data-value="100" style="background: white; border: 1px solid rgba(0,0,0,0.1); padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #333; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">100% (كاملة)</button>
-            <button class="preset-btn" data-value="80" style="background: white; border: 1px solid rgba(0,0,0,0.1); padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #333; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">80% (ممتازة)</button>
-            <button class="preset-btn" data-value="50" style="background: white; border: 1px solid rgba(0,0,0,0.1); padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #333; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">50% (متوسطة)</button>
-            <button class="preset-btn" data-value="20" style="background: white; border: 1px solid rgba(0,0,0,0.1); padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #333; cursor: pointer; transition: all 0.15s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">20% (منخفضة)</button>
-          </div>
-        </div>
-
-        <!-- Advanced Info Box -->
-        <div style="background: rgba(0,0,0,0.02); border: 1px dashed rgba(0,0,0,0.1); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
-          <strong style="font-size: 12px; color: #444; display: flex; align-items: center; gap: 4px;">
-            <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary);">info</span>
-            <span>نصيحة للحفاظ على عمر البطارية:</span>
-          </strong>
-          <p style="font-size: 11px; color: #666; margin: 0; line-height: 1.5;">
-            احرص على شحن الطابعة الحرارية عندما ينخفض مستوى البطارية عن ٢٠٪ لمنع انقطاع الاتصال اللاسلكي المفاجئ أثناء طباعة الفواتير الطويلة، وتفادي تشنج اللوحة الأم للطابعة.
-          </p>
-        </div>
-
-        <button class="btn-primary" id="btn-save-battery-calibration" style="padding: 12px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; cursor: pointer; border: none; background: var(--color-primary); color: white; transition: all 0.2s;">
-          <span class="material-icons-round">check_circle</span>
-          <span>حفظ وتثبيت المعايرة الدقيقة</span>
-        </button>
-
-      </div>
-    </div>
-
-
     <!-- Custom Confirmation Dialog -->
     <div id="custom-confirm-dialog" class="dialog-overlay" style="display: none;">
       <div class="dialog-card animate-pop">
@@ -1669,6 +1555,36 @@
         <p id="alert-message" class="dialog-message" style="line-height: 1.6; text-align: center; max-width: 320px; font-size: 13px;"></p>
         <div class="dialog-actions" style="width: 100%;">
           <button class="btn-primary" id="btn-alert-ok" style="width: 100%; font-weight: 700;">موافق</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Financial Details Dialog -->
+    <div id="custom-details-dialog" class="dialog-overlay" style="display: none; z-index: 1000;">
+      <div class="dialog-card animate-pop" style="max-width: 500px; width: 90%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
+        <div class="dialog-icon-container" style="background-color: rgba(9, 132, 227, 0.1); color: var(--color-primary); margin-bottom: 12px;">
+          <span id="details-dialog-icon" class="material-icons-round dialog-icon">receipt</span>
+        </div>
+        <h3 id="details-dialog-title" class="dialog-title" style="margin-bottom: 4px;">تفاصيل المصروفات</h3>
+        <p id="details-dialog-subtitle" class="dialog-message" style="margin-bottom: 16px; font-size: 11px; color: var(--color-text-muted);"></p>
+        
+        <div style="flex: 1; overflow-y: auto; margin-bottom: 20px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.06); background: rgba(0,0,0,0.01);">
+          <table style="width: 100%; border-collapse: collapse; text-align: right; direction: rtl; font-size: 12px;">
+            <thead>
+              <tr style="background: rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.06);">
+                <th style="padding: 10px; font-weight: 700;">التاريخ</th>
+                <th style="padding: 10px; font-weight: 700;">البيان / الوصف</th>
+                <th style="padding: 10px; font-weight: 700; text-align: left;">المبلغ</th>
+              </tr>
+            </thead>
+            <tbody id="details-dialog-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="dialog-actions" style="width: 100%;">
+          <button class="btn-primary" id="btn-details-close" style="width: 100%; font-weight: 700; background-color: var(--color-primary); color: white !important;">إغلاق</button>
         </div>
       </div>
     </div>
@@ -1723,9 +1639,21 @@
           <label style="font-size: 11px; font-weight: 700; color: var(--color-primary-mid);">البيان / ملاحظة</label>
           <input type="text" class="form-input" id="safe-adj-note" placeholder="مثال: إضافة رأس مال يدوياً...">
         </div>
-        <div class="dialog-actions">
+        <div class="dialog-actions" style="margin-bottom: 16px;">
           <button class="btn-secondary" id="btn-safe-adj-cancel">إلغاء</button>
-          <button class="btn-primary" id="btn-safe-adj-ok" style="background: var(--color-primary);">تأكيد الإضافة</button>
+          <button class="btn-primary" id="btn-safe-adj-ok" style="background: var(--color-primary); color: white;">تأكيد الإضافة</button>
+        </div>
+        <div style="width: 100%; height: 1px; background: rgba(0,0,0,0.08); margin: 8px 0 16px 0;"></div>
+        <p style="font-size: 11.5px; font-weight: 700; color: #4b5563; margin-bottom: 12px; text-align: center;">أو تسجيل سحب / تسوية سريعة:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+          <button id="btn-dialog-add-expense" class="btn-stats-action expense" style="font-size: 11.5px; padding: 10px 14px; border-radius: 12px; font-weight: 700; justify-content: center; width: 100%; height: 42px;">
+            <span class="material-icons-round" style="font-size: 15px;">receipt_long</span>
+            <span>تسجيل مصاريف</span>
+          </button>
+          <button id="btn-dialog-add-loss" class="btn-stats-action loss" style="font-size: 11.5px; padding: 10px 14px; border-radius: 12px; font-weight: 700; justify-content: center; width: 100%; height: 42px;">
+            <span class="material-icons-round" style="font-size: 15px;">trending_down</span>
+            <span>تسجيل خسائر</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1846,24 +1774,9 @@
   </div>
 
   <!-- Audio sounds for notifications -->
-  <audio id="sound-success" preload="auto">
-    <source src="Beep sound.mp3" type="audio/mpeg">
-    <source src="beep.mp3" type="audio/mpeg">
-    <source src="print.mp3" type="audio/mpeg">
-    <source src="sound.mp3" type="audio/mpeg">
-  </audio>
-  <audio id="sound-alert" preload="auto">
-    <source src="Beep sound.mp3" type="audio/mpeg">
-    <source src="beep.mp3" type="audio/mpeg">
-    <source src="print.mp3" type="audio/mpeg">
-    <source src="sound.mp3" type="audio/mpeg">
-  </audio>
-  <audio id="sound-print" preload="auto">
-    <source src="Beep sound.mp3" type="audio/mpeg">
-    <source src="beep.mp3" type="audio/mpeg">
-    <source src="print.mp3" type="audio/mpeg">
-    <source src="sound.mp3" type="audio/mpeg">
-  </audio>
+  <audio id="sound-success" preload="auto" src="Beep sound.mp3"></audio>
+  <audio id="sound-alert" preload="auto" src="Beep sound.mp3"></audio>
+  <audio id="sound-print" preload="auto" src="Beep sound.mp3"></audio>
 
   <!-- HTML2Canvas to generate image backups of receipt sharing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1951,6 +1864,95 @@
       });
     })();
   </script>
+
+  <!-- Dummy elements to satisfy app.js language runtime updates safely -->
+  <div style="display: none;">
+    <button id="btn-record-expense-dummy"></button>
+    <button id="btn-record-loss-dummy"></button>
+  </div>
+
+  <!-- Full-Screen Application Activation Lock Screen -->
+  <div id="activation-lock-screen" style="position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; padding: 16px; direction: rtl; overflow-y: auto;">
+    <div style="background: #ffffff; width: 100%; max-width: 480px; border-radius: 22px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.2); margin: auto;" class="animate-pop">
+      
+      <!-- Lock Header -->
+      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 24px 20px; text-align: center; color: white; position: relative;">
+        <div style="width: 58px; height: 58px; background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+          <span class="material-icons-round" style="font-size: 32px; color: #f87171;">lock_person</span>
+        </div>
+        <h2 style="font-size: 18px; font-weight: 800; margin: 0 0 4px 0; color: #f8fafc;">نظام محاسب العلوة غير مفعّل ⚠️</h2>
+        <p style="font-size: 12px; color: #94a3b8; margin: 0; font-weight: 600;">يتطلب تفعيل الترخيص المباشر لمرة واحدة ومدى الحياة</p>
+      </div>
+
+      <!-- Body Content -->
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Instruction Note -->
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #991b1b; line-height: 1.6; font-weight: 600; display: flex; align-items: flex-start; gap: 10px;">
+          <span class="material-icons-round" style="font-size: 20px; color: #dc2626; flex-shrink: 0; margin-top: 2px;">info</span>
+          <span>عزيزي المستخدم، هذا التطبيق غير قابل للاستخدام حالياً. للحصول على التفعيل الدائم لمرة واحدة ومدى الحياة، يرجى التواصل مع أحد المندوبين الموثقين الظاهرة أرقامهم أدناه لربط جهازك وحسابه وتفعيل النظام المباشر.</span>
+        </div>
+
+        <!-- HWID Display Card -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">معرّف الجهاز الفريد (HWID):</span>
+            <span id="lock-screen-hwid" style="font-family: monospace; font-size: 13px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px;">ALWA-HWID-84091-IQ99</span>
+          </div>
+          <button id="btn-copy-lock-hwid" style="background: #e2e8f0; color: #334155; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <span class="material-icons-round" style="font-size: 14px;">content_copy</span> نسخ
+          </button>
+        </div>
+
+        <!-- Trusted Representatives Section -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 12px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="color: #0ea5e9; font-size: 18px;">verified</span>
+            <span>المندوبون الموثقون للتفعيل والخدمة الميدانية:</span>
+          </div>
+
+          <!-- Rep 1: Baghdad -->
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 38px; height: 38px; background: #e0f2fe; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+                <span class="material-icons-round">person_pin</span>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 12px; font-weight: 800; color: #0f172a;">مندوب بغداد والفرع الرئيسي</span>
+                <span style="font-size: 11px; font-weight: 700; color: #0284c7; font-family: monospace; direction: ltr; text-align: right;">07749883474</span>
+              </div>
+            </div>
+            <a href="tel:07749883474" style="background: #0ea5e9; color: white; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 4px;">
+              <span class="material-icons-round" style="font-size: 14px;">call</span> اتصال
+            </a>
+          </div>
+
+          <!-- Rep 2: Mosul -->
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 38px; height: 38px; background: #e0f2fe; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+                <span class="material-icons-round">person_pin</span>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 12px; font-weight: 800; color: #0f172a;">مندوب الموصل والفروع الشمالية</span>
+                <span style="font-size: 11px; font-weight: 700; color: #0284c7; font-family: monospace; direction: ltr; text-align: right;">07883885156</span>
+              </div>
+            </div>
+            <a href="tel:07883885156" style="background: #0ea5e9; color: white; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 4px;">
+              <span class="material-icons-round" style="font-size: 14px;">call</span> اتصال
+            </a>
+          </div>
+        </div>
+
+        <!-- Developer Footer Note -->
+        <div style="text-align: center; font-size: 10.5px; color: #64748b; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 12px; line-height: 1.5;">
+          جميع الحقوق محفوظة لصالح <strong>شركة برايم™ للحلول البرمجية © 2026</strong><br/>
+          يتم تفعيل التطبيق تلقائياً فور ربط الكبل وتمرير أمر ADB المعتمد من المندوب.
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <!-- Application Main Script -->
   <script type="module" src="app.js"></script>
