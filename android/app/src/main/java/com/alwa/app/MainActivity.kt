@@ -71,6 +71,34 @@ class MainActivity : BridgeActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        // Handle deep link intent on startup
+        handleDeepLinkIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDeepLinkIntent(intent)
+    }
+
+    private fun handleDeepLinkIntent(intent: Intent?) {
+        val data = intent?.data ?: return
+        val url = data.toString()
+        if (url.startsWith("alwa://")) {
+            runOnUiThread {
+                try {
+                    // Give WebView a split second to fully load if it's on startup
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        bridge?.webView?.evaluateJavascript(
+                            "if (typeof window.handleOpenURL === 'function') { window.handleOpenURL('$url'); }",
+                            null
+                        )
+                    }, 500)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     override fun onResume() {
