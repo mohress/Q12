@@ -1046,17 +1046,7 @@
               </button>
 
               <!-- General invoice options & Payment Method -->
-              <div class="sheet-form-options-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start;">
-                <div class="form-group" style="margin: 0;">
-                  <label id="lbl-bags-cost" style="display: flex; align-items: center; gap: 6px;">
-                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">shopping_bag</span>
-                    <span>تكلفة الأكياس والكراتين (إجمالي اختياري)</span>
-                  </label>
-                  <div style="position: relative;">
-                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">shopping_bag</span>
-                    <input type="number" class="form-input" id="sale-bags-cost" placeholder="تكلفة الأكياس والكراتين (دواخل اختياري)..." value="0" style="padding-right: 42px;">
-                  </div>
-                </div>
+              <div class="sheet-form-options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start;">
 
                 <div class="form-group" style="margin: 0;">
                   <label id="lbl-sale-notes" style="display: flex; align-items: center; gap: 6px;">
@@ -1072,12 +1062,12 @@
                 <div class="form-group" style="margin: 0;">
                   <label id="lbl-payment-method">طريقة الدفع</label>
                   <div class="toggle-switch-group">
-                    <button class="toggle-switch-btn active" id="btn-pay-cash" data-method="cash">💵 نقد</button>
-                    <button class="toggle-switch-btn" id="btn-pay-debt" data-method="debt">📋 دين بالأجل</button>
+                    <button class="toggle-switch-btn" id="btn-pay-cash" data-method="cash">💵 نقد</button>
+                    <button class="toggle-switch-btn active" id="btn-pay-debt" data-method="debt">📋 دين بالأجل</button>
                   </div>
                 </div>
 
-                <div class="form-group" id="group-debt-options" style="display: none; margin: 0;">
+                <div class="form-group" id="group-debt-options" style="display: block; margin: 0; grid-column: 1 / -1;">
                   <label id="lbl-debt-due">موعد المطالبة بالدين</label>
                   <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);">
                     <button class="segmented-control-btn active" data-days="5">5 أيام</button>

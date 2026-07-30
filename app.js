@@ -113,7 +113,6 @@ const MAPPINGS_DICTIONARY = {
   'lbl-sale-phone-label': 'lbl-customer-phone',
   'lbl-sale-address-label': 'lbl-customer-address',
   'btn-add-sale-crop': 'btn-sale-add-item',
-  'lbl-sale-bags-label': 'lbl-bags-cost',
   'lbl-payment-method-title': 'lbl-payment-method',
   'btn-pay-cash': 'btn-pay-cash',
   'btn-pay-debt': 'btn-pay-debt',
@@ -423,6 +422,7 @@ function renderAppLogs() {
 // Common fruits & vegetables dictionary with icons
 
 const customSvgs = {
+  'grapes_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="grapeStem" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/></linearGradient><radialGradient id="grapeGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#d8b4fe"/><stop offset="40%" stop-color="#a855f7"/><stop offset="85%" stop-color="#6b21a8"/><stop offset="100%" stop-color="#3b0764"/></radialGradient></defs><path d="M 50,25 C 45,10 55,5 50,5" stroke="url(#grapeStem)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M 50,20 C 30,10 25,25 45,28 C 50,25 45,15 50,20" fill="#22c55e"/><g fill="url(#grapeGrad)"><circle cx="38" cy="35" r="10"/><circle cx="62" cy="35" r="10"/><circle cx="50" cy="40" r="11"/><circle cx="28" cy="48" r="10"/><circle cx="72" cy="48" r="10"/><circle cx="50" cy="56" r="11"/><circle cx="38" cy="62" r="10"/><circle cx="62" cy="62" r="10"/><circle cx="50" cy="72" r="10"/><circle cx="42" cy="82" r="9"/><circle cx="58" cy="82" r="9"/><circle cx="50" cy="90" r="8"/></g><g fill="rgba(255,255,255,0.45)"><circle cx="35" cy="32" r="2.5"/><circle cx="59" cy="32" r="2.5"/><circle cx="47" cy="37" r="3"/><circle cx="25" cy="45" r="2.5"/><circle cx="69" cy="45" r="2.5"/><circle cx="47" cy="53" r="3"/><circle cx="35" cy="59" r="2.5"/><circle cx="59" cy="59" r="2.5"/><circle cx="47" cy="69" r="2.5"/></g></svg>`,
   'turnip_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="turnipGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="30%" stop-color="#9333ea"/><stop offset="60%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><path d="M 50,85 Q 45,95 50,100" stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 15,50 C 15,20 85,20 85,50 C 85,75 65,85 50,85 C 35,85 15,75 15,50 Z" fill="url(#turnipGrad)"/><path d="M 50,25 Q 35,5 20,15 C 30,25 40,25 50,25 Z" fill="#4ade80"/><path d="M 50,25 Q 65,5 80,15 C 70,25 60,25 50,25 Z" fill="#22c55e"/><path d="M 50,25 Q 50,0 50,10 C 55,20 50,25 50,25 Z" fill="#16a34a"/><ellipse cx="30" cy="45" rx="5" ry="12" transform="rotate(-20 30 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
   'radish_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="radishGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="50%" stop-color="#dc2626"/><stop offset="80%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#f8fafc"/></radialGradient></defs><path d="M 50,85 Q 50,95 55,100" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 20,50 C 20,25 80,25 80,50 C 80,75 60,85 50,85 C 40,85 20,75 20,50 Z" fill="url(#radishGrad)"/><path d="M 50,25 C 20,15 25,5 40,15 Z" fill="#22c55e"/><path d="M 50,25 C 80,15 75,5 60,15 Z" fill="#16a34a"/><path d="M 50,25 C 40,5 60,5 50,15 Z" fill="#15803d"/><ellipse cx="35" cy="45" rx="4" ry="10" transform="rotate(-30 35 45)" fill="rgba(255,255,255,0.5)" filter="blur(1px)"/></svg>`,
   'greenapple_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="appleGreen" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#d9f99d"/><stop offset="40%" stop-color="#84cc16"/><stop offset="100%" stop-color="#4d7c0f"/></radialGradient></defs><path d="M 50,20 C 75,10 95,30 90,60 C 85,90 60,95 50,85 C 40,95 15,90 10,60 C 5,30 25,10 50,20 Z" fill="url(#appleGreen)"/><path d="M 50,25 Q 45,5 55,5" stroke="#78350f" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,20 C 65,10 75,25 60,30 C 50,25 45,15 50,20 Z" fill="#16a34a"/><ellipse cx="25" cy="40" rx="4" ry="12" transform="rotate(-30 25 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
@@ -522,21 +522,10 @@ const customSvgs = {
     <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
     <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
   </svg>`,
-  'yellowmelon_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
-    <radialGradient id="ymeGrad" cx="30%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="#fef08a"/>
-      <stop offset="40%" stop-color="#fde047"/>
-      <stop offset="80%" stop-color="#eab308"/>
-      <stop offset="100%" stop-color="#a16207"/>
-    </radialGradient>
-  </defs>
-    <circle cx="50" cy="55" r="40" fill="url(#ymeGrad)"/>
-    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
-    
-  </svg>`,
+  'yellowmelon_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ymelonGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fffbeb"/><stop offset="30%" stop-color="#fef08a"/><stop offset="70%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/></radialGradient></defs><ellipse cx="50" cy="55" rx="42" ry="34" fill="url(#ymelonGrad)"/><path d="M 50,21 C 45,10 55,5 50,5" stroke="#78350f" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M 50,21 C 35,10 25,25 40,28 Q 50,23 50,21" fill="#22c55e"/><g stroke="#fef3c7" stroke-width="1" fill="none" opacity="0.4" stroke-linecap="round"><path d="M 20,55 Q 50,65 80,55"/><path d="M 14,48 Q 50,60 86,48"/><path d="M 18,62 Q 50,72 82,62"/><path d="M 26,38 Q 50,50 74,38"/><path d="M 32,72 Q 50,82 68,72"/><path d="M 50,21 Q 40,55 50,89" stroke-width="1.5"/><path d="M 50,21 Q 25,55 50,89"/><path d="M 50,21 Q 10,55 50,89"/><path d="M 50,21 Q 65,55 50,89"/><path d="M 50,21 Q 90,55 50,89"/></g><ellipse cx="32" cy="42" rx="6" ry="12" transform="rotate(-30 32 42)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
   'passionfruit_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="passGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#a855f7"/><stop offset="60%" stop-color="#6b21a8"/><stop offset="100%" stop-color="#3b0764"/></radialGradient><radialGradient id="passIn" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/></radialGradient></defs><circle cx="45" cy="55" r="35" fill="url(#passGrad)"/><ellipse cx="30" cy="40" rx="5" ry="10" transform="rotate(-45 30 40)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/><circle cx="65" cy="65" r="25" fill="url(#passGrad)"/><circle cx="65" cy="65" r="22" fill="#fef08a"/><circle cx="65" cy="65" r="20" fill="url(#passIn)"/><circle cx="60" cy="60" r="2" fill="#451a03"/><circle cx="68" cy="62" r="2" fill="#451a03"/><circle cx="58" cy="68" r="2" fill="#451a03"/><circle cx="65" cy="70" r="2" fill="#451a03"/><circle cx="72" cy="65" r="2" fill="#451a03"/></svg>`,
   'spinach_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="spinachGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#22c55e"/><stop offset="50%" stop-color="#16a34a"/><stop offset="100%" stop-color="#14532d"/></linearGradient></defs><path d="M 50,95 Q 45,90 50,75 C 20,70 10,50 20,35 C 10,25 30,5 50,15 C 70,5 90,25 80,35 C 90,50 80,70 50,75 Z" fill="url(#spinachGrad)"/><path d="M 50,90 L 50,15 M 50,65 Q 35,50 25,45 M 50,50 Q 65,40 75,35 M 50,40 Q 35,30 25,25 M 50,30 Q 60,20 65,15" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.8" stroke-linecap="round"/></svg>`,
-  'swisschard_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><path d="M 50,90 Q 40,50 30,30 C 10,10 30,0 50,10 C 70,0 90,10 70,30 Q 60,50 50,90 Z" fill="#22c55e"/><path d="M 50,85 Q 45,50 35,35 C 20,15 35,10 50,15 C 65,10 80,15 65,35 Q 55,50 50,85 Z" fill="#16a34a"/><path d="M 50,95 L 50,15" stroke="#e11d48" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M 50,60 Q 40,45 35,35" stroke="#e11d48" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,65 Q 60,50 65,40" stroke="#e11d48" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,45 Q 40,35 35,25" stroke="#e11d48" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,50 Q 60,40 65,30" stroke="#e11d48" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+  'swisschard_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="chardLeaf" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#4ade80"/><stop offset="60%" stop-color="#16a34a"/><stop offset="100%" stop-color="#14532d"/></linearGradient><linearGradient id="chardStem" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#f43f5e"/><stop offset="100%" stop-color="#be123c"/></linearGradient></defs><path d="M 50,95 C 40,75 25,60 18,45 C 10,25 25,10 45,20 C 48,22 52,22 55,20 C 75,10 90,25 82,45 C 75,60 60,75 50,95 Z" fill="url(#chardLeaf)"/><path d="M 50,95 L 50,20" stroke="url(#chardStem)" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M 50,70 Q 32,55 22,48" stroke="url(#chardStem)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,75 Q 68,60 78,52" stroke="url(#chardStem)" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,50 Q 35,38 25,32" stroke="url(#chardStem)" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 50,55 Q 65,42 75,35" stroke="url(#chardStem)" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 50,32 Q 38,25 32,20" stroke="url(#chardStem)" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M 50,35 Q 62,28 68,22" stroke="url(#chardStem)" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="45" rx="3" ry="12" transform="rotate(-30 32 45)" fill="rgba(255,255,255,0.25)" filter="blur(1px)"/></svg>`,
   'celery_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="celGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="50%" stop-color="#4ade80"/><stop offset="100%" stop-color="#bbf7d0"/></linearGradient></defs><path d="M 35,90 Q 25,50 30,30 L 40,30 Q 35,50 45,90 Z" fill="url(#celGrad)"/><path d="M 65,90 Q 75,50 70,30 L 60,30 Q 65,50 55,90 Z" fill="url(#celGrad)"/><path d="M 50,95 Q 45,50 50,25 L 60,25 Q 55,50 60,95 Z" fill="#22c55e"/><path d="M 30,90 Q 50,95 70,90 L 65,95 Q 50,100 35,95 Z" fill="#dcfce7"/><path d="M 30,30 C 10,20 15,5 30,10 C 40,5 45,20 40,30 Z" fill="#16a34a"/><path d="M 70,30 C 90,20 85,5 70,10 C 60,5 55,20 60,30 Z" fill="#15803d"/><path d="M 50,25 C 40,15 45,0 55,5 C 65,10 65,20 60,25 Z" fill="#16a34a"/></svg>`,
   'watercress_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><path d="M 40,90 Q 30,60 40,30" stroke="#15803d" stroke-width="2" fill="none"/><path d="M 60,90 Q 70,60 60,30" stroke="#15803d" stroke-width="2" fill="none"/><circle cx="40" cy="30" r="10" fill="#22c55e"/><circle cx="30" cy="45" r="8" fill="#4ade80"/><circle cx="45" cy="55" r="7" fill="#16a34a"/><circle cx="25" cy="65" r="6" fill="#22c55e"/><circle cx="60" cy="30" r="12" fill="#16a34a"/><circle cx="70" cy="45" r="9" fill="#22c55e"/><circle cx="55" cy="55" r="7" fill="#15803d"/><circle cx="75" cy="65" r="6" fill="#4ade80"/></svg>`,
   'coriander_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -601,17 +590,7 @@ const customSvgs = {
   'zucchini_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="zucGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4ade80"/><stop offset="40%" stop-color="#166534"/><stop offset="100%" stop-color="#064e3b"/></linearGradient></defs><path d="M 20,15 Q 60,30 85,80 Q 70,95 10,40 Z" fill="url(#zucGrad)"/><path d="M 15,35 L 5,30 L 10,20 L 25,20 Z" fill="#064e3b"/><path d="M 22,25 Q 55,40 75,78" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="2,2"/><path d="M 18,30 Q 45,50 65,85" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="2,2"/><ellipse cx="30" cy="35" rx="4" ry="15" transform="rotate(-40 30 35)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
   'wildcucumber_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wcGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#dcfce7"/><stop offset="50%" stop-color="#86efac"/><stop offset="100%" stop-color="#166534"/></linearGradient></defs><path d="M 20,20 Q 60,40 80,80 Q 50,90 10,50 Q -10,30 20,20 Z" fill="url(#wcGrad)"/><path d="M 20,30 Q 55,45 70,80" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.8"/><path d="M 15,40 Q 40,60 60,85" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.8"/><ellipse cx="25" cy="25" rx="4" ry="12" transform="rotate(45 25 25)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/></svg>`,
   'leek_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="leekBase" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#f8fafc"/><stop offset="60%" stop-color="#bbf7d0"/><stop offset="100%" stop-color="#4ade80"/></linearGradient></defs><path d="M 40,95 L 60,95 Q 65,70 60,40 L 40,40 Q 35,70 40,95 Z" fill="url(#leekBase)"/><path d="M 45,95 Q 40,100 45,105" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 50,95 Q 50,100 50,105" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 55,95 Q 60,100 55,105" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 40,40 Q 20,20 10,30 Q 25,10 45,40 Z" fill="#22c55e"/><path d="M 60,40 Q 80,20 90,30 Q 75,10 55,40 Z" fill="#16a34a"/><path d="M 45,40 Q 40,10 50,5 Q 60,10 55,40 Z" fill="#15803d"/><path d="M 45,90 Q 45,60 50,45" stroke="#86efac" stroke-width="2" fill="none"/><path d="M 55,90 Q 55,60 50,45" stroke="#86efac" stroke-width="2" fill="none"/></svg>`,
-  'asparagus_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
-    <linearGradient id="aspGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#bbf7d0"/>
-      <stop offset="50%" stop-color="#22c55e"/>
-      <stop offset="100%" stop-color="#14532d"/>
-    </linearGradient>
-  </defs>
-    <path d="M 20,20 Q 50,50 80,80 Q 60,90 20,20" fill="url(#aspGrad)"/>
-    <path d="M 15,15 L 25,25" stroke="#166534" stroke-width="4" stroke-linecap="round"/>
-    <ellipse cx="40" cy="40" rx="4" ry="15" transform="rotate(-45 40 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/>
-  </svg>`,
+  'asparagus_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="aspStem" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#166534"/><stop offset="60%" stop-color="#22c55e"/><stop offset="100%" stop-color="#4ade80"/></linearGradient><linearGradient id="aspTip" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="50%" stop-color="#15803d"/><stop offset="100%" stop-color="#166534"/></linearGradient></defs><g transform="rotate(-15 50 50)"><path d="M 45,95 L 45,20 C 45,15 48,10 48,10 C 48,10 51,15 51,20 L 51,95 Z" fill="url(#aspStem)"/><path d="M 45,20 Q 48,10 51,20 Z" fill="url(#aspTip)"/><path d="M 45,25 L 48,22 L 51,25 Z" fill="#8b5cf6"/><path d="M 45,35 L 48,32 L 51,35 Z" fill="#22c55e"/><path d="M 45,45 L 48,42 L 51,45 Z" fill="#15803d"/><path d="M 45,55 L 48,52 L 51,55 Z" fill="#166534"/><path d="M 45,65 L 48,62 L 51,65 Z" fill="#14532d"/></g><g transform="rotate(10 50 50)"><path d="M 52,95 L 52,25 C 52,20 55,15 55,15 C 55,15 58,20 58,25 L 58,95 Z" fill="url(#aspStem)"/><path d="M 52,25 Q 55,15 58,25 Z" fill="url(#aspTip)"/><path d="M 52,30 L 55,27 L 58,30 Z" fill="#8b5cf6"/><path d="M 52,40 L 55,37 L 58,40 Z" fill="#22c55e"/><path d="M 52,50 L 55,47 L 58,50 Z" fill="#15803d"/><path d="M 52,60 L 55,57 L 58,60 Z" fill="#166534"/><path d="M 52,70 L 55,67 L 58,70 Z" fill="#14532d"/></g><g transform="rotate(-5 50 50)"><path d="M 38,95 L 38,30 C 38,25 41,20 41,20 C 41,20 44,25 44,30 L 44,95 Z" fill="url(#aspStem)"/><path d="M 38,30 Q 41,20 44,30 Z" fill="url(#aspTip)"/><path d="M 38,35 L 41,32 L 44,35 Z" fill="#8b5cf6"/><path d="M 38,45 L 41,42 L 44,45 Z" fill="#22c55e"/><path d="M 38,55 L 41,52 L 44,55 Z" fill="#15803d"/><path d="M 38,65 L 41,62 L 44,65 Z" fill="#166534"/><path d="M 38,75 L 41,72 L 44,75 Z" fill="#14532d"/></g><rect x="30" y="65" width="40" height="4" rx="2" fill="#f87171"/></svg>`,
   'greenbeans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
     <linearGradient id="grbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#86efac"/>
@@ -621,15 +600,7 @@ const customSvgs = {
     <path d="M 10,90 C 20,40 60,10 90,10 C 80,50 40,90 10,90 Z" fill="url(#grbGrad)"/>
     <ellipse cx="35" cy="65" rx="3" ry="12" transform="rotate(45 35 65)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/>
   </svg>`,
-  'broadbeans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
-    <linearGradient id="brbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4ade80"/>
-      <stop offset="100%" stop-color="#15803d"/>
-    </linearGradient>
-  </defs>
-    <path d="M 10,90 C 20,40 60,10 90,10 C 80,50 40,90 10,90 Z" fill="url(#brbGrad)"/>
-    <ellipse cx="35" cy="65" rx="3" ry="12" transform="rotate(45 35 65)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/>
-  </svg>`,
+  'broadbeans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="podOuter" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#22c55e"/><stop offset="100%" stop-color="#14532d"/></linearGradient><linearGradient id="podInner" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#dcfce7"/><stop offset="100%" stop-color="#bbf7d0"/></linearGradient><radialGradient id="beanGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#86efac"/><stop offset="60%" stop-color="#22c55e"/><stop offset="100%" stop-color="#15803d"/></radialGradient></defs><path d="M 5,65 Q 15,20 85,25 Q 95,30 90,42 Q 65,45 5,65" fill="url(#podOuter)"/><path d="M 12,56 Q 22,28 82,31 Q 86,35 84,40 Q 62,40 12,56" fill="url(#podInner)"/><g transform="rotate(5 50 50)"><ellipse cx="32" cy="43" rx="10" ry="8" fill="url(#beanGrad)" transform="rotate(-10 32 43)"/><path d="M 32,35 C 29,35 28,39 31,41" stroke="#15803d" stroke-width="1.5" fill="none"/><ellipse cx="30" cy="41" rx="2" ry="4" fill="rgba(255,255,255,0.4)" filter="blur(0.5px)"/><ellipse cx="54" cy="41" rx="10" ry="8" fill="url(#beanGrad)" transform="rotate(-5 54 41)"/><path d="M 54,33 C 51,33 50,37 53,39" stroke="#15803d" stroke-width="1.5" fill="none"/><ellipse cx="52" cy="39" rx="2" ry="4" fill="rgba(255,255,255,0.4)" filter="blur(0.5px)"/><ellipse cx="74" cy="39" rx="9" ry="7" fill="url(#beanGrad)" transform="rotate(5 74 39)"/><path d="M 74,32 C 71,32 70,35 73,37" stroke="#15803d" stroke-width="1.5" fill="none"/><ellipse cx="72" cy="37" rx="2" ry="4" fill="rgba(255,255,255,0.4)" filter="blur(0.5px)"/></g><path d="M 5,65 Q 40,75 80,45" stroke="#16a34a" stroke-width="2.5" fill="none" opacity="0.6"/></svg>`,
   'carob_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
     <linearGradient id="carGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#78350f"/>
@@ -655,18 +626,7 @@ const customSvgs = {
     <path d="M 50,15 C 45,25 55,25 50,35" stroke="#166534" stroke-width="4" fill="none"/>
   </svg>`,
   'blackberry_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bbGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#4c1d95"/><stop offset="60%" stop-color="#2e1065"/><stop offset="100%" stop-color="#000000"/></radialGradient></defs><path d="M 50,15 Q 45,5 55,5" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,15 L 35,15 L 45,25 Z" fill="#22c55e"/><path d="M 50,15 L 65,15 L 55,25 Z" fill="#22c55e"/><path d="M 50,15 L 50,25 Z" stroke="#15803d" stroke-width="4" fill="none"/><g fill="url(#bbGrad)"><circle cx="35" cy="40" r="10"/><circle cx="65" cy="40" r="10"/><circle cx="30" cy="55" r="10"/><circle cx="70" cy="55" r="10"/><circle cx="35" cy="70" r="10"/><circle cx="65" cy="70" r="10"/><circle cx="45" cy="35" r="12"/><circle cx="55" cy="35" r="12"/><circle cx="40" cy="50" r="12"/><circle cx="60" cy="50" r="12"/><circle cx="40" cy="65" r="12"/><circle cx="60" cy="65" r="12"/><circle cx="50" cy="80" r="12"/><circle cx="50" cy="45" r="13"/><circle cx="50" cy="60" r="13"/><circle cx="50" cy="70" r="11"/></g><g fill="rgba(255,255,255,0.4)"><circle cx="42" cy="32" r="2"/><circle cx="52" cy="32" r="2"/><circle cx="37" cy="47" r="2"/><circle cx="57" cy="47" r="2"/><circle cx="37" cy="62" r="2"/><circle cx="57" cy="62" r="2"/><circle cx="47" cy="77" r="2"/><circle cx="47" cy="42" r="2.5"/><circle cx="47" cy="57" r="2.5"/><circle cx="47" cy="67" r="2"/></g></svg>`,
-  'truffle_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
-    <radialGradient id="truGrad" cx="30%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="#d6d3d1"/>
-      <stop offset="40%" stop-color="#a8a29e"/>
-      <stop offset="80%" stop-color="#78716c"/>
-      <stop offset="100%" stop-color="#44403c"/>
-    </radialGradient>
-  </defs>
-    <circle cx="50" cy="55" r="40" fill="url(#truGrad)"/>
-    <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
-    
-  </svg>`,
+  'truffle_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="trufGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#e7e5e4"/><stop offset="30%" stop-color="#d6d3d1"/><stop offset="70%" stop-color="#a8a29e"/><stop offset="100%" stop-color="#57534e"/></radialGradient></defs><path d="M 25,35 C 15,45 15,65 25,75 C 35,85 65,85 75,75 C 85,65 85,45 75,35 C 65,25 35,25 25,35 Z" fill="url(#trufGrad)"/><path d="M 30,30 Q 25,45 35,55" stroke="#78716c" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/><path d="M 65,32 Q 75,45 65,60" stroke="#78716c" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/><path d="M 45,75 Q 55,80 65,70" stroke="#78716c" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/><g fill="#44403c" opacity="0.25"><circle cx="35" cy="40" r="3"/><circle cx="48" cy="35" r="4"/><circle cx="65" cy="45" r="2.5"/><circle cx="30" cy="55" r="4.5"/><circle cx="55" cy="60" r="3.5"/><circle cx="40" cy="70" r="4"/><circle cx="60" cy="72" r="3"/><circle cx="72" cy="58" r="2.5"/></g><path d="M 30,35 Q 32,28 40,30" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.3" stroke-linecap="round"/></svg>`,
   'dates_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dateGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#d97706"/><stop offset="50%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/></radialGradient></defs><path d="M 50,10 Q 50,30 35,35" stroke="#a16207" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 50,15 Q 65,30 65,45" stroke="#a16207" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="30" cy="55" rx="16" ry="26" transform="rotate(15 30 55)" fill="url(#dateGrad)"/><path d="M 25,40 Q 30,55 25,70" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><path d="M 35,45 Q 35,55 38,65" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><ellipse cx="25" cy="45" rx="3" ry="10" transform="rotate(15 25 45)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/><ellipse cx="65" cy="70" rx="16" ry="26" transform="rotate(-15 65 70)" fill="url(#dateGrad)"/><path d="M 60,55 Q 65,70 60,85" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><path d="M 70,60 Q 70,70 73,80" stroke="#451a03" stroke-width="2" fill="none" opacity="0.6"/><ellipse cx="60" cy="60" rx="3" ry="10" transform="rotate(-15 60 60)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
   'papaya_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
     <linearGradient id="papGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -727,7 +687,7 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "موز", synonymsAr: [], nameEn: "Banana", icon: "🍌" },
   { primaryAr: "تفاح", synonymsAr: [], nameEn: "Apple", icon: "apple_svg" },
   { primaryAr: "تفاح أخضر", synonymsAr: [], nameEn: "Green Apple", icon: "greenapple_svg" },
-  { primaryAr: "عنب", synonymsAr: [], nameEn: "Grape", icon: "🍇" },
+  { primaryAr: "عنب", synonymsAr: [], nameEn: "Grape", icon: "grapes_svg" },
   { primaryAr: "فراولة", synonymsAr: [], nameEn: "Strawberry", icon: "🍓" },
   { primaryAr: "رمان", synonymsAr: [], nameEn: "Pomegranate", icon: "pomegranate_svg" },
   { primaryAr: "خوخ", synonymsAr: [], nameEn: "Peach", icon: "🍑" },
@@ -853,68 +813,40 @@ function saveCustomCrop(cropName, measureType) {
 function sanitizeCropIcon(icon, isHtml = true) {
   if (!icon) return '🥦';
 
+  // 1. If it's a known offline custom SVG, use it immediately
   if (typeof customSvgs !== 'undefined' && customSvgs[icon]) {
     if (isHtml) return customSvgs[icon];
     return '🌱';
   }
 
-
-  if (!icon) return '🥦';
-
-  if (typeof customSvgs !== 'undefined' && customSvgs[icon]) {
-    if (isHtml) return customSvgs[icon];
-    return '🌱';
-  }
-
-
-  if (!icon) return '🥦';
-
-  
-
-  const fluentMapping = {
-    '🍅': 'Tomato', '🥒': 'Cucumber', '🥔': 'Potato', '🍆': 'Eggplant',
-    '🌶️': 'Hot pepper', '🥕': 'Carrot', '🌽': 'Ear of corn', '🍉': 'Watermelon',
-    '🍈': 'Melon', '🍊': 'Tangerine', '🍋': 'Lemon', '🍌': 'Banana',
-    '🍎': 'Red apple', '🍏': 'Green apple', '🍇': 'Grapes', '🍓': 'Strawberry',
-    '🍑': 'Peach', '🍍': 'Pineapple', '🥝': 'Kiwi fruit', '🍐': 'Pear',
-    '🥭': 'Mango', '🍒': 'Cherries', '🍄': 'Mushroom', '🥬': 'Leafy green',
-    '🥦': 'Broccoli', '🥑': 'Avocado', '🌿': 'Herb', '🌱': 'Seedling',
-    '🌴': 'Palm tree', '🌰': 'Chestnut', '🥥': 'Coconut', '🍠': 'Roasted sweet potato',
-    '🎃': 'Jack-o-lantern', '🌵': 'Cactus', '🧅': 'Onion', '🧄': 'Garlic',
-    '🫑': 'Bell pepper', '🫚': 'Ginger root',
-    'onion_svg': 'Onion', 'garlic_svg': 'Garlic', 'bell_pepper_svg': 'Bell pepper'
+  // 2. Direct mapping for key SVGs that are not in customSvgs but have standard emojis
+  const svgToEmoji = {
+    'onion_svg': '🧅',
+    'garlic_svg': '🧄',
+    'bell_pepper_svg': '🫑',
+    'driedlime_svg': '🍋',
+    'apple_svg': '🍎',
+    'greenapple_svg': '🍏',
+    'pomegranate_svg': ' pomegranate_svg' in customSvgs ? null : '🍎',
   };
 
-  let fluentName = null;
-  if (fluentMapping[icon]) {
-    fluentName = fluentMapping[icon];
-  } else if (typeof icon === 'string') {
-    for (const [key, val] of Object.entries(fluentMapping)) {
-      if (icon.includes(key)) {
-        fluentName = val;
-        break;
-      }
-    }
+  let cleanIcon = icon;
+  if (svgToEmoji[icon]) {
+    cleanIcon = svgToEmoji[icon];
   }
 
-  if (fluentName) {
-    if (isHtml) {
-      const fileName = fluentName.toLowerCase().replace(/ /g, '_') + '_3d.png';
-      const encodedDirName = encodeURIComponent(fluentName);
-      const url = `https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/${encodedDirName}/3D/${fileName}`;
-      return `<img src="${url}" style="width:1.4em; height:1.4em; vertical-align:middle; display:inline-block; margin:0 0.1em; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.15));" loading="lazy" />`;
-    }
-    return icon.length > 3 ? '🌱' : icon; // If it's a long string like onion_svg, return seedling, else the emoji
-  }
-
-  if (typeof icon === 'string' && (icon.trim().startsWith('<svg') || icon.trim().startsWith('<img'))) {
-    if (isHtml) return icon;
+  // 3. If it is already an HTML tag (like <svg or <img)
+  if (typeof cleanIcon === 'string' && (cleanIcon.trim().startsWith('<svg') || cleanIcon.trim().startsWith('<img'))) {
+    if (isHtml) return cleanIcon;
     return '🌱';
   }
 
-  
-  
-  return isHtml ? `<span style="font-size: 1.2em; display:inline-block; vertical-align:middle;">${icon}</span>` : icon;
+  // 4. Return standard built-in system emoji with beautiful, instant-loading inline styling
+  // This works completely offline, uses 0 network/data, and eliminates any rendering/loading delay.
+  if (isHtml) {
+    return `<span style="font-size: 1.25em; line-height: 1; display: inline-block; vertical-align: middle; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.15));">${cleanIcon}</span>`;
+  }
+  return cleanIcon;
 }
 
 
@@ -2115,6 +2047,32 @@ async function renderImportsList() {
       }
     }
 
+    let remainingLabel = '';
+    if (remainingWeight > 0 || remainingBoxes > 0) {
+      const parts = [];
+      const allCount = items.every(it => getCropUnitType(it.crop_type) === 'count');
+      if (allCount) {
+        const unitLabel = currentLanguage === 'ar' ? 'قطعة' : 'pcs';
+        parts.push(`${formatVal(remainingWeight)} ${unitLabel}`);
+      } else {
+        const weightUnitLabel = currentLanguage === 'ar' ? (commonUnit === 'kg' ? 'كجم' : commonUnit) : commonUnit;
+        if (remainingWeight > 0) {
+          parts.push(`${formatVal(remainingWeight)} ${weightUnitLabel}`);
+        }
+        if (remainingBoxes > 0 && hasNormalCrops) {
+          const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+          parts.push(`${formatVal(remainingBoxes)} ${boxLabel}`);
+        }
+      }
+      if (parts.length > 0) {
+        remainingLabel = currentLanguage === 'ar' 
+          ? `(متبقي: ${parts.join(' / ')})` 
+          : `(Rem: ${parts.join(' / ')})`;
+      }
+    } else {
+      remainingLabel = currentLanguage === 'ar' ? '(لا يوجد متبقي)' : '(None left)';
+    }
+
     let colorClass = 'green';
     if (percentSold >= 85) {
       colorClass = 'red';
@@ -2283,12 +2241,15 @@ async function renderImportsList() {
       <!-- Column 4: Settle/Sales Progress Status -->
       <div class="itr-col-status">
         <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; width: 100%; max-width: 160px; margin: 0 auto;">
-          <span style="font-size: 11px; color: var(--color-text-muted); font-weight: 700; white-space: nowrap;">${currentLanguage === 'ar' ? 'نسبة المبيعات' : 'Sales Ratio'}</span>
+          <span style="font-size: 11px; color: var(--color-text-muted); font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-family: Cairo, sans-serif;">
+            <span>${currentLanguage === 'ar' ? 'نسبة المبيعات' : 'Sales Ratio'}:</span>
+            <span style="font-size: 12px; font-weight: 850; color: #1b4332;">${percentSold}%</span>
+          </span>
           <div class="progress-track" style="width: 100%; margin: 2px 0;">
             <div class="progress-fill green" style="width: ${percentSold}%;"></div>
           </div>
-          <span style="font-size: 12.5px; font-weight: 850; color: #1b4332; font-family: Cairo, sans-serif;">
-            ${percentSold}%
+          <span style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); white-space: nowrap; font-family: Cairo, sans-serif;">
+            ${remainingLabel}
           </span>
         </div>
       </div>
@@ -2437,6 +2398,32 @@ async function renderArchiveList() {
       }
     }
 
+    let remainingLabel = '';
+    if (remainingWeight > 0 || remainingBoxes > 0) {
+      const parts = [];
+      const allCount = items.every(it => getCropUnitType(it.crop_type) === 'count');
+      if (allCount) {
+        const unitLabel = currentLanguage === 'ar' ? 'قطعة' : 'pcs';
+        parts.push(`${formatVal(remainingWeight)} ${unitLabel}`);
+      } else {
+        const weightUnitLabel = currentLanguage === 'ar' ? (commonUnit === 'kg' ? 'كجم' : commonUnit) : commonUnit;
+        if (remainingWeight > 0) {
+          parts.push(`${formatVal(remainingWeight)} ${weightUnitLabel}`);
+        }
+        if (remainingBoxes > 0 && hasNormalCrops) {
+          const boxLabel = currentLanguage === 'ar' ? 'صندوق' : 'box';
+          parts.push(`${formatVal(remainingBoxes)} ${boxLabel}`);
+        }
+      }
+      if (parts.length > 0) {
+        remainingLabel = currentLanguage === 'ar' 
+          ? `(متبقي: ${parts.join(' / ')})` 
+          : `(Rem: ${parts.join(' / ')})`;
+      }
+    } else {
+      remainingLabel = currentLanguage === 'ar' ? '(لا يوجد متبقي)' : '(None left)';
+    }
+
     const card = document.createElement('div');
     card.className = 'invoice-table-row stagger-item';
     card.style.animationDelay = `${displayedCount * 0.08}s`;
@@ -2565,12 +2552,15 @@ async function renderArchiveList() {
       <!-- Column 4: Settle/Sales Progress Status -->
       <div class="itr-col-status">
         <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; width: 100%; max-width: 160px; margin: 0 auto;">
-          <span style="font-size: 11px; color: var(--color-text-muted); font-weight: 700; white-space: nowrap;">${currentLanguage === 'ar' ? 'نسبة المبيعات' : 'Sales Ratio'}</span>
+          <span style="font-size: 11px; color: var(--color-text-muted); font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: 4px; font-family: Cairo, sans-serif;">
+            <span>${currentLanguage === 'ar' ? 'نسبة المبيعات' : 'Sales Ratio'}:</span>
+            <span style="font-size: 12px; font-weight: 850; color: #1b4332;">${percentSold}%</span>
+          </span>
           <div class="progress-track" style="width: 100%; margin: 2px 0;">
             <div class="progress-fill green" style="width: ${percentSold}%;"></div>
           </div>
-          <span style="font-size: 12.5px; font-weight: 850; color: #1b4332; font-family: Cairo, sans-serif;">
-            ${percentSold}%
+          <span style="font-size: 10px; font-weight: 700; color: var(--color-text-muted); white-space: nowrap; font-family: Cairo, sans-serif;">
+            ${remainingLabel}
           </span>
         </div>
       </div>
@@ -3294,14 +3284,14 @@ async function addSaleCropRow() {
     </div>
     
     <div class="form-group" style="position: relative;">
-      <label>
-        <span>${currentLanguage === 'ar' ? 'البضاعة المتوفرة بالفواتير (المحصول - الفلاح - السيارة)' : 'Select Available Cargo (Crop - Farmer - Car)'}</span>
+      <label style="margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+        <span>${currentLanguage === 'ar' ? 'اختر البضاعة المتوفرة بالمخزن' : 'Select Cargo from Warehouse'}</span>
       </label>
-      <div style="position: relative;">
-        <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">inventory_2</span>
-        <select class="form-input sale-cargo-select" required style="padding-right: 42px;">
-          <option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر البضاعة المتوفرة بالفواتير (المحصول - الفلاح - السيارة)...' : 'Choose from available imports...'}</option>
-        </select>
+      <select class="form-input sale-cargo-select" required style="display: none;">
+        <option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر البضاعة المتوفرة بالفواتير...' : 'Choose from available imports...'}</option>
+      </select>
+      <div class="warehouse-crops-horizontal-list" style="display: flex; gap: 10px; overflow-x: auto; padding: 6px 4px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; direction: rtl; min-height: 116px; margin-bottom: 4px; border: 1px solid rgba(45, 106, 79, 0.08); border-radius: 12px; background: rgba(45, 106, 79, 0.01);">
+        <!-- Squares/cards populated dynamically by refreshCargoOptions -->
       </div>
     </div>
 
@@ -3606,9 +3596,17 @@ async function refreshCargoOptions(selectElement) {
   const currentVal = selectElement.value;
   selectElement.innerHTML = `<option value="" disabled selected>${currentLanguage === 'ar' ? 'جاري التحميل...' : 'Loading...'}</option>`;
 
+  const parentFormGroup = selectElement.closest('.form-group');
+  const horizontalList = parentFormGroup ? parentFormGroup.querySelector('.warehouse-crops-horizontal-list') : null;
+  if (horizontalList) {
+    horizontalList.innerHTML = '';
+  }
+
   const allSaleItems = await dbGetAll('sale_items');
 
   selectElement.innerHTML = `<option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر من البضاعة المعروضة بالاستيراد...' : 'Choose from available imports...'}</option>`;
+
+  let availableCount = 0;
 
   activeImportInvoices.forEach(imp => {
     imp.items.forEach(it => {
@@ -3631,31 +3629,129 @@ async function refreshCargoOptions(selectElement) {
         return; // Skip fully sold items
       }
 
+      availableCount++;
+
       const opt = document.createElement('option');
       opt.value = `${imp.id}|${it.crop_type}`;
 
       let remainingText = '';
+      let remainingLabelShort = '';
       if (isCount) {
         remainingText = currentLanguage === 'ar' 
           ? `(متبقي: ${formatVal(remBoxes)} قطعة)` 
-          : `(rem: ${formatVal(remBoxes)} قطعة)`;
+          : `(rem: ${formatVal(remBoxes)} pcs)`;
+        remainingLabelShort = `${formatVal(remBoxes)} قطعة`;
       } else if (isWatermelonOrMelon(it.crop_type)) {
         remainingText = currentLanguage === 'ar' 
           ? `(متبقي: ${formatWeight(remWeight, it.unit || 'kg')})` 
           : `(rem: ${formatWeight(remWeight, it.unit || 'kg')})`;
+        remainingLabelShort = `${formatWeight(remWeight, it.unit || 'kg')}`;
       } else {
         remainingText = currentLanguage === 'ar' 
           ? `(متبقي: ${formatWeight(remWeight, it.unit || 'kg')} [${remBoxes} ص])` 
           : `(rem: ${formatWeight(remWeight, it.unit || 'kg')} [${remBoxes} b])`;
+        remainingLabelShort = `${formatWeight(remWeight, it.unit || 'kg')} [${remBoxes} ص]`;
       }
 
       opt.textContent = `${getCropIcon(it.crop_type, false)} ${it.crop_type} - فلاح: ${imp.farmer_name} (#${imp.id}) ${remainingText}`;
       selectElement.appendChild(opt);
+
+      if (horizontalList) {
+        const card = document.createElement('div');
+        card.className = 'warehouse-crop-card';
+        card.setAttribute('data-value', `${imp.id}|${it.crop_type}`);
+        
+        card.style.cssText = `
+          flex: 0 0 115px;
+          min-width: 115px;
+          height: 115px;
+          background: #ffffff;
+          border: 1.5px solid ${isSelected ? 'var(--color-primary)' : 'rgba(45, 106, 79, 0.15)'};
+          border-radius: 12px;
+          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          gap: 2px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: ${isSelected ? '0 4px 12px rgba(45, 106, 79, 0.12)' : '0 2px 6px rgba(0,0,0,0.02)'};
+          text-align: center;
+          background-color: ${isSelected ? 'rgba(82, 183, 136, 0.08)' : '#ffffff'};
+          position: relative;
+          user-select: none;
+          box-sizing: border-box;
+        `;
+
+        if (isSelected) {
+          card.classList.add('selected');
+        }
+
+        const iconHtml = getCropIcon(it.crop_type, true);
+        
+        card.innerHTML = `
+          <div style="font-size: 16px; display: flex; align-items: center; justify-content: center; height: 28px;">
+            ${iconHtml}
+          </div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #1b4332; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+            ${it.crop_type}
+          </div>
+          <div style="font-size: 10px; font-weight: 600; color: #4b5563; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+            فلاح: ${imp.farmer_name}
+          </div>
+          <div style="font-size: 10px; font-weight: 700; color: ${isSelected ? 'var(--color-primary-dark)' : '#059669'}; background: ${isSelected ? 'rgba(82, 183, 136, 0.2)' : '#e6f7ed'}; padding: 2px 6px; border-radius: 6px; white-space: nowrap; width: 100%; box-sizing: border-box; text-align: center; line-height: 1.2; margin-top: auto;">
+            ${remainingLabelShort}
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          const siblingCards = horizontalList.querySelectorAll('.warehouse-crop-card');
+          siblingCards.forEach(c => {
+            c.style.borderColor = 'rgba(45, 106, 79, 0.15)';
+            c.style.backgroundColor = '#ffffff';
+            c.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
+            c.classList.remove('selected');
+          });
+
+          card.style.borderColor = 'var(--color-primary)';
+          card.style.backgroundColor = 'rgba(82, 183, 136, 0.08)';
+          card.style.boxShadow = '0 4px 12px rgba(45, 106, 79, 0.12)';
+          card.classList.add('selected');
+
+          selectElement.value = `${imp.id}|${it.crop_type}`;
+          selectElement.dispatchEvent(new Event('change'));
+        });
+
+        horizontalList.appendChild(card);
+      }
     });
   });
 
+  if (availableCount === 0 && horizontalList) {
+    horizontalList.innerHTML = `
+      <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; border: 1.5px dashed rgba(45, 106, 79, 0.2); border-radius: 12px; background: rgba(45, 106, 79, 0.02); color: #2d6a4f; text-align: center; gap: 4px; box-sizing: border-box;">
+        <span class="material-icons-round" style="font-size: 24px; color: #52b788;">sentiment_dissatisfied</span>
+        <span style="font-size: 11px; font-weight: 700;">${currentLanguage === 'ar' ? 'لا توجد بضاعة متوفرة حالياً بالمخزن' : 'No available cargo in warehouse'}</span>
+        <span style="font-size: 9.5px; opacity: 0.8;">${currentLanguage === 'ar' ? 'قم بتسجيل فاتورة استيراد جديدة أولاً.' : 'Please add a new import invoice first.'}</span>
+      </div>
+    `;
+  }
+
   if (currentVal) {
     selectElement.value = currentVal;
+    if (horizontalList) {
+      const selectedCard = horizontalList.querySelector(`.warehouse-crop-card[data-value="${currentVal}"]`);
+      if (selectedCard) {
+        selectedCard.style.borderColor = 'var(--color-primary)';
+        selectedCard.style.backgroundColor = 'rgba(82, 183, 136, 0.08)';
+        selectedCard.style.boxShadow = '0 4px 12px rgba(45, 106, 79, 0.12)';
+        selectedCard.classList.add('selected');
+        setTimeout(() => {
+          selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }, 100);
+      }
+    }
   }
 }
 
@@ -3715,8 +3811,7 @@ function updateSaleInvoiceOverallTotal() {
     totalCarrying += rowPorterFee;
   });
 
-  const bagsCost = parseNumberInput(document.getElementById('sale-bags-cost').value) || 0;
-  const grandTotal = subtotal + totalCommissions + totalCarrying + bagsCost;
+  const grandTotal = subtotal + totalCommissions + totalCarrying;
 
   document.getElementById('lbl-subtotal-val').textContent = formatVal(subtotal, true);
   document.getElementById('lbl-commission-val').textContent = formatVal(totalCommissions, true);
@@ -3764,7 +3859,6 @@ async function submitSaleInvoice() {
   const customerName = document.getElementById('sale-customer-name').value.trim();
   const customerPhone = document.getElementById('sale-customer-phone').value.trim() || '07700000000';
   const customerAddress = document.getElementById('sale-customer-address').value.trim() || 'بغداد';
-  const bagsCost = parseNumberInput(document.getElementById('sale-bags-cost').value) || 0;
   
   const paymentMethodSelect = document.querySelector('.toggle-switch-group .toggle-switch-btn.active');
   const paymentType = paymentMethodSelect ? paymentMethodSelect.dataset.method : 'cash';
@@ -3918,7 +4012,7 @@ async function submitSaleInvoice() {
   const subtotal = saleItemsToSave.reduce((sum, item) => sum + item.agreed_price, 0);
   const totalCommissions = saleItemsToSave.reduce((sum, item) => sum + item.commission_amount, 0);
   const totalCarrying = saleItemsToSave.reduce((sum, item) => sum + item.porter_fee, 0);
-  const grandTotal = subtotal + totalCommissions + totalCarrying + bagsCost;
+  const grandTotal = subtotal + totalCommissions + totalCarrying;
 
   const orderId = await generateOrderId();
   const saleNotes = document.getElementById('sale-notes').value.trim();
@@ -3928,7 +4022,7 @@ async function submitSaleInvoice() {
     order_id: orderId,
     total_amount: grandTotal,
     payment_type: paymentType,
-    bags_cost: bagsCost,
+    bags_cost: 0,
     notes: saleNotes,
     created_at: Date.now()
   });
@@ -4018,7 +4112,6 @@ async function submitSaleInvoice() {
   document.getElementById('sale-customer-name').value = '';
   document.getElementById('sale-customer-phone').value = '';
   document.getElementById('sale-customer-address').value = '';
-  document.getElementById('sale-bags-cost').value = '';
   document.getElementById('sale-notes').value = '';
   document.getElementById('sale-items-container').innerHTML = '';
   
@@ -7797,15 +7890,13 @@ async function openPrintPreview(saleId) {
     const priceStr = formatVal(computedPrice);
     const weightStr = isCountUnit ? '-' : formatWeight(it.weight_kg, it.unit || 'kg');
     const boxesStr = formatVal(it.box_count || 0);
-    const isLast = idx === items.length - 1;
-    const rowBorder = isLast ? '' : borderStyle;
 
     return `
-      <tr style="${rowBorder} height: auto;">
-        <td style="text-align: right; width: auto; ${paddingClass} white-space: normal; word-break: break-word; line-height: 1.25; padding-left: 8px;" title="${cropName}">${cropName}</td>
-        <td style="text-align: center; width: 1%; white-space: nowrap; ${paddingClass} padding-left: 12px; padding-right: 12px; vertical-align: bottom !important; padding-bottom: 0px !important;">${priceStr}</td>
-        <td style="text-align: center; width: 1%; white-space: nowrap; ${paddingClass} padding-left: 12px; padding-right: 12px; vertical-align: bottom !important; padding-bottom: 0px !important;">${weightStr}</td>
-        <td style="text-align: left; width: 1%; white-space: nowrap; ${paddingClass} padding-left: 4px; font-weight: 700; vertical-align: bottom !important; padding-bottom: 0px !important;">${boxesStr}</td>
+      <tr style="height: auto;">
+        <td style="text-align: right; border: 1px solid #000; padding: 5px 4px !important; white-space: normal; word-break: break-word; line-height: 1.2; font-weight: 800; vertical-align: middle !important;" title="${cropName}">${cropName}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px 4px !important; white-space: nowrap; font-weight: 700; vertical-align: middle !important;">${boxesStr}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px 4px !important; white-space: nowrap; font-weight: 700; vertical-align: middle !important;">${weightStr}</td>
+        <td style="text-align: center; border: 1px solid #000; padding: 5px 4px !important; white-space: nowrap; font-weight: 700; vertical-align: middle !important;">${priceStr}</td>
       </tr>
     `;
   }).join('');
@@ -7843,13 +7934,13 @@ async function openPrintPreview(saleId) {
       </div>
     </div>
 
-    <table class="receipt-table" style="width: 100%; border-collapse: collapse; ${tableFontSizeClass} table-layout: auto; direction: rtl; margin-bottom: 6px;">
+    <table class="receipt-table" style="width: 100%; border-collapse: collapse; border: 2px solid #000; ${tableFontSizeClass} table-layout: auto; direction: rtl; margin-bottom: 10px; font-family: Cairo, sans-serif;">
       <thead>
-        <tr style="border-bottom: 1.5px dashed #000; height: 24px;">
-          <th style="text-align: right; font-weight:700; width: auto; padding-left: 8px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'الصنف' : 'Item'}</th>
-          <th style="text-align: center; font-weight:700; width: 1%; white-space: nowrap; padding-left: 12px; padding-right: 12px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
-          <th style="text-align: center; font-weight:700; width: 1%; white-space: nowrap; padding-left: 12px; padding-right: 12px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
-          <th style="text-align: left; font-weight:700; width: 1%; white-space: nowrap; padding-left: 4px; vertical-align: middle !important; padding-bottom: 10px !important;">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</th>
+        <tr style="background-color: #f2f2f2; border-bottom: 2px solid #000; height: 28px;">
+          <th style="text-align: right; font-weight: 850; border: 1.5px solid #000; padding: 6px 4px !important; color: #000; vertical-align: middle !important;">${currentLanguage === 'ar' ? 'الصنف' : 'Item'}</th>
+          <th style="text-align: center; font-weight: 850; border: 1.5px solid #000; padding: 6px 4px !important; color: #000; vertical-align: middle !important;">${currentLanguage === 'ar' ? 'العدد' : 'Count'}</th>
+          <th style="text-align: center; font-weight: 850; border: 1.5px solid #000; padding: 6px 4px !important; color: #000; vertical-align: middle !important;">${currentLanguage === 'ar' ? 'الوزن' : 'Weight'}</th>
+          <th style="text-align: center; font-weight: 850; border: 1.5px solid #000; padding: 6px 4px !important; color: #000; vertical-align: middle !important;">${currentLanguage === 'ar' ? 'السعر' : 'Price'}</th>
         </tr>
       </thead>
       <tbody>
@@ -8358,50 +8449,95 @@ function renderPrinterDevicesList() {
 
 function extractBatteryPercentage(value) {
   if (typeof value !== 'number' || isNaN(value)) return 100;
-  
-  // 1. Dual-cell millivolts (e.g. 6000 to 8500)
+
+  // Scientific multi-segment state-of-charge (SoC) lookup curve for a standard 3.7V Lithium-ion cell (e.g., Luck Jingle D1 1200mAh 3.7V).
+  // This curve maps no-load voltage (in Volts) directly to highly accurate actual remaining percentage.
+  // It takes into account the standard discharge profile of Li-ion chemistry and typical thermal printer low-voltage cutoff (~3.2V).
+  function map3_7V_LiIonVoltageToPercentage(volts) {
+    if (volts >= 4.15) return 100;
+    if (volts <= 3.20) return 0;
+    
+    const curve = [
+      { v: 4.15, p: 100 },
+      { v: 4.05, p: 90 },
+      { v: 3.96, p: 80 },
+      { v: 3.90, p: 70 },
+      { v: 3.83, p: 60 },
+      { v: 3.78, p: 50 },
+      { v: 3.73, p: 40 },
+      { v: 3.68, p: 30 },
+      { v: 3.60, p: 20 },
+      { v: 3.52, p: 10 },
+      { v: 3.40, p: 5 },
+      { v: 3.20, p: 0 }
+    ];
+    
+    for (let i = 0; i < curve.length - 1; i++) {
+      const upper = curve[i];
+      const lower = curve[i + 1];
+      if (volts <= upper.v && volts >= lower.v) {
+        const pctRange = upper.p - lower.p;
+        const voltRange = upper.v - lower.v;
+        const pct = lower.p + ((volts - lower.v) / voltRange) * pctRange;
+        return Math.max(0, Math.min(100, Math.round(pct)));
+      }
+    }
+    return 0;
+  }
+
+  // 1. Dual-cell millivolts (e.g., 6000mV to 8500mV)
+  // Divide by 2 to get single-cell equivalent voltage
   if (value >= 6000 && value <= 8500) {
-    return Math.max(0, Math.min(100, Math.round(((value - 6000) / 2400) * 100)));
+    const volts = (value / 1000) / 2;
+    return map3_7V_LiIonVoltageToPercentage(volts);
   }
   
-  // 2. Single-cell millivolts (optimized for 3.7V Li-ion: 3400mV to 4200mV)
+  // 2. Single-cell millivolts (e.g., 3000mV to 4500mV - typical for Luck Jingle D1)
   if (value >= 3000 && value <= 4500) {
-    // 3400mV is typically empty for high-current thermal heads, 4200mV is fully charged
-    return Math.max(0, Math.min(100, Math.round(((value - 3400) / 800) * 100)));
+    const volts = value / 1000;
+    return map3_7V_LiIonVoltageToPercentage(volts);
   }
 
-  // 3. Dual-cell decivolts (e.g. 60 to 85 for 6.0V - 8.5V Li-ion pack, typical for portable printers)
+  // 3. Dual-cell decivolts (e.g., 60 to 85 decivolts)
+  // Divide by 2 to get single-cell equivalent voltage
   if (value >= 60 && value <= 85) {
-    return Math.max(0, Math.min(100, Math.round(((value - 60) / 24) * 100)));
+    const volts = (value / 10) / 2;
+    return map3_7V_LiIonVoltageToPercentage(volts);
   }
   
-  // 4. Single-cell decivolts (optimized for 3.7V Li-ion decivolts: 34 to 42)
+  // 4. Single-cell decivolts (e.g., 30 to 45 decivolts - typical for Luck Jingle D1)
   if (value >= 30 && value <= 45) {
-    return Math.max(0, Math.min(100, Math.round(((value - 34) / 8) * 100)));
+    const volts = value / 10;
+    return map3_7V_LiIonVoltageToPercentage(volts);
   }
 
-  // 5. Cheap Chinese pocket printers bar-count indicators (returning 1 to 4, or 1 to 5 bars)
-  // Portable printers brownout or refuse to print when actual battery is below 20-30%.
-  // A raw value of 1-5 received from a working printer is almost certainly a bar-count rather than literal 1%-5%.
+  // 5. Cheap pocket printer bar-count indicators (returning 1 to 4, or 1 to 5 bars)
   if (value >= 1 && value <= 5) {
-    if (value === 1) return 25;
-    if (value === 2) return 50;
-    if (value === 3) return 75;
-    if (value === 4) return 100;
+    if (value === 1) return 15;
+    if (value === 2) return 40;
+    if (value === 3) return 65;
+    if (value === 4) return 85;
     if (value === 5) return 100;
   }
   
-  // 6. Standard 0-100 percentage (excluding the 1-5 bar counts handled above)
+  // 6. Standard 0-100 percentage
+  // If the device's internal firmware has already translated the battery level to a percentage (0-100),
+  // we must trust it directly to prevent compounding errors. No aggressive power curves.
   if (value >= 0 && value <= 100) {
-    return value;
+    return Math.max(0, Math.min(100, Math.round(value)));
   }
   
-  // 7. Raw 8-bit Analog Digital Converter (ADC) reading (e.g. 170 to 255 representing raw voltage range)
+  // 7. Raw 8-bit Analog Digital Converter (ADC) reading (e.g., 170 to 255 representing raw voltage range)
   if (value > 100 && value <= 255) {
+    let volts;
     if (value >= 170) {
-      return Math.max(0, Math.min(100, Math.round(((value - 170) / 70) * 100)));
+      // Linear scaling: 170 maps to 3.2V, 255 maps to 4.2V
+      volts = 3.2 + ((value - 170) / (255 - 170)) * (4.2 - 3.2);
+    } else {
+      // Fallback
+      volts = 3.0 + (value / 255) * 1.2;
     }
-    return Math.max(0, Math.min(100, Math.round((value / 255) * 100)));
+    return map3_7V_LiIonVoltageToPercentage(volts);
   }
   
   return 100;
@@ -10756,7 +10892,6 @@ function applyBilingualTranslations() {
   const elSaleNotesInput = document.getElementById('sale-notes');
   if (elSaleNotesInput) elSaleNotesInput.placeholder = t.lblNotesPl;
   document.getElementById('btn-add-sale-crop').innerHTML = `<span class="material-icons-round" style="font-size: 16px;">add</span> ${t.txtAddSaleCrop}`;
-  document.getElementById('lbl-sale-bags-label').textContent = t.lblBagsCost;
   document.getElementById('lbl-payment-method-title').textContent = t.lblPaymentMethod;
   document.getElementById('btn-pay-cash').textContent = t.btnPayCash;
   document.getElementById('btn-pay-debt').textContent = t.btnPayDebt;
@@ -10990,9 +11125,15 @@ function openBottomSheet(id) {
     if (phoneInput) phoneInput.value = '';
     const addressInput = document.getElementById('sale-customer-address');
     if (addressInput) addressInput.value = '';
-    const bagsInput = document.getElementById('sale-bags-cost');
-    if (bagsInput) bagsInput.value = '0';
     
+    // Set default payment method to debt
+    const btnCash = document.getElementById('btn-pay-cash');
+    const btnDebt = document.getElementById('btn-pay-debt');
+    if (btnCash) btnCash.classList.remove('active');
+    if (btnDebt) btnDebt.classList.add('active');
+    const debtGroup = document.getElementById('sale-debt-due-group');
+    if (debtGroup) debtGroup.style.display = 'block';
+
     // Reset totals to 0
     const subtotalEl = document.getElementById('lbl-subtotal-val');
     const commissionEl = document.getElementById('lbl-commission-val');
@@ -12692,13 +12833,18 @@ function isAdbActivated() {
   const status2 = localStorage.getItem('alwa_license_activated_v1');
   const status3 = localStorage.getItem('alwa_activation_backup_2026');
 
-  // Auto-activate in preview/dev environments (Cloud Run, localhost, 127.0.0.1) so developers and previewers see it fully activated
-  const isPreviewEnv = window.location.hostname.includes('run.app') || 
-                       window.location.hostname.includes('localhost') || 
-                       window.location.hostname.includes('127.0.0.1');
+  // Auto-activate ONLY in the AI Studio preview/dev environment (Cloud Run / run.app) so developers/previewers see it fully activated in browser.
+  // We strictly exclude 'localhost' and '127.0.0.1' because Cordova/Capacitor native Android apps run on local webview hosts,
+  // which would bypass the lock screen entirely on real devices if we auto-activated there.
+  const isPreviewEnv = window.location.hostname.includes('run.app');
 
-  if (status1 === 'true' || status2 === 'true' || status3 === 'ACTIVE' || isPreviewEnv) {
-    // Preserve activation state across app updates and sync all storage keys
+  if (isPreviewEnv) {
+    // Return true to bypass the lock screen in browser preview, but DO NOT save activation status to localStorage.
+    return true;
+  }
+
+  if (status1 === 'true' || status2 === 'true' || status3 === 'ACTIVE') {
+    // Preserve activation state across app updates and sync all storage keys (on actual device activation)
     if (status1 !== 'true') localStorage.setItem('alwa_adb_activated', 'true');
     if (status2 !== 'true') localStorage.setItem('alwa_license_activated_v1', 'true');
     if (status3 !== 'ACTIVE') localStorage.setItem('alwa_activation_backup_2026', 'ACTIVE');
@@ -13633,7 +13779,7 @@ function initDevicesBatteryMonitor() {
   function processPrinterBatteryDrain(amount = 1) {
     if (!isPrinterConnected) return;
     const stored = localStorage.getItem('alwa_printer_battery_percent');
-    let currentBattery = stored ? parseInt(stored, 10) : (92 + Math.floor(Math.random() * 6));
+    let currentBattery = stored ? parseInt(stored, 10) : (76 + Math.floor(Math.random() * 5));
     currentBattery = Math.max(currentBattery - amount, 5); // Limit min battery to 5%
     printerBatteryPercent = currentBattery;
     localStorage.setItem('alwa_printer_battery_percent', currentBattery);
@@ -13727,7 +13873,7 @@ function initDevicesBatteryMonitor() {
           if (stored) {
             printerBatteryPercent = parseInt(stored, 10);
           } else {
-            printerBatteryPercent = 92 + Math.floor(Math.random() * 6);
+            printerBatteryPercent = 76 + Math.floor(Math.random() * 5);
           }
           localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
         }
@@ -13811,9 +13957,6 @@ function dummyKeypadOldCode() {
     suffixText = isAr ? 'دينار' : 'IQD';
   } else if (inputElement.classList.contains('sale-porter-rate')) {
     titleText = isAr ? 'عمولة الحمالية للصندوق' : 'Porter Fee per Box';
-    suffixText = isAr ? 'دينار' : 'IQD';
-  } else if (inputElement.id === 'sale-bags-cost') {
-    titleText = isAr ? 'تكلفة الأكياس والكراتين' : 'Bags and Boxes Cost';
     suffixText = isAr ? 'دينار' : 'IQD';
   } else if (inputElement.classList.contains('import-crop-weight')) {
     titleText = isAr ? 'الوزن الكلي القائم (كغم)' : 'Total Weight (Kg)';
