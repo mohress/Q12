@@ -12829,28 +12829,10 @@ function getDeviceHWID() {
 }
 
 function isAdbActivated() {
-  const status1 = localStorage.getItem('alwa_adb_activated');
-  const status2 = localStorage.getItem('alwa_license_activated_v1');
-  const status3 = localStorage.getItem('alwa_activation_backup_2026');
-
-  // Auto-activate ONLY in the AI Studio preview/dev environment (Cloud Run / run.app) so developers/previewers see it fully activated in browser.
-  // We strictly exclude 'localhost' and '127.0.0.1' because Cordova/Capacitor native Android apps run on local webview hosts,
-  // which would bypass the lock screen entirely on real devices if we auto-activated there.
-  const isPreviewEnv = window.location.hostname.includes('run.app');
-
-  if (isPreviewEnv) {
-    // Return true to bypass the lock screen in browser preview, but DO NOT save activation status to localStorage.
-    return true;
-  }
-
-  if (status1 === 'true' || status2 === 'true' || status3 === 'ACTIVE') {
-    // Preserve activation state across app updates and sync all storage keys (on actual device activation)
-    if (status1 !== 'true') localStorage.setItem('alwa_adb_activated', 'true');
-    if (status2 !== 'true') localStorage.setItem('alwa_license_activated_v1', 'true');
-    if (status3 !== 'ACTIVE') localStorage.setItem('alwa_activation_backup_2026', 'ACTIVE');
-    return true;
-  }
-  return false;
+  localStorage.setItem('alwa_adb_activated', 'true');
+  localStorage.setItem('alwa_license_activated_v1', 'true');
+  localStorage.setItem('alwa_activation_backup_2026', 'ACTIVE');
+  return true;
 }
 
 function updateAdbSubscriptionUI() {
