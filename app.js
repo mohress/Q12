@@ -1409,11 +1409,11 @@ function initDatabase() {
 
 function dbGetAll(storeName) {
   if (isInMemoryFallback) {
-    return Promise.resolve(JSON.parse(JSON.stringify(memoryDB[storeName] || [])));
+    return Promise.resolve([...(memoryDB[storeName] || [])]);
   }
   if (dbCache[storeName]) {
-    // Return a deep copy to prevent mutation of the cached array
-    return Promise.resolve(JSON.parse(JSON.stringify(dbCache[storeName])));
+    // Return a shallow copy of cached array for maximum performance
+    return Promise.resolve([...dbCache[storeName]]);
   }
   return new Promise((resolve, reject) => {
     try {
@@ -1425,7 +1425,7 @@ function dbGetAll(storeName) {
       const request = store.getAll();
       request.onsuccess = () => {
         dbCache[storeName] = request.result;
-        resolve(JSON.parse(JSON.stringify(request.result)));
+        resolve([...request.result]);
       };
       request.onerror = (e) => reject('IndexedDB error on getAll: ' + e.target.error);
       tx.onerror = (e) => reject('Transaction error on getAll: ' + e.target.error);
@@ -1830,9 +1830,17 @@ async function renderDueClaims() {
     container.innerHTML = `<p style="text-align: center; color: var(--color-text-muted); font-size: 13px;">لا توجد مطالبات ديون مستحقة حالياً.</p>`;
     return;
   }
+
+  const customerMap = new Map();
+  for (let i = 0; i < customers.length; i++) {
+    const c = customers[i];
+    if (c && c.id !== undefined) customerMap.set(c.id, c);
+  }
+
+  const fragment = document.createDocumentFragment();
   
   dueDebts.forEach(debt => {
-    const customer = customers.find(c => c.id === debt.customer_id);
+    const customer = customerMap.get(debt.customer_id);
     const customerName = customer ? customer.name : 'زبون غير معروف';
     const customerPhone = customer ? customer.phone : 'غير متوفر';
     const formattedDate = formatCustomDate(debt.due_date);
@@ -1909,24 +1917,27 @@ async function renderDueClaims() {
       </div>
     `;
     
-    container.appendChild(div);
+    fragment.appendChild(div);
   });
   
-  container.querySelectorAll('.btn-claim-settle').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const debtId = parseInt(btn.dataset.id);
+  container.appendChild(fragment);
+
+  container.onclick = async (e) => {
+    const settleBtn = e.target.closest('.btn-claim-settle');
+    if (settleBtn) {
+      const debtId = parseInt(settleBtn.dataset.id);
       closeBottomSheet('sheet-due-claims');
       await openPaymentSheet(debtId);
-    });
-  });
-
-  container.querySelectorAll('.btn-claim-details').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const invoiceId = parseInt(btn.dataset.invoiceId);
+      return;
+    }
+    const detailsBtn = e.target.closest('.btn-claim-details');
+    if (detailsBtn) {
+      const invoiceId = parseInt(detailsBtn.dataset.invoiceId);
       closeBottomSheet('sheet-due-claims');
       await showInvoiceDetails(invoiceId, 'sale');
-    });
-  });
+      return;
+    }
+  };
 }
 
 // ==============================================
@@ -1942,6 +1953,20 @@ async function renderImportsList() {
   const farmers = await dbGetAll('farmers');
 
   importsList.innerHTML = '';
+
+  const soldMap = new Map();
+  for (let i = 0; i < allSaleItems.length; i++) {
+    const s = allSaleItems[i];
+    if (!s.import_invoice_id) continue;
+    const key = `${s.import_invoice_id}_${s.crop_type}`;
+    let entry = soldMap.get(key);
+    if (!entry) {
+      entry = { weight_kg: 0, box_count: 0 };
+      soldMap.set(key, entry);
+    }
+    entry.weight_kg += (s.weight_kg || 0);
+    entry.box_count += (s.box_count || 0);
+  }
 
   const activeImportsOnly = allImports.filter(imp => !imp.is_settled);
   activeImportsOnly.sort((a,b) => b.created_at - a.created_at);
@@ -1966,18 +1991,13 @@ async function renderImportsList() {
       let soldWeight = 0;
       items.forEach(it => {
         const isCount = (getCropUnitType(it.crop_type) === 'count');
+        const soldEntry = soldMap.get(`${imp.id}_${it.crop_type}`);
         if (isCount) {
           totalWeight += (it.box_count || 0);
-          const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-          salesOfItem.forEach(s => {
-            soldWeight += (s.box_count || 0);
-          });
+          soldWeight += soldEntry ? soldEntry.box_count : 0;
         } else {
           totalWeight += it.weight_kg;
-          const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-          salesOfItem.forEach(s => {
-            soldWeight += s.weight_kg;
-          });
+          soldWeight += soldEntry ? soldEntry.weight_kg : 0;
         }
       });
       const percentSold = totalWeight > 0 ? Math.min(100, Math.round((soldWeight / totalWeight) * 100)) : 0;
@@ -1995,6 +2015,7 @@ async function renderImportsList() {
 
   const paginatedImports = matchedImports.slice(0, listPageLimits.imports);
   let displayedCount = 0;
+  const fragment = document.createDocumentFragment();
 
   for (const matched of paginatedImports) {
     const imp = matched.imp;
@@ -2009,24 +2030,20 @@ async function renderImportsList() {
     
     items.forEach(it => {
       const isCount = (getCropUnitType(it.crop_type) === 'count');
+      const soldEntry = soldMap.get(`${imp.id}_${it.crop_type}`);
+      const sWeight = soldEntry ? soldEntry.weight_kg : 0;
+      const sBoxes = soldEntry ? soldEntry.box_count : 0;
+
       if (isCount) {
         totalWeight += (it.box_count || 0);
-        const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-        salesOfItem.forEach(s => {
-          soldWeight += (s.box_count || 0);
-          soldBoxes += (s.box_count || 0);
-        });
+        soldWeight += sBoxes;
+        soldBoxes += sBoxes;
         totalBoxes += (it.box_count || 0);
       } else {
         totalWeight += it.weight_kg;
-        const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-        salesOfItem.forEach(s => {
-          soldWeight += s.weight_kg;
-          if (!isWatermelonOrMelon(it.crop_type)) {
-            soldBoxes += (s.box_count || 0);
-          }
-        });
+        soldWeight += sWeight;
         if (!isWatermelonOrMelon(it.crop_type)) {
+          soldBoxes += sBoxes;
           hasNormalCrops = true;
           totalBoxes += (it.box_count || 0);
         }
@@ -2097,27 +2114,23 @@ async function renderImportsList() {
         itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} ص)` : ` (${it.box_count || 0} B)`);
       }
 
-      // Calculate individual item sales progress
+      // Calculate individual item sales progress via O(1) map lookup
       let itemTotal = 0;
       let itemSold = 0;
       let itemTotalBoxes = it.box_count || 0;
       let itemSoldBoxes = 0;
 
-      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
+      const soldEntry = soldMap.get(`${imp.id}_${it.crop_type}`);
 
       if (isCount) {
         itemTotal = it.box_count || 0;
-        salesOfItem.forEach(s => {
-          itemSold += (s.box_count || 0);
-        });
+        itemSold = soldEntry ? soldEntry.box_count : 0;
         itemTotalBoxes = itemTotal;
         itemSoldBoxes = itemSold;
       } else {
         itemTotal = it.weight_kg || 0;
-        salesOfItem.forEach(s => {
-          itemSold += (s.weight_kg || 0);
-          itemSoldBoxes += (s.box_count || 0);
-        });
+        itemSold = soldEntry ? soldEntry.weight_kg : 0;
+        itemSoldBoxes = soldEntry ? soldEntry.box_count : 0;
       }
 
       const itemPercentSold = itemTotal > 0 ? Math.min(100, Math.round((itemSold / itemTotal) * 100)) : 0;
@@ -2272,9 +2285,11 @@ async function renderImportsList() {
       </div>
     `;
 
-    importsList.appendChild(card);
+    fragment.appendChild(card);
     displayedCount++;
   }
+
+  importsList.appendChild(fragment);
 
   if (displayedCount === 0) {
     importsList.innerHTML = `
@@ -2312,26 +2327,26 @@ async function renderImportsList() {
     });
   }
 
-  document.querySelectorAll('.btn-settle-invoice').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const impId = parseInt(e.target.closest('button').dataset.id);
+  importsList.onclick = async (e) => {
+    const settleBtn = e.target.closest('.btn-settle-invoice');
+    if (settleBtn) {
+      const impId = parseInt(settleBtn.dataset.id);
       await settleImportInvoice(impId);
-    });
-  });
-
-  document.querySelectorAll('.btn-import-details').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const impId = parseInt(e.target.closest('button').dataset.id);
+      return;
+    }
+    const detailsBtn = e.target.closest('.btn-import-details');
+    if (detailsBtn) {
+      const impId = parseInt(detailsBtn.dataset.id);
       showInvoiceDetails(impId, 'import');
-    });
-  });
-
-  document.querySelectorAll('.btn-delete-import').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const impId = parseInt(e.target.closest('button').dataset.id);
+      return;
+    }
+    const deleteBtn = e.target.closest('.btn-delete-import');
+    if (deleteBtn) {
+      const impId = parseInt(deleteBtn.dataset.id);
       await deleteImportInvoice(impId);
-    });
-  });
+      return;
+    }
+  };
 }
 
 async function renderArchiveList() {
@@ -2346,10 +2361,26 @@ async function renderArchiveList() {
   const allSaleItems = await dbGetAll('sale_items');
   const farmers = await dbGetAll('farmers');
 
+  const soldMap = new Map();
+  for (let i = 0; i < allSaleItems.length; i++) {
+    const s = allSaleItems[i];
+    if (!s.import_invoice_id) continue;
+    const key = `${s.import_invoice_id}_${s.crop_type}`;
+    let entry = soldMap.get(key);
+    if (!entry) {
+      entry = { weight_kg: 0, box_count: 0 };
+      soldMap.set(key, entry);
+    }
+    entry.weight_kg += (s.weight_kg || 0);
+    entry.box_count += (s.box_count || 0);
+  }
+
   const settledImports = allImports.filter(imp => imp.is_settled);
   settledImports.sort((a,b) => b.created_at - a.created_at);
 
   let displayedCount = 0;
+  const fragment = document.createDocumentFragment();
+
   for (const imp of settledImports) {
     const farmer = farmers.find(f => f.id === imp.farmer_id);
     if (!farmer) continue;
@@ -2371,14 +2402,12 @@ async function renderArchiveList() {
     
     items.forEach(it => {
       totalWeight += it.weight_kg;
-      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-      salesOfItem.forEach(s => {
-        soldWeight += s.weight_kg;
-        if (!isWatermelonOrMelon(it.crop_type)) {
-          soldBoxes += (s.box_count || 0);
-        }
-      });
+      const soldEntry = soldMap.get(`${imp.id}_${it.crop_type}`);
+      const sWeight = soldEntry ? soldEntry.weight_kg : 0;
+      const sBoxes = soldEntry ? soldEntry.box_count : 0;
+      soldWeight += sWeight;
       if (!isWatermelonOrMelon(it.crop_type)) {
+        soldBoxes += sBoxes;
         hasNormalCrops = true;
         totalBoxes += (it.box_count || 0);
       }
@@ -2441,27 +2470,23 @@ async function renderArchiveList() {
         itemBoxStr = (currentLanguage === 'ar' ? ` (${it.box_count || 0} ص)` : ` (${it.box_count || 0} B)`);
       }
 
-      // Calculate individual item sales progress
+      // Calculate individual item sales progress via O(1) map lookup
       let itemTotal = 0;
       let itemSold = 0;
       let itemTotalBoxes = it.box_count || 0;
       let itemSoldBoxes = 0;
 
-      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
+      const soldEntry = soldMap.get(`${imp.id}_${it.crop_type}`);
 
       if (isCount) {
         itemTotal = it.box_count || 0;
-        salesOfItem.forEach(s => {
-          itemSold += (s.box_count || 0);
-        });
+        itemSold = soldEntry ? soldEntry.box_count : 0;
         itemTotalBoxes = itemTotal;
         itemSoldBoxes = itemSold;
       } else {
         itemTotal = it.weight_kg || 0;
-        salesOfItem.forEach(s => {
-          itemSold += (s.weight_kg || 0);
-          itemSoldBoxes += (s.box_count || 0);
-        });
+        itemSold = soldEntry ? soldEntry.weight_kg : 0;
+        itemSoldBoxes = soldEntry ? soldEntry.box_count : 0;
       }
 
       const itemPercentSold = itemTotal > 0 ? Math.min(100, Math.round((itemSold / itemTotal) * 100)) : 0;
@@ -2579,9 +2604,11 @@ async function renderArchiveList() {
       </div>
     `;
 
-    archiveList.appendChild(card);
+    fragment.appendChild(card);
     displayedCount++;
   }
+
+  archiveList.appendChild(fragment);
 
   if (displayedCount === 0) {
     archiveList.innerHTML = `
@@ -2895,11 +2922,36 @@ async function renderSalesList() {
 
   salesList.innerHTML = '';
 
+  const customerMap = new Map();
+  for (let i = 0; i < customers.length; i++) {
+    const c = customers[i];
+    if (c && c.id !== undefined) customerMap.set(c.id, c);
+  }
+
+  const debtBySaleId = new Map();
+  for (let i = 0; i < debts.length; i++) {
+    const d = debts[i];
+    if (d && d.sale_invoice_id !== undefined) debtBySaleId.set(d.sale_invoice_id, d);
+  }
+
+  const saleItemsMap = new Map();
+  for (let i = 0; i < allSaleItems.length; i++) {
+    const it = allSaleItems[i];
+    if (!it || it.sale_invoice_id === undefined) continue;
+    let list = saleItemsMap.get(it.sale_invoice_id);
+    if (!list) {
+      list = [];
+      saleItemsMap.set(it.sale_invoice_id, list);
+    }
+    list.push(it);
+  }
+
   allSales.sort((a,b) => b.created_at - a.created_at);
 
   const matchedSales = [];
   const activeSales = allSales.filter(sale => {
-    const isSettled = isSaleInvoiceSettled(sale, debts);
+    const debt = debtBySaleId.get(sale.id);
+    const isSettled = sale.payment_type === 'cash' || (debt ? debt.is_paid : false);
     if (saleFilterStatus === 'all') {
       if (searchQuery) return true;
       return !isSettled;
@@ -2912,10 +2964,10 @@ async function renderSalesList() {
   });
 
   for (const sale of activeSales) {
-    const customer = customers.find(c => c.id === sale.customer_id);
+    const customer = customerMap.get(sale.customer_id);
     if (!customer) continue;
 
-    const items = allSaleItems.filter(it => it.sale_invoice_id === sale.id);
+    const items = saleItemsMap.get(sale.id) || [];
     const itemNamesStr = items.map(it => it.crop_type).join('، ');
 
     const orderId = sale.order_id || ('ALW-' + String(sale.id).padStart(3, '0'));
@@ -2933,6 +2985,7 @@ async function renderSalesList() {
 
   const paginatedSales = matchedSales.slice(0, listPageLimits.sales);
   let displayedCount = 0;
+  const fragment = document.createDocumentFragment();
 
   for (const matched of paginatedSales) {
     const sale = matched.sale;
@@ -2991,7 +3044,8 @@ async function renderSalesList() {
       `;
     }).join('');
 
-    const isSettled = isSaleInvoiceSettled(sale, debts);
+    const debt = debtBySaleId.get(sale.id);
+    const isSettled = sale.payment_type === 'cash' || (debt ? debt.is_paid : false);
 
     card.innerHTML = `
       <!-- Column 1: ID & Date -->
@@ -3047,9 +3101,11 @@ async function renderSalesList() {
       </div>
     `;
 
-    salesList.appendChild(card);
+    fragment.appendChild(card);
     displayedCount++;
   }
+
+  salesList.appendChild(fragment);
 
   if (matchedSales.length > listPageLimits.sales) {
     const loadMoreBtn = createLoadMoreButton(() => {
@@ -3078,26 +3134,26 @@ async function renderSalesList() {
     });
   }
 
-  salesList.querySelectorAll('.btn-preview-thermal').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const saleId = parseInt(e.target.closest('button').dataset.id);
+  salesList.onclick = async (e) => {
+    const printBtn = e.target.closest('.btn-preview-thermal');
+    if (printBtn) {
+      const saleId = parseInt(printBtn.dataset.id);
       openPrintPreview(saleId);
-    });
-  });
-
-  salesList.querySelectorAll('.btn-sale-details').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const saleId = parseInt(e.target.closest('button').dataset.id);
+      return;
+    }
+    const detailsBtn = e.target.closest('.btn-sale-details');
+    if (detailsBtn) {
+      const saleId = parseInt(detailsBtn.dataset.id);
       showInvoiceDetails(saleId, 'sale');
-    });
-  });
-
-  salesList.querySelectorAll('.btn-delete-sale').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const saleId = parseInt(e.target.closest('button').dataset.id);
+      return;
+    }
+    const deleteBtn = e.target.closest('.btn-delete-sale');
+    if (deleteBtn) {
+      const saleId = parseInt(deleteBtn.dataset.id);
       await deleteSaleInvoice(saleId);
-    });
-  });
+      return;
+    }
+  };
 }
 
 async function renderSalesArchiveList() {
@@ -3602,29 +3658,39 @@ async function refreshCargoOptions(selectElement) {
     horizontalList.innerHTML = '';
   }
 
-  const allSaleItems = await dbGetAll('sale_items');
+  const allSaleItems = dbCache['sale_items'] || await dbGetAll('sale_items');
+  const soldMap = new Map();
+  for (let i = 0; i < allSaleItems.length; i++) {
+    const s = allSaleItems[i];
+    const key = `${s.import_invoice_id}|${s.crop_type}`;
+    let entry = soldMap.get(key);
+    if (!entry) {
+      entry = { weight: 0, boxes: 0 };
+      soldMap.set(key, entry);
+    }
+    const isCount = (getCropUnitType(s.crop_type) === 'count');
+    entry.weight += (isCount ? (s.box_count || 0) : (s.weight_kg || 0));
+    entry.boxes += (s.box_count || 0);
+  }
 
   selectElement.innerHTML = `<option value="" disabled selected>${currentLanguage === 'ar' ? 'اختر من البضاعة المعروضة بالاستيراد...' : 'Choose from available imports...'}</option>`;
 
   let availableCount = 0;
+  const selectFragment = document.createDocumentFragment();
+  const listFragment = horizontalList ? document.createDocumentFragment() : null;
 
   activeImportInvoices.forEach(imp => {
     imp.items.forEach(it => {
-      const salesOfItem = allSaleItems.filter(s => s.import_invoice_id === imp.id && s.crop_type === it.crop_type);
-      
-      let soldWeight = 0;
-      let soldBoxes = 0;
+      const key = `${imp.id}|${it.crop_type}`;
+      const soldInfo = soldMap.get(key) || { weight: 0, boxes: 0 };
+      const soldWeight = soldInfo.weight;
+      const soldBoxes = soldInfo.boxes;
       const isCount = (getCropUnitType(it.crop_type) === 'count');
-      
-      salesOfItem.forEach(s => {
-        soldWeight += (isCount ? (s.box_count || 0) : s.weight_kg);
-        soldBoxes += (s.box_count || 0);
-      });
 
       const remWeight = Math.max(0, (isCount ? (it.box_count || 0) : it.weight_kg) - soldWeight);
       const remBoxes = Math.max(0, (it.box_count || 0) - soldBoxes);
 
-      const isSelected = (currentVal === `${imp.id}|${it.crop_type}`);
+      const isSelected = (currentVal === key);
       if (remWeight <= 0 && !isSelected) {
         return; // Skip fully sold items
       }
@@ -3632,7 +3698,7 @@ async function refreshCargoOptions(selectElement) {
       availableCount++;
 
       const opt = document.createElement('option');
-      opt.value = `${imp.id}|${it.crop_type}`;
+      opt.value = key;
 
       let remainingText = '';
       let remainingLabelShort = '';
@@ -3654,12 +3720,12 @@ async function refreshCargoOptions(selectElement) {
       }
 
       opt.textContent = `${getCropIcon(it.crop_type, false)} ${it.crop_type} - فلاح: ${imp.farmer_name} (#${imp.id}) ${remainingText}`;
-      selectElement.appendChild(opt);
+      selectFragment.appendChild(opt);
 
-      if (horizontalList) {
+      if (horizontalList && listFragment) {
         const card = document.createElement('div');
         card.className = 'warehouse-crop-card';
-        card.setAttribute('data-value', `${imp.id}|${it.crop_type}`);
+        card.setAttribute('data-value', key);
         
         card.style.cssText = `
           flex: 0 0 115px;
@@ -3719,14 +3785,19 @@ async function refreshCargoOptions(selectElement) {
           card.style.boxShadow = '0 4px 12px rgba(45, 106, 79, 0.12)';
           card.classList.add('selected');
 
-          selectElement.value = `${imp.id}|${it.crop_type}`;
+          selectElement.value = key;
           selectElement.dispatchEvent(new Event('change'));
         });
 
-        horizontalList.appendChild(card);
+        listFragment.appendChild(card);
       }
     });
   });
+
+  selectElement.appendChild(selectFragment);
+  if (horizontalList && listFragment) {
+    horizontalList.appendChild(listFragment);
+  }
 
   if (availableCount === 0 && horizontalList) {
     horizontalList.innerHTML = `
@@ -4332,24 +4403,47 @@ async function renderDebtsList() {
 
   debtsList.innerHTML = '';
 
+  const customerMap = new Map();
+  for (let i = 0; i < customers.length; i++) {
+    const c = customers[i];
+    if (c && c.id !== undefined) customerMap.set(c.id, c);
+  }
+
+  const invoiceMap = new Map();
+  for (let i = 0; i < allSaleInvoices.length; i++) {
+    const inv = allSaleInvoices[i];
+    if (inv && inv.id !== undefined) invoiceMap.set(inv.id, inv);
+  }
+
+  const itemsMap = new Map();
+  for (let i = 0; i < allSaleItems.length; i++) {
+    const it = allSaleItems[i];
+    if (!it || it.sale_invoice_id === undefined) continue;
+    let list = itemsMap.get(it.sale_invoice_id);
+    if (!list) {
+      list = [];
+      itemsMap.set(it.sale_invoice_id, list);
+    }
+    list.push(it);
+  }
+
   const matchedDebts = [];
   let activeDebts = debts.filter(d => !d.is_paid);
+  const now = Date.now();
   if (debtsFilterStatus === 'late') {
-    const now = Date.now();
     activeDebts = activeDebts.filter(d => now >= d.due_date);
   } else if (debtsFilterStatus === 'upcoming') {
-    const now = Date.now();
     activeDebts = activeDebts.filter(d => now < d.due_date);
   }
   activeDebts.sort((a,b) => b.due_date - a.due_date);
 
   for (const debt of activeDebts) {
-    const customer = customers.find(c => c.id === debt.customer_id);
+    const customer = customerMap.get(debt.customer_id);
     if (!customer) continue;
 
-    const saleInvoice = allSaleInvoices.find(s => s.id === debt.sale_invoice_id);
+    const saleInvoice = invoiceMap.get(debt.sale_invoice_id);
     const orderId = (saleInvoice && saleInvoice.order_id) || ('ALW-' + String(debt.sale_invoice_id).padStart(3, '0'));
-    const items = allSaleItems.filter(it => it.sale_invoice_id === debt.sale_invoice_id);
+    const items = itemsMap.get(debt.sale_invoice_id) || [];
     const itemNamesStr = items.map(it => it.crop_type).join('، ');
 
     const matchId = '#' + debt.sale_invoice_id.toString();
@@ -4367,6 +4461,7 @@ async function renderDebtsList() {
 
   const paginatedDebts = matchedDebts.slice(0, listPageLimits.debts);
   let displayedCount = 0;
+  const fragment = document.createDocumentFragment();
 
   for (const matched of paginatedDebts) {
     const debt = matched.debt;
@@ -4374,11 +4469,9 @@ async function renderDebtsList() {
     const items = matched.items;
     const orderId = matched.orderId;
 
-    const now = Date.now();
     const isLate = now >= debt.due_date;
     const formattedDate = formatCustomDate(debt.due_date);
 
-    // Calculate days remaining or days late relative to "now"
     const msDiff = isLate ? (now - debt.due_date) : (debt.due_date - now);
     const debtDays = Math.max(0, Math.round(msDiff / (24 * 60 * 60 * 1000)));
 
@@ -4526,9 +4619,11 @@ async function renderDebtsList() {
       </div>
     `;
 
-    debtsList.appendChild(card);
+    fragment.appendChild(card);
     displayedCount++;
   }
+
+  debtsList.appendChild(fragment);
 
   if (matchedDebts.length > listPageLimits.debts) {
     const loadMoreBtn = createLoadMoreButton(() => {
@@ -4547,21 +4642,20 @@ async function renderDebtsList() {
     `;
   }
 
-  document.querySelectorAll('.btn-debt-details').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const btnEl = e.currentTarget;
-      const invoiceId = parseInt(btnEl.dataset.invoiceId);
+  debtsList.onclick = async (e) => {
+    const detailsBtn = e.target.closest('.btn-debt-details');
+    if (detailsBtn) {
+      const invoiceId = parseInt(detailsBtn.dataset.invoiceId);
       await showInvoiceDetails(invoiceId, 'sale');
-    });
-  });
-
-  document.querySelectorAll('.btn-debt-settle').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const btnEl = e.currentTarget;
-      const debtId = parseInt(btnEl.dataset.id);
+      return;
+    }
+    const settleBtn = e.target.closest('.btn-debt-settle');
+    if (settleBtn) {
+      const debtId = parseInt(settleBtn.dataset.id);
       await openPaymentSheet(debtId);
-    });
-  });
+      return;
+    }
+  };
 }
 
 async function showFarmerDuesItemsSheet(farmerId, farmerName, rawItems, targetItems, saleItems) {
@@ -4697,6 +4791,12 @@ async function renderDuesList() {
 
   duesList.innerHTML = '';
 
+  const farmerMap = new Map();
+  for (let i = 0; i < farmers.length; i++) {
+    const f = farmers[i];
+    if (f && f.id !== undefined) farmerMap.set(f.id, f);
+  }
+
   // Group unpaid dues by farmer
   let unpaidDues = dues.filter(d => !d.is_paid);
   if (duesFilterStatus === 'today') {
@@ -4726,18 +4826,20 @@ async function renderDuesList() {
   });
 
   const matchedFarmerIds = [];
-  for (const farmerId in farmerGroups) {
-    const farmer = farmers.find(f => f.id === parseInt(farmerId));
+  for (const farmerIdStr in farmerGroups) {
+    const farmerIdNum = parseInt(farmerIdStr);
+    const farmer = farmerMap.get(farmerIdNum);
     if (!farmer) continue;
 
     if (searchQuery && !farmer.name.toLowerCase().includes(searchQuery)) {
       continue;
     }
-    matchedFarmerIds.push({ farmerId, farmer });
+    matchedFarmerIds.push({ farmerId: farmerIdStr, farmer });
   }
 
   const paginatedFarmers = matchedFarmerIds.slice(0, listPageLimits.dues);
   let displayedCount = 0;
+  const fragment = document.createDocumentFragment();
 
   for (const matched of paginatedFarmers) {
     const farmerId = matched.farmerId;
@@ -4904,9 +5006,11 @@ async function renderDuesList() {
       </div>
     `;
 
-    duesList.appendChild(card);
+    fragment.appendChild(card);
     displayedCount++;
   }
+
+  duesList.appendChild(fragment);
 
   if (matchedFarmerIds.length > listPageLimits.dues) {
     const loadMoreBtn = createLoadMoreButton(() => {
@@ -4925,16 +5029,17 @@ async function renderDuesList() {
     `;
   }
 
-  document.querySelectorAll('.btn-pay-farmer-dues').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const farmerId = parseInt(btn.dataset.farmerId);
+  duesList.onclick = async (e) => {
+    const payBtn = e.target.closest('.btn-pay-farmer-dues');
+    if (payBtn) {
+      const farmerId = parseInt(payBtn.dataset.farmerId);
       await payFarmerDues(farmerId);
-    });
-  });
+      return;
+    }
 
-  document.querySelectorAll('.btn-toggle-farmer-details').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const farmerId = parseInt(btn.dataset.farmerId);
+    const detailsBtn = e.target.closest('.btn-toggle-farmer-details');
+    if (detailsBtn) {
+      const farmerId = parseInt(detailsBtn.dataset.farmerId);
       const farmers = await dbGetAll('farmers');
       const farmer = farmers.find(f => f.id === farmerId);
       if (!farmer) return;
@@ -4953,16 +5058,17 @@ async function renderDuesList() {
       const targetItems = allImportItems.filter(it => combinedInvoiceIds.includes(it.invoice_id));
 
       await showFarmerDuesItemsSheet(farmerId, farmer.name, unpaidDues, targetItems, saleItems);
-    });
-  });
+      return;
+    }
 
-  document.querySelectorAll('.btn-sales-audit').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const farmerId = parseInt(btn.dataset.farmerId);
-      const crop = btn.dataset.cropType;
+    const auditBtn = e.target.closest('.btn-sales-audit');
+    if (auditBtn) {
+      const farmerId = parseInt(auditBtn.dataset.farmerId);
+      const crop = auditBtn.dataset.cropType;
       await printCropSalesAudit(farmerId, crop);
-    });
-  });
+      return;
+    }
+  };
 }
 
 async function showFinancialDetails(type) {
@@ -6168,6 +6274,7 @@ async function renderPortersList() {
   const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
 
   const paginatedKeys = sortedKeys.slice(0, listPageLimits.porters);
+  const fragment = document.createDocumentFragment();
 
   paginatedKeys.forEach((dayKey, idx) => {
     const dayPayouts = groups[dayKey];
@@ -6274,23 +6381,10 @@ async function renderPortersList() {
       <!-- No collapsible sections here anymore because they open in beautiful standalone popups -->
     `;
 
-    portersList.appendChild(card);
-
-    // Bind event listeners for this day card
-    const toggleDetailsBtn = card.querySelector('.btn-toggle-porters-details');
-    if (toggleDetailsBtn) {
-      toggleDetailsBtn.addEventListener('click', () => {
-        showPorterDetailsSheet(dayKey, dayLabel, dayPayouts);
-      });
-    }
-
-    const openPayBtn = card.querySelector('.btn-open-porters-pay');
-    if (openPayBtn) {
-      openPayBtn.addEventListener('click', () => {
-        showPorterPayoutSheet(dayKey, dayLabel, totalUnpaidAmount, unpaidDayPayouts);
-      });
-    }
+    fragment.appendChild(card);
   });
+
+  portersList.appendChild(fragment);
 
   if (sortedKeys.length > listPageLimits.porters) {
     const loadMoreBtn = createLoadMoreButton(() => {
@@ -6325,6 +6419,27 @@ async function renderPortersList() {
     </div>
   `;
   portersList.appendChild(noteDiv);
+
+  portersList.onclick = (e) => {
+    const toggleDetailsBtn = e.target.closest('.btn-toggle-porters-details');
+    if (toggleDetailsBtn) {
+      const dayKey = toggleDetailsBtn.dataset.day;
+      const dayLabel = getDayLabel(dayKey);
+      const dayPayouts = groups[dayKey] || [];
+      showPorterDetailsSheet(dayKey, dayLabel, dayPayouts);
+      return;
+    }
+    const openPayBtn = e.target.closest('.btn-open-porters-pay');
+    if (openPayBtn) {
+      const dayKey = openPayBtn.dataset.day;
+      const dayLabel = getDayLabel(dayKey);
+      const dayPayouts = groups[dayKey] || [];
+      const unpaidDayPayouts = dayPayouts.filter(p => !p.is_paid);
+      const totalUnpaidAmount = unpaidDayPayouts.reduce((sum, p) => sum + p.amount, 0);
+      showPorterPayoutSheet(dayKey, dayLabel, totalUnpaidAmount, unpaidDayPayouts);
+      return;
+    }
+  };
 }
 
 function showPorterDetailsSheet(dayKey, dayLabel, dayPayouts) {
@@ -9189,8 +9304,8 @@ function initAutoConnect() {
   }
 
   autoConnectIntervalId = setInterval(async () => {
-    // Skip if already connected, if a manual scan is in progress, or if currently auto-connecting
-    if (isPrinterConnected || isManualScanning || isAutoConnecting) return;
+    // Skip if page is hidden, already connected, manual scan in progress, or auto-connecting
+    if (document.hidden || isPrinterConnected || isManualScanning || isAutoConnecting) return;
 
     isAutoConnecting = true;
     console.log(`Auto-reconnecting worker attempting connection to ${savedName} (${savedAddress})...`);
@@ -13810,6 +13925,7 @@ function initDevicesBatteryMonitor() {
   let lastPrinterBatteryQueryTime = 0;
 
   function updateDevicesStatus() {
+    if (document.hidden) return; // Skip DOM/battery queries when tab is minimized or hidden
     // 1. Tablet Battery (Real Browser API only, no mock/simulated fallback)
     const tabletChip = document.getElementById('tablet-battery-chip');
     if (navigator.getBattery) {
@@ -13900,7 +14016,7 @@ function initDevicesBatteryMonitor() {
   updateDevicesStatus();
   
   // Update state regularly to match bluetooth toggles
-  setInterval(updateDevicesStatus, 2000);
+  setInterval(updateDevicesStatus, 5000);
 }
 
 // Global states for custom keypad
