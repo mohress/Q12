@@ -338,7 +338,6 @@ export class BLEPrinterDriver {
       }
     });
 
-    clone.id = 'html2canvas-print-clone';
     document.body.appendChild(clone);
 
     let rawCanvas: HTMLCanvasElement;
@@ -351,29 +350,7 @@ export class BLEPrinterDriver {
         backgroundColor: '#FFFFFF',
         logging: false,
         useCORS: false,
-        imageTimeout: 0,
-        onclone: (clonedDoc: Document) => {
-          // Remove all script elements
-          const scripts = clonedDoc.querySelectorAll('script');
-          scripts.forEach(s => s.remove());
-
-          // Remove Google Fonts links and any other external styles to prevent blocking/network overhead
-          const fontLinks = clonedDoc.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"], link[href*="googleapis.com"]');
-          fontLinks.forEach(link => link.remove());
-
-          // Strip the entire body down to ONLY our target cloned element
-          const clonedElement = clonedDoc.getElementById('html2canvas-print-clone');
-          if (clonedElement) {
-            const body = clonedDoc.body;
-            while (body.firstChild) {
-              body.removeChild(body.firstChild);
-            }
-            body.appendChild(clonedElement);
-            clonedElement.style.position = 'static';
-            clonedElement.style.margin = '0 auto';
-            clonedElement.style.display = 'block';
-          }
-        }
+        imageTimeout: 150
       } as any);
       
       PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي بنجاح. أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
