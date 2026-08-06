@@ -10018,14 +10018,6 @@ function saveOfficeInfo() {
   officeChangesCount++;
   localStorage.setItem('alwa_office_changes_count', officeChangesCount.toString());
 
-  // Restore read-only state for safety
-  const setOfficeName = document.getElementById('setting-office-name');
-  if (setOfficeName) {
-    setOfficeName.readOnly = true;
-    setOfficeName.style.backgroundColor = 'rgba(0,0,0,0.03)';
-    setOfficeName.style.cursor = 'pointer';
-  }
-
   showToast(currentLanguage === 'ar' ? 'تم حفظ التعديلات وتحديث ترويسة الفواتير بنجاح!' : 'Office details saved successfully!', 'check_circle');
 }
 
@@ -11472,16 +11464,10 @@ function updateUIActiveTab(tabId) {
     const setOfficeName = document.getElementById('setting-office-name');
     if (setOfficeName) {
       setOfficeName.value = officeName;
-      setOfficeName.readOnly = true;
-      setOfficeName.style.backgroundColor = 'rgba(0,0,0,0.03)';
-      setOfficeName.style.cursor = 'pointer';
     }
     const setOfficeOwner = document.getElementById('setting-office-owner');
     if (setOfficeOwner) {
       setOfficeOwner.value = officeOwner;
-      setOfficeOwner.readOnly = true;
-      setOfficeOwner.style.backgroundColor = 'rgba(0,0,0,0.03)';
-      setOfficeOwner.style.cursor = 'pointer';
     }
     const setOfficePhone = document.getElementById('setting-office-phone');
     if (setOfficePhone) setOfficePhone.value = officePhone;
@@ -13697,36 +13683,6 @@ function checkUrlAdbActivation() {
 
     // 18. Bind Office Info Save
     document.getElementById('btn-save-office-settings').addEventListener('click', saveOfficeInfo);
-
-    const setOfficeNameInput = document.getElementById('setting-office-name');
-    if (setOfficeNameInput) {
-      setOfficeNameInput.addEventListener('click', () => {
-        if (setOfficeNameInput.readOnly) {
-          openPasscodeDialog('1964', () => {
-            setOfficeNameInput.readOnly = false;
-            setOfficeNameInput.style.backgroundColor = '';
-            setOfficeNameInput.style.cursor = 'auto';
-            setOfficeNameInput.focus();
-            showToast(currentLanguage === 'ar' ? 'تم فك قفل اسم العلوة بنجاح!' : 'Office name unlocked successfully!', 'check_circle');
-          });
-        }
-      });
-    }
-
-    const setOfficeOwnerInput = document.getElementById('setting-office-owner');
-    if (setOfficeOwnerInput) {
-      setOfficeOwnerInput.addEventListener('click', () => {
-        if (setOfficeOwnerInput.readOnly) {
-          openPasscodeDialog('1964', () => {
-            setOfficeOwnerInput.readOnly = false;
-            setOfficeOwnerInput.style.backgroundColor = '';
-            setOfficeOwnerInput.style.cursor = 'auto';
-            setOfficeOwnerInput.focus();
-            showToast(currentLanguage === 'ar' ? 'تم فك قفل اسم صاحب العلوة بنجاح!' : 'Office owner name unlocked successfully!', 'check_circle');
-          });
-        }
-      });
-    }
 
     // 19. Initialize settings preferences
     numeralSystem = 'en';
