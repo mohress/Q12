@@ -1588,8 +1588,12 @@ async function checkAndBootstrapData() {
 // ==============================================
 // 5. NOTIFICATION SOUNDS (HTML5 Audio with Web Audio Synth Fallback)
 // ==============================================
-function playSound(type) {
+function playSound(type, forcePrintSuccess = false) {
   if (!soundEnabled) return;
+  if (!forcePrintSuccess) {
+    // Silence all action and interaction sounds as requested by the user, except print success
+    return;
+  }
 
   // Synthesizer fallback function to generate a premium digital POS beep sound
   function playSynthBeep(beepType) {
@@ -9817,7 +9821,9 @@ async function executePrintJob(saleId) {
     const success = await BLEPrinterDriver.printHTMLElement(container, config);
 
     if (success) {
-      playSound('success');
+      setTimeout(() => {
+        playSound('success', true);
+      }, 3000);
       showToast(currentLanguage === 'ar' ? 'تمت عملية الطباعة الرسومية بنجاح!' : 'Hardware raster print job dispatched successfully!', 'print');
       
       // Dynamic battery drain on print execution
