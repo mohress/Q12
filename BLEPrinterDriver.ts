@@ -349,8 +349,8 @@ export class BLEPrinterDriver {
         windowWidth: designWidth,
         backgroundColor: '#FFFFFF',
         logging: false,
-        useCORS: true,
-        allowTaint: true
+        useCORS: false,
+        imageTimeout: 0
       } as any);
       
       PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي بنجاح. أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
@@ -398,48 +398,46 @@ export class BLEPrinterDriver {
       const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
       const pixels = imgData.data;
 
-      // Pre-calculate grayscale values into a float buffer for error diffusion
-      const grayData = new Float32Array(canvasWidth * finalHeight);
-      for (let y = 0; y < finalHeight; y++) {
-        for (let x = 0; x < canvasWidth; x++) {
-          const idx = (y * canvasWidth + x) * 4;
-          const r = pixels[idx];
-          const g = pixels[idx + 1];
-          const b = pixels[idx + 2];
-          const a = pixels[idx + 3];
-          
-          if (a <= 128) {
-            grayData[y * canvasWidth + x] = 255; // Treat transparent as white paper
-          } else {
-            grayData[y * canvasWidth + x] = 0.299 * r + 0.587 * g + 0.114 * b;
-          }
+      // Ultra-optimized 1D linear loop to pre-calculate grayscale values
+      const len = canvasWidth * finalHeight;
+      const grayData = new Float32Array(len);
+      for (let i = 0; i < len; i++) {
+        const idx = i * 4;
+        const a = pixels[idx + 3];
+        if (a <= 128) {
+          grayData[i] = 255; // Treat transparent as white paper
+        } else {
+          grayData[i] = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
         }
       }
 
-      // Floyd-Steinberg Error Diffusion Dithering Pass
-      // This allows shading, light grey backgrounds, and alternating table rows
-      // to print correctly as fine stippled dots on monochrome thermal printers.
+      // Ultra-optimized Floyd-Steinberg Error Diffusion Dithering Pass with Cached Row Offsets
       for (let y = 0; y < finalHeight; y++) {
+        const rowOffset = y * canvasWidth;
+        const nextRowOffset = (y + 1) * canvasWidth;
+        const isLastRow = (y + 1) >= finalHeight;
+
         for (let x = 0; x < canvasWidth; x++) {
-          const idx = y * canvasWidth + x;
+          const idx = rowOffset + x;
           const oldVal = grayData[idx];
-          // Use 185 as threshold. Values below 185 become black (0), above become white (255)
           const newVal = oldVal < 185 ? 0 : 255;
           grayData[idx] = newVal;
-          
+
           const err = oldVal - newVal;
-          
-          // Distribute error to 4 neighbors (Floyd-Steinberg coefficients)
+          if (err === 0) continue; // Early skip: no error distribution needed
+
+          const err16 = err / 16;
+
           if (x + 1 < canvasWidth) {
-            grayData[idx + 1] += err * (7 / 16);
+            grayData[idx + 1] += err16 * 7;
           }
-          if (y + 1 < finalHeight) {
+          if (!isLastRow) {
             if (x > 0) {
-              grayData[(y + 1) * canvasWidth + (x - 1)] += err * (3 / 16);
+              grayData[nextRowOffset + (x - 1)] += err16 * 3;
             }
-            grayData[(y + 1) * canvasWidth + x] += err * (5 / 16);
+            grayData[nextRowOffset + x] += err16 * 5;
             if (x + 1 < canvasWidth) {
-              grayData[(y + 1) * canvasWidth + (x + 1)] += err * (1 / 16);
+              grayData[nextRowOffset + (x + 1)] += err16 * 1;
             }
           }
         }
