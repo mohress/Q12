@@ -38,7 +38,7 @@
   --color-primary-light: #40916C;
   --color-accent: #52B788;
   --color-white: #FFFFFF;
-  --color-surface: #F8FAF9;
+  --color-surface: #F3F6F4;
   --color-text-dark: #1A1A1A;
   --color-text-muted: #6B7280;
   
@@ -53,10 +53,10 @@
   --color-danger: #E63946;
   --color-info: #0077B6;
 
-  /* Shadows */
-  --shadow-premium: 0 12px 24px -10px rgba(27, 67, 50, 0.15), 0 4px 12px -5px rgba(27, 67, 50, 0.1);
-  --shadow-glow: 0 0 20px rgba(82, 183, 136, 0.35);
-  --shadow-dark-card: 0 10px 20px -8px rgba(27, 67, 50, 0.3);
+  /* Shadows (Removed for peak performance and pure flat look) */
+  --shadow-premium: none;
+  --shadow-glow: none;
+  --shadow-dark-card: none;
 
   /* Fonts */
   --font-family: 'Cairo', sans-serif;
@@ -121,7 +121,7 @@ body::after {
   background: 
     radial-gradient(circle at 10% 20%, rgba(82, 183, 136, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(45, 106, 79, 0.12) 0%, transparent 50%),
-    linear-gradient(135deg, #F0F4F2 0%, #F8FAF9 100%);
+    linear-gradient(135deg, #EBEEEC 0%, #F3F6F4 100%);
   transform: translate3d(0,0,0);
 }
 
@@ -5130,6 +5130,47 @@ body.no-animations * {
 .shake-error {
   animation: shake-error-anim 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
+
+/* --- Global Shadow & Filter Removal for Performance & Flat Aesthetics --- */
+*, *::before, *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+svg, svg *, .chart-bar:hover, 
+.badge-crop-name svg, .crop-grid-icon svg, .warehouse-crop-card svg, 
+.autocomplete-item svg, .crop-autocomplete-dropdown svg {
+  filter: none !important;
+}
+
+/* Enhancements for flat look: elevate hierarchy with clean subtle borders where shadows are missing */
+.bottom-sheet {
+  border: 1.5px solid rgba(27, 67, 50, 0.2) !important;
+  border-bottom: none !important;
+}
+
+.autocomplete-dropdown, .crop-autocomplete-dropdown {
+  border: 1.5px solid rgba(27, 67, 50, 0.25) !important;
+}
+
+.premium-card, .stats-summary-card, .developer-rights-card, .accent-card {
+  border: 1px solid rgba(27, 67, 50, 0.15) !important;
+}
+
+/* Optimize scroll performance for the due claims list */
+#due-claims-body {
+  will-change: scroll-position;
+  contain: content;
+  -webkit-overflow-scrolling: touch;
+}
+
+#due-claims-body > div,
+#due-claims-body .premium-card {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
 
 
 
