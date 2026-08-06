@@ -422,6 +422,10 @@ function renderAppLogs() {
 // Common fruits & vegetables dictionary with icons
 
 const customSvgs = {
+  'onion_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="onionGrad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#f472b6"/><stop offset="40%" stop-color="#db2777"/><stop offset="80%" stop-color="#9d174d"/><stop offset="100%" stop-color="#4c0519"/></radialGradient><linearGradient id="onionStem" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#78350f"/></linearGradient></defs><path d="M 42,83 Q 36,94 40,99 M 48,84 Q 48,97 47,100 M 54,84 Q 60,95 56,99 M 36,80 Q 28,90 32,95 M 62,80 Q 70,90 66,95" stroke="#fed7aa" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M 50,12 C 16,36 14,75 32,85 C 50,94 50,94 68,85 C 86,75 84,36 50,12 Z" fill="url(#onionGrad)"/><path d="M 50,12 C 28,34 26,68 38,84 M 50,12 C 38,36 36,70 48,86 M 50,12 C 46,36 44,70 50,86 M 50,12 C 54,36 56,70 52,86 M 50,12 C 62,36 64,70 52,86 M 50,12 C 72,34 74,68 62,84" stroke="rgba(253,242,248,0.32)" stroke-width="1.8" fill="none"/><path d="M 50,12 L 46,2 Q 51,-2 53,4 L 50,12 Z" fill="url(#onionStem)"/><ellipse cx="28" cy="38" rx="8" ry="16" transform="rotate(-30 28 38)" fill="rgba(255,255,255,0.45)" filter="blur(1px)"/></svg>`,
+  'bell_pepper_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="pepperGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="35%" stop-color="#dc2626"/><stop offset="80%" stop-color="#991b1b"/><stop offset="100%" stop-color="#450a0a"/></radialGradient><linearGradient id="pepperStem" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#15803d"/></linearGradient></defs><path d="M 50,22 Q 42,2 28,6 Q 36,15 48,22 Z" fill="url(#pepperStem)"/><path d="M 50,22 C 24,19 10,32 10,60 C 10,87 32,96 46,92 C 43,70 46,40 50,22 Z" fill="url(#pepperGrad)"/><path d="M 50,22 C 76,19 90,32 90,60 C 90,87 68,96 54,92 C 57,70 54,40 50,22 Z" fill="url(#pepperGrad)"/><path d="M 50,22 C 32,23 20,35 20,62 C 20,88 38,96 50,96 C 62,96 80,88 80,62 C 80,35 68,23 50,22 Z" fill="url(#pepperGrad)"/><ellipse cx="32" cy="38" rx="6" ry="14" transform="rotate(-25 32 38)" fill="rgba(255,255,255,0.55)" filter="blur(1px)"/><ellipse cx="68" cy="40" rx="5" ry="12" transform="rotate(25 68 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/><ellipse cx="50" cy="32" rx="12" ry="4" fill="rgba(255,255,255,0.25)" filter="blur(1px)"/></svg>`,
+  'garlic_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.22));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="garlicGrad" cx="45%" cy="45%" r="55%"><stop offset="0%" stop-color="#ffffff"/><stop offset="65%" stop-color="#f8fafc"/><stop offset="85%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#cbd5e1"/></radialGradient><linearGradient id="garlicStem" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#cbd5e1"/><stop offset="100%" stop-color="#a8a29e"/></linearGradient></defs><path d="M 40,84 Q 34,95 38,99 M 50,85 Q 50,97 51,100 M 60,84 Q 66,95 62,99 M 45,85 Q 42,93 44,97 M 55,85 Q 58,93 56,97" stroke="#a8a29e" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M 50,15 C 18,22 10,55 14,74 C 18,88 38,90 50,90 C 62,90 82,88 86,74 C 90,55 82,22 50,15 Z" fill="url(#garlicGrad)"/><path d="M 50,15 C 36,28 32,58 38,87 M 50,15 C 64,28 68,58 62,87 M 50,15 C 50,38 50,82 50,90" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 50,15 C 22,30 22,65 28,82 M 50,15 C 78,30 78,65 72,82" stroke="#e2e8f0" stroke-width="1.5" fill="none"/><path d="M 50,20 Q 38,32 36,70 M 50,20 Q 62,32 64,70 M 50,24 Q 45,35 44,75 M 50,24 Q 55,35 56,75" stroke="rgba(147,51,234,0.22)" stroke-width="1.5" fill="none"/><path d="M 50,15 L 46,3 Q 51,-1 53,4 L 50,15 Z" fill="url(#garlicStem)"/><ellipse cx="32" cy="42" rx="6" ry="14" transform="rotate(-25 32 42)" fill="rgba(255,255,255,0.75)" filter="blur(1px)"/></svg>`,
+  'ginger_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="gingerGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#fef08a"/><stop offset="30%" stop-color="#f59e0b"/><stop offset="75%" stop-color="#d97706"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient></defs><path d="M 35,45 C 20,40 10,55 18,70 C 25,80 40,75 42,65 Z" fill="url(#gingerGrad)"/><path d="M 60,35 C 55,20 75,10 85,22 C 92,30 85,45 75,45 Z" fill="url(#gingerGrad)"/><path d="M 30,60 C 20,70 25,90 45,90 C 65,90 75,70 65,50 C 55,40 40,45 30,60 Z" fill="url(#gingerGrad)"/><circle cx="26" cy="52" r="14" fill="url(#gingerGrad)"/><circle cx="68" cy="54" r="16" fill="url(#gingerGrad)"/><circle cx="48" cy="42" r="12" fill="url(#gingerGrad)"/><path d="M 18,52 Q 25,48 30,54 M 20,62 Q 28,57 33,64 M 36,70 Q 46,65 50,73 M 42,83 Q 52,79 56,86 M 60,48 Q 66,43 72,50 M 65,62 Q 72,57 77,65 M 42,46 Q 48,41 52,48 M 74,32 Q 80,28 84,34" stroke="#7c2d12" stroke-width="2" fill="none" opacity="0.65" stroke-linecap="round"/><ellipse cx="38" cy="54" rx="5" ry="12" transform="rotate(-30 38 54)" fill="rgba(255,255,255,0.35)" filter="blur(1px)"/><ellipse cx="70" cy="46" rx="4" ry="10" transform="rotate(15 70 46)" fill="rgba(255,255,255,0.25)" filter="blur(1px)"/></svg>`,
   'grapes_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="grapeStem" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/></linearGradient><radialGradient id="grapeGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#d8b4fe"/><stop offset="40%" stop-color="#a855f7"/><stop offset="85%" stop-color="#6b21a8"/><stop offset="100%" stop-color="#3b0764"/></radialGradient></defs><path d="M 50,25 C 45,10 55,5 50,5" stroke="url(#grapeStem)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M 50,20 C 30,10 25,25 45,28 C 50,25 45,15 50,20" fill="#22c55e"/><g fill="url(#grapeGrad)"><circle cx="38" cy="35" r="10"/><circle cx="62" cy="35" r="10"/><circle cx="50" cy="40" r="11"/><circle cx="28" cy="48" r="10"/><circle cx="72" cy="48" r="10"/><circle cx="50" cy="56" r="11"/><circle cx="38" cy="62" r="10"/><circle cx="62" cy="62" r="10"/><circle cx="50" cy="72" r="10"/><circle cx="42" cy="82" r="9"/><circle cx="58" cy="82" r="9"/><circle cx="50" cy="90" r="8"/></g><g fill="rgba(255,255,255,0.45)"><circle cx="35" cy="32" r="2.5"/><circle cx="59" cy="32" r="2.5"/><circle cx="47" cy="37" r="3"/><circle cx="25" cy="45" r="2.5"/><circle cx="69" cy="45" r="2.5"/><circle cx="47" cy="53" r="3"/><circle cx="35" cy="59" r="2.5"/><circle cx="59" cy="59" r="2.5"/><circle cx="47" cy="69" r="2.5"/></g></svg>`,
   'turnip_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="turnipGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="30%" stop-color="#9333ea"/><stop offset="60%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><path d="M 50,85 Q 45,95 50,100" stroke="#94a3b8" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 15,50 C 15,20 85,20 85,50 C 85,75 65,85 50,85 C 35,85 15,75 15,50 Z" fill="url(#turnipGrad)"/><path d="M 50,25 Q 35,5 20,15 C 30,25 40,25 50,25 Z" fill="#4ade80"/><path d="M 50,25 Q 65,5 80,15 C 70,25 60,25 50,25 Z" fill="#22c55e"/><path d="M 50,25 Q 50,0 50,10 C 55,20 50,25 50,25 Z" fill="#16a34a"/><ellipse cx="30" cy="45" rx="5" ry="12" transform="rotate(-20 30 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
   'radish_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="radishGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="50%" stop-color="#dc2626"/><stop offset="80%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#f8fafc"/></radialGradient></defs><path d="M 50,85 Q 50,95 55,100" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 20,50 C 20,25 80,25 80,50 C 80,75 60,85 50,85 C 40,85 20,75 20,50 Z" fill="url(#radishGrad)"/><path d="M 50,25 C 20,15 25,5 40,15 Z" fill="#22c55e"/><path d="M 50,25 C 80,15 75,5 60,15 Z" fill="#16a34a"/><path d="M 50,25 C 40,5 60,5 50,15 Z" fill="#15803d"/><ellipse cx="35" cy="45" rx="4" ry="10" transform="rotate(-30 35 45)" fill="rgba(255,255,255,0.5)" filter="blur(1px)"/></svg>`,
@@ -437,8 +441,8 @@ const customSvgs = {
   'lentils_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="lenGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#fb923c"/><stop offset="100%" stop-color="#9a3412"/></radialGradient></defs><circle cx="35" cy="45" r="15" fill="url(#lenGrad)"/><circle cx="65" cy="55" r="15" fill="url(#lenGrad)"/><circle cx="45" cy="70" r="15" fill="url(#lenGrad)"/></svg>`,
   'mungbeans_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="munGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#14532d"/></radialGradient></defs><ellipse cx="40" cy="50" rx="12" ry="18" fill="url(#munGrad)" transform="rotate(30 40 50)"/><ellipse cx="65" cy="65" rx="12" ry="18" fill="url(#munGrad)" transform="rotate(-20 65 65)"/><ellipse cx="70" cy="40" rx="12" ry="18" fill="url(#munGrad)" transform="rotate(45 70 40)"/></svg>`,
   'driedlime_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dlGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#d6d3d1"/><stop offset="50%" stop-color="#78716c"/><stop offset="100%" stop-color="#1c1917"/></radialGradient></defs><circle cx="50" cy="55" r="35" fill="url(#dlGrad)"/><circle cx="40" cy="40" r="3" fill="#44403c"/><circle cx="60" cy="45" r="4" fill="#44403c"/><circle cx="50" cy="70" r="3" fill="#44403c"/></svg>`,
-  'tangerine_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="tangGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#fef08a"/><stop offset="30%" stop-color="#fb923c"/><stop offset="80%" stop-color="#ea580c"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient></defs><ellipse cx="50" cy="60" rx="42" ry="34" fill="url(#tangGrad)"/><circle cx="50" cy="28" r="4" fill="#c2410c"/><circle cx="48" cy="27" r="1.5" fill="#7c2d12"/><path d="M 50,28 C 25,5 5,20 20,45 C 35,30 45,30 50,28 Z" fill="#22c55e"/><ellipse cx="35" cy="45" rx="8" ry="12" transform="rotate(-45 35 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
-  'cherrytomato_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="chtGrad" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="50%" stop-color="#ef4444"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient></defs><circle cx="50" cy="55" r="25" fill="url(#chtGrad)"/><path d="M 50,30 L 45,20 L 50,10 L 55,20 Z" fill="#166534"/><ellipse cx="40" cy="45" rx="4" ry="8" transform="rotate(-45 40 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'tangerine_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.22));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="tangGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#fde047"/><stop offset="25%" stop-color="#f97316"/><stop offset="75%" stop-color="#ea580c"/><stop offset="100%" stop-color="#9a3412"/></radialGradient><linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#15803d"/></linearGradient></defs><path d="M 50,26 C 26,6 6,18 18,44 C 34,34 45,32 50,26 Z" fill="url(#leafGrad)"/><path d="M 18,44 Q 32,32 50,26" stroke="#166534" stroke-width="1.8" fill="none"/><ellipse cx="50" cy="58" rx="44" ry="36" fill="url(#tangGrad)"/><g fill="#c2410c" opacity="0.35"><circle cx="22" cy="55" r="1.5"/><circle cx="32" cy="66" r="1.2"/><circle cx="42" cy="76" r="1.8"/><circle cx="52" cy="74" r="1.5"/><circle cx="62" cy="66" r="1.2"/><circle cx="72" cy="55" r="1.5"/><circle cx="28" cy="44" r="1.5"/><circle cx="40" cy="47" r="1.2"/><circle cx="60" cy="47" r="1.8"/><circle cx="72" cy="44" r="1.2"/><circle cx="50" cy="84" r="1.5"/><circle cx="36" cy="80" r="1.2"/><circle cx="64" cy="80" r="1.8"/></g><circle cx="50" cy="25" r="4" fill="#7c2d12"/><circle cx="49" cy="24" r="1.8" fill="#451a03"/><ellipse cx="34" cy="44" rx="7" ry="14" transform="rotate(-35 34 44)" fill="rgba(255,255,255,0.48)" filter="blur(1px)"/></svg>`,
+  'cherrytomato_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="cherryGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fecaca"/><stop offset="35%" stop-color="#ef4444"/><stop offset="80%" stop-color="#b91c1c"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient></defs><path d="M 15,15 Q 50,22 85,42" stroke="#15803d" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 30,18 L 33,32 M 52,23 L 54,42 M 72,34 L 74,53" stroke="#16a34a" stroke-width="2.2" fill="none"/><g><circle cx="33" cy="44" r="17" fill="url(#cherryGrad)"/><path d="M 33,27 L 29,31 L 37,31 L 28,29 L 38,29 Z" fill="#15803d"/><circle cx="26" cy="37" r="3" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/></g><g><circle cx="54" cy="56" r="19.5" fill="url(#cherryGrad)"/><path d="M 54,36.5 L 49,42 L 59,42 L 48,39 L 60,39 Z" fill="#15803d"/><circle cx="46" cy="48" r="3.5" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/></g><g><circle cx="74" cy="68" r="18" fill="url(#cherryGrad)"/><path d="M 74,50 L 69,55 L 79,55 L 68,52 L 80,52 Z" fill="#15803d"/><circle cx="66" cy="60" r="3.2" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/></g></svg>`,
   'cartoncorn_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="canGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#94a3b8"/><stop offset="50%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#475569"/></linearGradient></defs><rect x="25" y="30" width="50" height="60" rx="5" fill="url(#canGrad)"/><rect x="25" y="20" width="50" height="10" fill="#64748b"/><circle cx="50" cy="60" r="15" fill="#facc15"/><circle cx="45" cy="55" r="3" fill="#ca8a04"/><circle cx="55" cy="65" r="3" fill="#ca8a04"/></svg>`,
 
   'dragonfruit_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="dfPinkGrad" cx="40%" cy="40%" r="60%"><stop offset="0%" stop-color="#fbcfe8"/><stop offset="40%" stop-color="#f43f5e"/><stop offset="80%" stop-color="#e11d48"/><stop offset="100%" stop-color="#9f1239"/></radialGradient></defs><ellipse cx="50" cy="55" rx="35" ry="40" fill="url(#dfPinkGrad)"/><path d="M 25,40 Q 10,25 20,20 Q 25,30 35,35 Z" fill="#4ade80"/><path d="M 45,30 Q 30,10 40,5 Q 50,15 55,25 Z" fill="#4ade80"/><path d="M 70,45 Q 85,30 75,20 Q 65,30 60,40 Z" fill="#4ade80"/><path d="M 18,65 Q 5,55 10,45 Q 20,55 25,60 Z" fill="#4ade80"/><path d="M 80,65 Q 95,55 90,45 Q 80,55 75,60 Z" fill="#4ade80"/><path d="M 40,80 Q 25,95 40,95 Q 50,85 55,75 Z" fill="#4ade80"/><ellipse cx="35" cy="45" rx="6" ry="12" transform="rotate(-30 35 45)" fill="rgba(255,255,255,0.3)" filter="blur(1px)"/></svg>`,
@@ -458,7 +462,7 @@ const customSvgs = {
     <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
     <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
   </svg>`,
-  'jujube_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="jujubeGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="40%" stop-color="#dc2626"/><stop offset="80%" stop-color="#991b1b"/><stop offset="100%" stop-color="#450a0a"/></radialGradient></defs><ellipse cx="50" cy="55" rx="25" ry="35" fill="url(#jujubeGrad)"/><path d="M 50,20 Q 55,10 60,5" stroke="#78350f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50,20 C 60,15 65,25 55,30 C 45,25 45,15 50,20 Z" fill="#22c55e"/><ellipse cx="40" cy="45" rx="3" ry="12" transform="rotate(-15 40 45)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/></svg>`,
+  'jujube_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="jujubeRed" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="30%" stop-color="#b91c1c"/><stop offset="80%" stop-color="#7f1d1d"/><stop offset="100%" stop-color="#450a0a"/></radialGradient><radialGradient id="jujubeYellow" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#fef08a"/><stop offset="45%" stop-color="#ca8a04"/><stop offset="90%" stop-color="#854d0e"/><stop offset="100%" stop-color="#451a03"/></radialGradient></defs><path d="M 50,28 Q 28,8 16,24 Q 35,34 50,28 Z" fill="#15803d"/><path d="M 50,28 Q 72,8 84,24 Q 65,34 50,28 Z" fill="#166534"/><path d="M 50,28 Q 42,40 34,48 M 50,28 Q 55,40 64,48" stroke="#78350f" stroke-width="2.8" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="65" rx="19" ry="25" transform="rotate(-15 32 65)" fill="url(#jujubeYellow)"/><ellipse cx="25" cy="55" rx="4.5" ry="11" transform="rotate(-30 25 55)" fill="rgba(255,255,255,0.45)" filter="blur(1px)"/><ellipse cx="64" cy="65" rx="19" ry="25" transform="rotate(15 64 65)" fill="url(#jujubeRed)"/><ellipse cx="57" cy="55" rx="4.5" ry="11" transform="rotate(10 57 55)" fill="rgba(255,255,255,0.45)" filter="blur(1px)"/></svg>`,
   'persimmon_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
     <radialGradient id="perGrad" cx="30%" cy="30%" r="70%">
       <stop offset="0%" stop-color="#fdba74"/>
@@ -471,7 +475,7 @@ const customSvgs = {
     <ellipse cx="35" cy="35" rx="8" ry="14" transform="rotate(-45 35 35)" fill="rgba(255,255,255,0.6)" filter="blur(1px)"/>
     <path d="M 50,15 C 30,5 20,20 50,25 Z" fill="#4ade80"/><path d="M 50,25 C 48,15 52,15 50,15" stroke="#166534" stroke-width="2" fill="none"/>
   </svg>`,
-  'mangosteen_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="mangoGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#7e22ce"/><stop offset="60%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#2e1065"/></radialGradient><radialGradient id="mangLeafGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#14532d"/></radialGradient></defs><circle cx="50" cy="60" r="35" fill="url(#mangoGrad)"/><path d="M 50,15 C 30,15 20,35 25,45 C 35,35 45,45 50,45 C 55,45 65,35 75,45 C 80,35 70,15 50,15 Z" fill="url(#mangLeafGrad)"/><circle cx="50" cy="25" r="4" fill="#064e3b"/><ellipse cx="35" cy="55" rx="8" ry="15" transform="rotate(-30 35 55)" fill="rgba(255,255,255,0.2)" filter="blur(1px)"/></svg>`,
+  'mangosteen_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="mangosteenGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#d8b4fe"/><stop offset="30%" stop-color="#6b21a8"/><stop offset="75%" stop-color="#3b0764"/><stop offset="100%" stop-color="#1e0030"/></radialGradient><linearGradient id="mangosteenLeaf" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#4ade80"/><stop offset="50%" stop-color="#16a34a"/><stop offset="100%" stop-color="#14532d"/></linearGradient></defs><circle cx="50" cy="58" r="38" fill="url(#mangosteenGrad)"/><path d="M 50,22 C 40,14 24,24 28,38 C 35,36 44,35 50,35 Z" fill="url(#mangosteenLeaf)"/><path d="M 50,22 C 60,14 76,24 72,38 C 65,36 56,35 50,35 Z" fill="url(#mangosteenLeaf)"/><path d="M 50,22 C 36,18 24,32 35,44 C 42,40 46,31 50,22 Z" fill="url(#mangosteenLeaf)" opacity="0.95"/><path d="M 50,22 C 64,18 76,32 65,44 C 58,40 54,31 50,22 Z" fill="url(#mangosteenLeaf)" opacity="0.95"/><path d="M 50,22 L 50,6 C 46,3 54,3 50,6" stroke="#15803d" stroke-width="6.5" stroke-linecap="round" fill="none"/><ellipse cx="34" cy="45" rx="7" ry="16" transform="rotate(-35 34 45)" fill="rgba(255,255,255,0.42)" filter="blur(1px)"/><ellipse cx="66" cy="72" rx="4" ry="9" transform="rotate(30 66 72)" fill="rgba(255,255,255,0.18)" filter="blur(1px)"/><g fill="#4a044e" opacity="0.8"><path d="M 50,86 L 47,94 L 53,94 Z"/><path d="M 50,86 L 42,91 L 46,86 Z"/><path d="M 50,86 L 58,91 L 54,86 Z"/><path d="M 50,86 L 43,81 L 48,83 Z"/><path d="M 50,86 L 57,81 L 52,83 Z"/></g></svg>`,
   'rambutan_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs>
     <radialGradient id="ramGrad" cx="30%" cy="30%" r="70%">
       <stop offset="0%" stop-color="#fca5a5"/>
@@ -733,7 +737,7 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "بروكلي", synonymsAr: [], nameEn: "Broccoli", icon: "🥦" },
   { primaryAr: "خرشوف", synonymsAr: ["أرضي شوكي"], nameEn: "Artichoke", icon: "artichoke_svg" },
   { primaryAr: "هليون", synonymsAr: [], nameEn: "Asparagus", icon: "asparagus_svg" },
-  { primaryAr: "زنجبيل", synonymsAr: [], nameEn: "Ginger", icon: "🫚" },
+  { primaryAr: "زنجبيل", synonymsAr: [], nameEn: "Ginger", icon: "ginger_svg" },
   { primaryAr: "كركم", synonymsAr: [], nameEn: "Turmeric", icon: "turmeric_svg" },
   { primaryAr: "جوز الهند", synonymsAr: [], nameEn: "Coconut", icon: "🥥" },
   { primaryAr: "سفرجل", synonymsAr: [], nameEn: "Quince", icon: "quince_svg" },
@@ -753,7 +757,7 @@ const CROP_SUGGESTIONS = [
   { primaryAr: "جانرك", synonymsAr: ["كرز أخضر"], nameEn: "Green Cherry Plum", icon: "greencherryplum_svg" },
   // New count-only crops
   { primaryAr: "باشن فروت", synonymsAr: ["فاكهة العاطفة"], nameEn: "Passion Fruit", icon: "passionfruit_svg", countOnly: true },
-  { primaryAr: "مانكو ستين", synonymsAr: ["مانغوستين"], nameEn: "Mangosteen", icon: "mangosteen_svg", countOnly: true },
+  { primaryAr: "مانكو ستين", synonymsAr: ["مانغوستين", "المانكوستين", "مانكوستين"], nameEn: "Mangosteen", icon: "mangosteen_svg", countOnly: true },
   { primaryAr: "رامبوتان", synonymsAr: [], nameEn: "Rambutan", icon: "rambutan_svg", countOnly: true },
   { primaryAr: "دراكون فروت", synonymsAr: ["فاكهة التنين", "بتايا"], nameEn: "Dragon Fruit", icon: "dragonfruit_svg", countOnly: true },
   { primaryAr: "ذرة كارتون", synonymsAr: ["ذرة معلبة"], nameEn: "Carton Corn", icon: "cartoncorn_svg", countOnly: true },
@@ -813,9 +817,21 @@ function saveCustomCrop(cropName, measureType) {
 function sanitizeCropIcon(icon, isHtml = true) {
   if (!icon) return '🥦';
 
-  // 1. If it's a known offline custom SVG, use it immediately
+  // 1. If it's a known offline custom SVG, use it immediately with unique IDs for gradients/defs to prevent browser rendering conflicts
   if (typeof customSvgs !== 'undefined' && customSvgs[icon]) {
-    if (isHtml) return customSvgs[icon];
+    if (isHtml) {
+      let svgContent = customSvgs[icon];
+      const uniqueSuffix = 'gen_' + Math.random().toString(36).substring(2, 9);
+      // Replace id="idName" with id="idName_uniqueSuffix"
+      svgContent = svgContent.replace(/id=["']([^"']+)["']/g, (match, idVal) => {
+        return `id="${idVal}_${uniqueSuffix}"`;
+      });
+      // Replace url(#idName) with url(#idName_uniqueSuffix)
+      svgContent = svgContent.replace(/url\(#([^)]+)\)/g, (match, urlId) => {
+        return `url(#${urlId}_${uniqueSuffix})`;
+      });
+      return svgContent;
+    }
     return '🌱';
   }
 
@@ -827,7 +843,7 @@ function sanitizeCropIcon(icon, isHtml = true) {
     'driedlime_svg': '🍋',
     'apple_svg': '🍎',
     'greenapple_svg': '🍏',
-    'pomegranate_svg': ' pomegranate_svg' in customSvgs ? null : '🍎',
+    'pomegranate_svg': 'pomegranate_svg' in customSvgs ? null : '🍎',
   };
 
   let cleanIcon = icon;
@@ -837,7 +853,17 @@ function sanitizeCropIcon(icon, isHtml = true) {
 
   // 3. If it is already an HTML tag (like <svg or <img)
   if (typeof cleanIcon === 'string' && (cleanIcon.trim().startsWith('<svg') || cleanIcon.trim().startsWith('<img'))) {
-    if (isHtml) return cleanIcon;
+    if (isHtml) {
+      let svgContent = cleanIcon;
+      const uniqueSuffix = 'gen_' + Math.random().toString(36).substring(2, 9);
+      svgContent = svgContent.replace(/id=["']([^"']+)["']/g, (match, idVal) => {
+        return `id="${idVal}_${uniqueSuffix}"`;
+      });
+      svgContent = svgContent.replace(/url\(#([^)]+)\)/g, (match, urlId) => {
+        return `url(#${urlId}_${uniqueSuffix})`;
+      });
+      return svgContent;
+    }
     return '🌱';
   }
 
@@ -2662,7 +2688,7 @@ function addImportCropRow() {
         <label class="import-crop-weight-label">${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن القائم (كغم)' : 'الوزن القائم (Kg)') : 'Weight (Kg)'}</label>
         <div style="position: relative;">
           <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">scale</span>
-          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? (numeralSystem === 'ar' ? 'الوزن...' : 'Weight...') : 'Weight...'}" required style="padding-right: 42px;">
+          <input type="number" class="form-input import-crop-weight" placeholder="${currentLanguage === 'ar' ? 'الوزن بالكيلو غرام' : 'Weight in Kg...'}" required style="padding-right: 42px;">
         </div>
       </div>
       <div class="form-group import-box-count-container" style="flex: 1; min-width: 100px;">
@@ -3035,7 +3061,7 @@ async function renderSalesList() {
         `;
       }
       return `
-        <span class="itr-item-badge">
+        <span class="itr-item-badge" style="position: relative; overflow: hidden; min-width: 150px; justify-content: center; margin: 2px;">
           <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
           <span class="badge-qty-group">
             ${qtyHtml}
@@ -3232,7 +3258,7 @@ async function renderSalesArchiveList() {
         `;
       }
       return `
-        <span class="itr-item-badge">
+        <span class="itr-item-badge" style="position: relative; overflow: hidden; min-width: 150px; justify-content: center; margin: 2px;">
           <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
           <span class="badge-qty-group">
             ${qtyHtml}
@@ -4555,7 +4581,7 @@ async function renderDebtsList() {
         `;
       }
       return `
-        <span class="itr-item-badge">
+        <span class="itr-item-badge" style="position: relative; overflow: hidden; min-width: 150px; justify-content: center; margin: 2px;">
           <span class="badge-crop-name">${getCropIcon(it.crop_type)} ${it.crop_type}</span>
           <span class="badge-qty-group">
             ${qtyHtml}
@@ -4731,7 +4757,7 @@ async function showFarmerDuesItemsSheet(farmerId, farmerName, rawItems, targetIt
       }
 
       return `
-        <div class="premium-card" style="display: flex; flex-direction: column; padding: 12px; gap: 8px; width: 100%;">
+        <div class="premium-card" style="display: flex; flex-direction: column; padding: 14px; gap: 8px; width: 100%;">
           <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 20px;">${cropIcon}</span>
@@ -4747,8 +4773,25 @@ async function showFarmerDuesItemsSheet(farmerId, farmerName, rawItems, targetIt
               <span>${currentLanguage === 'ar' ? 'جرد المبيعات' : 'Sales Audit'}</span>
             </button>
           </div>
+
+          <!-- Financial Breakdown equation -->
+          <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px solid rgba(0,0,0,0.03); padding-top: 8px; margin-top: 4px; font-family: Cairo, sans-serif; font-size: 11.5px;">
+            <div style="display: flex; justify-content: space-between; color: var(--color-text-muted); align-items: center;">
+              <span>${currentLanguage === 'ar' ? 'قيمة البضاعة المباعة بدون عمولات ثانوية:' : 'Sold Goods Value (without secondary commissions):'}</span>
+              <strong style="color: var(--color-text-dark); font-family: var(--font-mono), monospace;">${formatVal(items.reduce((sum, item) => sum + (item.sold_price || 0), 0), true)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: var(--color-text-muted); align-items: center;">
+              <span>${currentLanguage === 'ar' ? '+ 2% من قيمة هذه البضاعة:' : '+ 2% of this value:'}</span>
+              <strong style="color: var(--color-primary-mid); font-family: var(--font-mono), monospace;">+ ${formatVal(Math.round(items.reduce((sum, item) => sum + (item.sold_price || 0), 0) * 0.02), true)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px dashed rgba(45,106,79,0.15); padding-top: 6px; margin-top: 2px; align-items: center;">
+              <span style="color: var(--color-primary-dark);">${currentLanguage === 'ar' ? 'صافي المستحق للصرف:' : 'Net Due for Payout:'}</span>
+              <strong style="color: var(--color-success); font-family: var(--font-mono), monospace; font-size: 13.5px;">${formatVal(items.reduce((sum, item) => sum + (item.net_due || 0), 0), true)}</strong>
+            </div>
+          </div>
+
           <!-- Progress bar for individual crop sales progress -->
-          <div style="display: flex; flex-direction: column; gap: 3px; width: 100%; border-top: 1px solid rgba(0,0,0,0.03); padding-top: 6px; margin-top: 2px;">
+          <div style="display: flex; flex-direction: column; gap: 3px; width: 100%; border-top: 1px solid rgba(0,0,0,0.03); padding-top: 8px; margin-top: 2px;">
             <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); font-weight: 600;">
               <span>${currentLanguage === 'ar' ? 'نسبة البيع:' : 'Sales progress:'} <strong style="color: ${cropColorClass};">${formatVal(cropPercentSold)}%</strong></span>
               <span>${currentLanguage === 'ar' ? 'تم بيع:' : 'Sold:'} ${formatWeight(cropTotalSold, isCount ? 'count' : 'kg')} / ${formatWeight(cropTotalImported, isCount ? 'count' : 'kg')}</span>
@@ -5436,10 +5479,18 @@ async function printCropSalesAudit(farmerId, crop) {
       </tbody>
     </table>
 
-    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 800; font-size: 17px;">
+    <div style="border-top: 1.5px dashed #000; padding-top: 6px; direction: rtl; ${fontSizeClass} font-weight: 800; font-size: 15px; display: flex; flex-direction: column; gap: 4px;">
       <div style="display: flex; justify-content: space-between;">
-        <span>إجمالي المبيعات:</span>
+        <span>قيمة البضاعة المباعة بدون عمولات ثانوية:</span>
         <span>${formatVal(totalSoldPrice, true)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-weight: 700; color: #444;">
+        <span>+ 2% من قيمة هذه البضاعة:</span>
+        <span>+ ${formatVal(Math.round(totalSoldPrice * 0.02), true)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 17px; font-weight: 900; border-top: 1.5px dashed #000; padding-top: 4px; margin-top: 2px;">
+        <span>صافي مستحق المزارع الكلي:</span>
+        <span>${formatVal(totalSoldPrice + Math.round(totalSoldPrice * 0.02), true)}</span>
       </div>
     </div>
 
@@ -6729,10 +6780,42 @@ async function openFarmerPayoutSheet(farmerId) {
     return;
   }
 
+  // Calculate if there are any partial payments on these unpaid dues
+  let totalPartiallyPaid = 0;
+  for (const d of unpaidDues) {
+    const originalDue = d.sold_price + Math.round(d.sold_price * 0.02);
+    if (d.net_due < originalDue) {
+      totalPartiallyPaid += (originalDue - d.net_due);
+    }
+  }
+
   // Populate bottom-sheet info
   document.getElementById('payout-farmer-name').textContent = currentLanguage === 'ar' ? `الفلاح: ${farmer.name}` : `Farmer: ${farmer.name}`;
-  document.getElementById('payout-crop-sales').textContent = currentLanguage === 'ar' ? `إجمالي مبيعات محاصيله: ${formatVal(totalSales, true)}` : `Total Crop Sales: ${formatVal(totalSales, true)}`;
-  document.getElementById('payout-commission-2').textContent = currentLanguage === 'ar' ? `مجموع عمولته 2%: ${formatVal(commission2, true)}` : `Total 2% Commission: ${formatVal(commission2, true)}`;
+  document.getElementById('payout-crop-sales').textContent = currentLanguage === 'ar' 
+    ? `قيمة البضاعة المباعة بدون عمولات ثانوية: ${formatVal(totalSales, true)}` 
+    : `Value of sold goods without secondary commissions: ${formatVal(totalSales, true)}`;
+  document.getElementById('payout-commission-2').textContent = currentLanguage === 'ar' 
+    ? `+ 2% من قيمة هذه البضاعة: + ${formatVal(commission2, true)}` 
+    : `+ 2% of the value of these goods: + ${formatVal(commission2, true)}`;
+  
+  const partialPaidEl = document.getElementById('payout-partial-paid');
+  if (partialPaidEl) {
+    if (totalPartiallyPaid > 0) {
+      partialPaidEl.style.display = 'block';
+      partialPaidEl.textContent = currentLanguage === 'ar'
+        ? `تم دفع دفعة جزئية سابقاً من هذه المستحقات: ${formatVal(totalPartiallyPaid, true)}`
+        : `Previously paid partial amount from these dues: ${formatVal(totalPartiallyPaid, true)}`;
+    } else {
+      partialPaidEl.style.display = 'none';
+    }
+  }
+
+  const totalNetEl = document.getElementById('payout-total-net');
+  if (totalNetEl) {
+    totalNetEl.textContent = currentLanguage === 'ar'
+      ? `المجموع المستحق للصرف: ${formatVal(totalNetDue, true)}`
+      : `Total Net Due for Payout: ${formatVal(totalNetDue, true)}`;
+  }
   
   const amountInput = document.getElementById('payout-amount');
   if (amountInput) {
@@ -13976,9 +14059,9 @@ function initDevicesBatteryMonitor() {
           localStorage.setItem('alwa_printer_battery_percent', printerBatteryPercent);
         }
 
-        // Idle battery drain (1% every 10 minutes -> 300 cycles of 2 seconds)
+        // Idle battery drain (1% every 10 minutes -> 40 cycles of 15 seconds)
         idleDrainCounter++;
-        if (idleDrainCounter >= 300) {
+        if (idleDrainCounter >= 40) {
           idleDrainCounter = 0;
           if (typeof processPrinterBatteryDrain === 'function') {
             processPrinterBatteryDrain(1);
@@ -14015,8 +14098,8 @@ function initDevicesBatteryMonitor() {
   // Initial call
   updateDevicesStatus();
   
-  // Update state regularly to match bluetooth toggles
-  setInterval(updateDevicesStatus, 5000);
+  // Update state regularly to match bluetooth toggles (throttled to 15s to save CPU/battery)
+  setInterval(updateDevicesStatus, 15000);
 }
 
 // Global states for custom keypad
@@ -14860,8 +14943,12 @@ const reapplyFullscreen = async () => {
 };
 document.addEventListener('resume', reapplyFullscreen, false);
 document.addEventListener('visibilitychange', () => {
+  document.body.classList.toggle('tab-hidden', document.hidden);
   if (document.visibilityState === 'visible') {
     reapplyFullscreen();
+    if (typeof updateDevicesStatus === 'function') {
+      updateDevicesStatus();
+    }
   }
 });
 window.addEventListener('focus', reapplyFullscreen, false);

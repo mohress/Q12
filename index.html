@@ -885,7 +885,7 @@
       </div>
       
       <div class="sheet-split-container" style="display: flex; flex-direction: row; direction: ltr; width: 100%; align-items: stretch; overflow: hidden; min-height: 0; flex: 1;">
-        <div class="bottom-sheet-body" style="flex: 1; min-width: 0; direction: rtl; padding-bottom: 80px !important;">
+        <div class="bottom-sheet-body" style="flex: 1; min-width: 0; direction: rtl; padding-bottom: 16px !important;">
           <div class="sheet-desktop-split-wrapper">
             <!-- Column 1: Main Inputs & Crops -->
             <div class="sheet-desktop-main-col">
@@ -1022,58 +1022,12 @@
       </div>
       
       <div class="sheet-split-container" style="display: flex; flex-direction: row; direction: ltr; width: 100%; align-items: stretch; overflow: hidden; min-height: 0; flex: 1;">
-        <div class="bottom-sheet-body" style="flex: 1; min-width: 0; direction: rtl; padding-bottom: 80px;">
+        <div class="bottom-sheet-body" style="flex: 1; min-width: 0; direction: rtl; padding-bottom: 16px !important;">
           <div class="sheet-desktop-split-wrapper">
             <!-- Column 1: Main Customer Info & Crops List -->
             <div class="sheet-desktop-main-col">
-              <!-- Crops for Sale -->
-              <div style="display: flex; flex-direction: column; gap: 10px;" id="sale-items-container">
-                <!-- Dynamic Items added here -->
-              </div>
-
-              <button class="btn-secondary" id="btn-sale-add-item" style="border-style: dashed; padding: 10px; font-size: 12px; margin-top: 4px;">
-                <span class="material-icons-round">add</span>
-                <span id="txt-add-sale-crop">إضافة صنف آخر في الفاتورة</span>
-              </button>
-
-              <!-- General invoice options & Payment Method -->
-              <div class="sheet-form-options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start;">
-
-                <div class="form-group" style="margin: 0;">
-                  <label id="lbl-sale-notes" style="display: flex; align-items: center; gap: 6px;">
-                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">notes</span>
-                    <span id="lbl-sale-notes-text">ملاحظات الفاتورة</span>
-                  </label>
-                  <div style="position: relative;">
-                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">notes</span>
-                    <input type="text" class="form-input" id="sale-notes" placeholder="ملاحظات الفاتورة (اختياري)..." style="padding-right: 42px;">
-                  </div>
-                </div>
-
-                <div class="form-group" style="margin: 0;">
-                  <label id="lbl-payment-method">طريقة الدفع</label>
-                  <div class="toggle-switch-group">
-                    <button class="toggle-switch-btn" id="btn-pay-cash" data-method="cash">💵 نقد</button>
-                    <button class="toggle-switch-btn active" id="btn-pay-debt" data-method="debt">📋 دين بالأجل</button>
-                  </div>
-                </div>
-
-                <div class="form-group" id="group-debt-options" style="display: block; margin: 0; grid-column: 1 / -1;">
-                  <label id="lbl-debt-due">موعد المطالبة بالدين</label>
-                  <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);">
-                    <button class="segmented-control-btn active" data-days="5">5 أيام</button>
-                    <button class="segmented-control-btn" data-days="10">10 أيام</button>
-                    <button class="segmented-control-btn" data-days="15">15 يوم</button>
-                    <button class="segmented-control-btn" data-days="custom" id="btn-custom-debt-days">مخصص</button>
-                  </div>
-                  <div id="custom-debt-days-input-group" style="display: none; margin-top: 8px;">
-                    <input type="number" class="form-input" id="custom-debt-days-input" placeholder="أدخل عدد الأيام..." min="1" step="1">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Customer Info moved to the bottom -->
-              <div class="sheet-form-header-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 24px;">
+              <!-- Customer Info at the top -->
+              <div class="sheet-form-header-grid" style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px;">
                 <div class="form-group" style="margin: 0;">
                   <label id="lbl-customer-name" style="display: flex; align-items: center; gap: 6px;">
                     <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">person</span>
@@ -1105,6 +1059,52 @@
                   <div style="position: relative;">
                     <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">location_on</span>
                     <input type="text" class="form-input" id="sale-customer-address" placeholder="عنوان الزبون (اختياري)..." style="padding-right: 42px;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Crops for Sale -->
+              <div style="display: flex; flex-direction: column; gap: 10px;" id="sale-items-container">
+                <!-- Dynamic Items added here -->
+              </div>
+
+              <button class="btn-secondary" id="btn-sale-add-item" style="border-style: dashed; padding: 10px; font-size: 12px; margin-top: 4px;">
+                <span class="material-icons-round">add</span>
+                <span id="txt-add-sale-crop">إضافة صنف آخر في الفاتورة</span>
+              </button>
+
+              <!-- General invoice options & Payment Method -->
+              <div class="sheet-form-options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; margin-top: 24px;">
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-sale-notes" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-round" style="font-size: 16px; color: var(--color-primary-mid);">notes</span>
+                    <span id="lbl-sale-notes-text">ملاحظات الفاتورة</span>
+                  </label>
+                  <div style="position: relative;">
+                    <span class="material-icons-round" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--color-primary); font-size: 18px; pointer-events: none; z-index: 2;">notes</span>
+                    <input type="text" class="form-input" id="sale-notes" placeholder="ملاحظات الفاتورة (اختياري)..." style="padding-right: 42px;">
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label id="lbl-payment-method">طريقة الدفع</label>
+                  <div class="toggle-switch-group">
+                    <button class="toggle-switch-btn" id="btn-pay-cash" data-method="cash">💵 نقد</button>
+                    <button class="toggle-switch-btn active" id="btn-pay-debt" data-method="debt">📋 دين بالأجل</button>
+                  </div>
+                </div>
+
+                <div class="form-group" id="group-debt-options" style="display: block; margin: 0; grid-column: 1 / -1;">
+                  <label id="lbl-debt-due">موعد المطالبة بالدين</label>
+                  <div class="segmented-control" style="background-color: rgba(0,0,0,0.05);">
+                    <button class="segmented-control-btn active" data-days="5">5 أيام</button>
+                    <button class="segmented-control-btn" data-days="10">10 أيام</button>
+                    <button class="segmented-control-btn" data-days="15">15 يوم</button>
+                    <button class="segmented-control-btn" data-days="custom" id="btn-custom-debt-days">مخصص</button>
+                  </div>
+                  <div id="custom-debt-days-input-group" style="display: none; margin-top: 8px;">
+                    <input type="number" class="form-input" id="custom-debt-days-input" placeholder="أدخل عدد الأيام..." min="1" step="1">
                   </div>
                 </div>
               </div>
@@ -1302,14 +1302,10 @@
           </div>
         </div>
 
-        <div class="summary-grid" style="grid-template-columns: repeat(3, 1fr) !important; gap: 6px;">
+        <div class="summary-grid" style="grid-template-columns: repeat(2, 1fr) !important; gap: 6px;">
           <button class="btn-primary" id="btn-execute-print" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px;">
             <span class="material-icons-round" style="font-size: 16px;">bluetooth</span>
             <span id="txt-print-execute">طباعة بلوتوث</span>
-          </button>
-          <button class="btn-secondary" id="btn-execute-system-print" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--color-info); color: var(--color-info); background-color: rgba(0, 119, 182, 0.05);">
-            <span class="material-icons-round" style="font-size: 16px;">print</span>
-            <span id="txt-print-system">طباعة النظام</span>
           </button>
           <button class="btn-secondary" id="btn-share-receipt-png" style="padding: 10px 4px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1.5px solid var(--color-primary-light);">
             <span class="material-icons-round" style="font-size: 16px;">share</span>
@@ -1350,10 +1346,12 @@
         <button class="icon-btn" id="btn-close-farmer-payout-sheet"><span class="material-icons-round">close</span></button>
       </div>
       <div class="bottom-sheet-body">
-        <div class="premium-card" style="background-color: rgba(45,106,79,0.05); border: 1px solid rgba(45,106,79,0.1); padding: 12px;">
-          <div style="font-size: 13px; font-weight: 700; color: var(--color-primary);" id="payout-farmer-name">الفلاح: ...</div>
-          <div style="font-size: 12px; margin-top: 4px;" id="payout-crop-sales">إجمالي مبيعات محاصيله: 0 دينار</div>
-          <div style="font-size: 11px; margin-top: 2px; color: var(--color-primary-light);" id="payout-commission-2">مجموع عمولته 2%: 0 دينار</div>
+        <div class="premium-card" style="background-color: rgba(45,106,79,0.05); border: 1px solid rgba(45,106,79,0.15); padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 14px; font-weight: 800; color: var(--color-primary);" id="payout-farmer-name">الفلاح: ...</div>
+          <div style="font-size: 12px; margin-top: 2px;" id="payout-crop-sales">قيمة البضاعة المباعة بدون عمولات ثانوية: 0 دينار</div>
+          <div style="font-size: 12px; color: var(--color-primary-mid);" id="payout-commission-2">+ 2% من قيمة هذه البضاعة: 0 دينار</div>
+          <div style="font-size: 12px; color: #b7094c; font-weight: 700; display: none;" id="payout-partial-paid">تم دفع دفعة جزئية سابقاً من هذه المستحقات: 0 دينار</div>
+          <div style="font-size: 13.5px; font-weight: 800; color: var(--color-success); border-top: 1px dashed rgba(45,106,79,0.2); padding-top: 6px; margin-top: 2px;" id="payout-total-net">المجموع المستحق للصرف: 0 دينار</div>
         </div>
         <div class="form-group">
           <label id="lbl-payout-amount">المبلغ المدفوع يدوياً للفلاح</label>
