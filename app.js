@@ -9740,20 +9740,6 @@ async function executePrintJob(saleId) {
     return;
   }
 
-  // Get invoice data (only for specific sale invoice print jobs)
-  if (saleId && saleId !== -1 && !isNaN(saleId)) {
-    const sale = await dbGet('sale_invoices', saleId);
-    if (!sale) {
-      showToast(currentLanguage === 'ar' ? 'لم يتم العثور على الفاتورة!' : 'Invoice not found!', 'error', true);
-      return;
-    }
-    const customer = await dbGet('customers', sale.customer_id);
-    if (!customer) return;
-
-    const saleItems = await dbGetAll('sale_items');
-    const items = saleItems.filter(it => it.sale_invoice_id === saleId);
-  }
-
   // Active Visual simulator animation on-screen
   const printSimulator = document.getElementById('print-simulator');
   const paperStrip = document.getElementById('printer-paper-strip');
