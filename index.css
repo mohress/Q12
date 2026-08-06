@@ -5159,16 +5159,17 @@ svg, svg *, .chart-bar:hover,
 
 /* Optimize scroll performance for the due claims list */
 #due-claims-body {
-  will-change: scroll-position;
-  contain: content;
+  will-change: transform;
   -webkit-overflow-scrolling: touch;
+  contain: layout style paint;
+  scroll-behavior: smooth;
 }
 
 #due-claims-body > div,
 #due-claims-body .premium-card {
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 140px;
+  transition: none !important; /* Neutralize hover/active transition overhead on touch drag */
 }
 
 

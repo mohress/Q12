@@ -513,7 +513,10 @@ export class BLEPrinterDriver {
       const imgData = finalCtx.getImageData(0, 0, canvasWidth, finalHeight);
       const pixels = imgData.data;
 
-      // Ultra-optimized 1D linear loop to pre-calculate grayscale values
+      // Ultra-optimized 1D linear loop to pre-calculate and strictly binarize to high-contrast monochrome.
+      // Using a solid high-contrast threshold (e.g., 210) ensures all text, borders, tables, and logos are printed
+      // as deep, clear, solid black, completely eliminating faded, faint, or pixelated checkerboard patterns caused
+      // by error diffusion dithering on low-end thermal printers.
       const len = canvasWidth * finalHeight;
       const grayData = new Float32Array(len);
       for (let i = 0; i < len; i++) {
@@ -522,39 +525,10 @@ export class BLEPrinterDriver {
         if (a <= 128) {
           grayData[i] = 255; // Treat transparent as white paper
         } else {
-          grayData[i] = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
-        }
-      }
-
-      // Ultra-optimized Floyd-Steinberg Error Diffusion Dithering Pass with Cached Row Offsets
-      for (let y = 0; y < finalHeight; y++) {
-        const rowOffset = y * canvasWidth;
-        const nextRowOffset = (y + 1) * canvasWidth;
-        const isLastRow = (y + 1) >= finalHeight;
-
-        for (let x = 0; x < canvasWidth; x++) {
-          const idx = rowOffset + x;
-          const oldVal = grayData[idx];
-          const newVal = oldVal < 185 ? 0 : 255;
-          grayData[idx] = newVal;
-
-          const err = oldVal - newVal;
-          if (err === 0) continue; // Early skip: no error distribution needed
-
-          const err16 = err / 16;
-
-          if (x + 1 < canvasWidth) {
-            grayData[idx + 1] += err16 * 7;
-          }
-          if (!isLastRow) {
-            if (x > 0) {
-              grayData[nextRowOffset + (x - 1)] += err16 * 3;
-            }
-            grayData[nextRowOffset + x] += err16 * 5;
-            if (x + 1 < canvasWidth) {
-              grayData[nextRowOffset + (x + 1)] += err16 * 1;
-            }
-          }
+          const g = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
+          // If the pixel is dark, grey, or anti-aliased font edges (value < 210), force it to deep pure black (0)
+          // to heat up the thermal printer pin fully. Otherwise, make it pure white (255).
+          grayData[i] = g < 210 ? 0 : 255;
         }
       }
 
