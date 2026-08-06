@@ -12,6 +12,7 @@
  */
 
 import html2canvas from 'html2canvas';
+import { toCanvas } from 'html-to-image';
 
 export interface DiagnosticStep {
   id: string;
@@ -341,26 +342,57 @@ export class BLEPrinterDriver {
     document.body.appendChild(clone);
 
     let rawCanvas: HTMLCanvasElement;
+    let renderMethod = 'html-to-image';
+    const renderStartTime = performance.now();
+
     try {
       const scaleFactor = canvasWidth / designWidth;
-      rawCanvas = await html2canvas(clone, {
-        scale: scaleFactor,
+      // Ultra-fast html-to-image renderer for instant printing under 100ms
+      rawCanvas = await toCanvas(clone, {
         width: designWidth,
-        windowWidth: designWidth,
-        backgroundColor: '#FFFFFF',
-        logging: false,
-        useCORS: false,
-        imageTimeout: 150
-      } as any);
+        height: clone.offsetHeight || clone.scrollHeight || 600,
+        style: {
+          transform: 'none',
+          position: 'static',
+          margin: '0',
+          padding: '6px 4px',
+          backgroundColor: '#FFFFFF'
+        },
+        pixelRatio: scaleFactor,
+        cacheBust: true,
+        backgroundColor: '#FFFFFF'
+      });
       
-      PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي بنجاح. أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
+      const renderDuration = performance.now() - renderStartTime;
+      console.log(`[BLEPrinterDriver] html-to-image render succeeded in ${renderDuration.toFixed(1)}ms`);
+      PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي فوراً وبسرعة فائقة (${renderDuration.toFixed(1)}ms). أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements instantly via html-to-image in ${renderDuration.toFixed(1)}ms. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
     } catch (err: any) {
-      console.error('[BLEPrinterDriver] html2canvas clone capture failed:', err);
-      PrintDiagnostics.updateStep('render_html', 'failed', `فشل محرك html2canvas في تحويل عناصر الصفحة إلى صورة: ${err?.message || err}`, `Visual capture failed: ${err?.message || err}`);
-      if (document.body.contains(clone)) {
-        document.body.removeChild(clone);
+      console.warn('[BLEPrinterDriver] Fast html-to-image failed, falling back to html2canvas:', err);
+      renderMethod = 'html2canvas-fallback';
+      
+      try {
+        const scaleFactor = canvasWidth / designWidth;
+        rawCanvas = await html2canvas(clone, {
+          scale: scaleFactor,
+          width: designWidth,
+          windowWidth: designWidth,
+          backgroundColor: '#FFFFFF',
+          logging: false,
+          useCORS: false,
+          imageTimeout: 150
+        } as any);
+        
+        const renderDuration = performance.now() - renderStartTime;
+        console.log(`[BLEPrinterDriver] html2canvas fallback render succeeded in ${renderDuration.toFixed(1)}ms`);
+        PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي عبر المحرك البديل في ${renderDuration.toFixed(1)}ms. أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements via fallback html2canvas in ${renderDuration.toFixed(1)}ms. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
+      } catch (fallbackErr: any) {
+        console.error('[BLEPrinterDriver] Both html-to-image and html2canvas failed:', fallbackErr);
+        PrintDiagnostics.updateStep('render_html', 'failed', `فشل تحويل عناصر الصفحة إلى صورة: ${fallbackErr?.message || fallbackErr}`, `Visual capture failed: ${fallbackErr?.message || fallbackErr}`);
+        if (document.body.contains(clone)) {
+          document.body.removeChild(clone);
+        }
+        return false;
       }
-      return false;
     } finally {
       if (document.body.contains(clone)) {
         document.body.removeChild(clone);
