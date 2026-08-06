@@ -12,7 +12,6 @@
  */
 
 import html2canvas from 'html2canvas';
-import { toCanvas } from 'html-to-image';
 
 export interface DiagnosticStep {
   id: string;
@@ -339,38 +338,120 @@ export class BLEPrinterDriver {
       }
     });
 
-    document.body.appendChild(clone);
-
     let rawCanvas: HTMLCanvasElement;
-    let renderMethod = 'html-to-image';
+    let renderMethod = 'html2canvas-iframe';
     const renderStartTime = performance.now();
 
+    let iframe: HTMLIFrameElement | null = null;
+
     try {
-      const scaleFactor = canvasWidth / designWidth;
-      // Ultra-fast html-to-image renderer for instant printing under 100ms
-      rawCanvas = await toCanvas(clone, {
-        width: designWidth,
-        height: clone.offsetHeight || clone.scrollHeight || 600,
-        style: {
-          transform: 'none',
-          position: 'static',
-          margin: '0',
-          padding: '6px 4px',
-          backgroundColor: '#FFFFFF'
-        },
-        pixelRatio: scaleFactor,
-        cacheBust: true,
-        backgroundColor: '#FFFFFF'
+      // Create hidden, same-origin iframe for isolated high-speed rendering
+      iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '-9999px';
+      iframe.style.width = `${designWidth}px`;
+      iframe.style.height = '1px';
+      iframe.style.visibility = 'hidden';
+      iframe.style.pointerEvents = 'none';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        throw new Error('Could not access iframe document');
+      }
+
+      // Initialize iframe with clean RTL standard structure
+      iframeDoc.open();
+      iframeDoc.write(`
+        <!DOCTYPE html>
+        <html dir="rtl">
+        <head>
+          <meta charset="utf-8">
+          <title>Print Frame</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: #FFFFFF;
+              width: ${designWidth}px !important;
+              overflow: hidden;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="print-root" style="width: ${designWidth}px !important; box-sizing: border-box;"></div>
+        </body>
+        </html>
+      `);
+      iframeDoc.close();
+
+      // Copy all styles and link elements from parent to preserve Cairo, Monofrik, and precise design typography
+      document.querySelectorAll('style, link[rel="stylesheet"]').forEach((sheet) => {
+        try {
+          iframeDoc.head.appendChild(sheet.cloneNode(true));
+        } catch (e) {
+          console.warn('[BLEPrinterDriver] Failed to copy stylesheet node to iframe:', e);
+        }
       });
+
+      // Find root container and append clone
+      const root = iframeDoc.getElementById('print-root');
+      if (!root) {
+        throw new Error('Print root container not found inside iframe');
+      }
+
+      clone.style.position = 'relative';
+      clone.style.left = '0';
+      clone.style.top = '0';
+      clone.style.zIndex = '1';
+      clone.style.width = '100%';
+      clone.style.maxWidth = '100%';
+      clone.style.margin = '0';
+      clone.style.boxSizing = 'border-box';
+      root.appendChild(clone);
+
+      // Dynamically adjust iframe height to encompass content fully
+      iframe.style.height = `${root.offsetHeight || root.scrollHeight || 1000}px`;
+
+      // Wait for all web fonts inside the iframe to load successfully to prevent fallback font rendering
+      if (iframe.contentWindow?.document?.fonts?.ready) {
+        await iframe.contentWindow.document.fonts.ready;
+      }
+      
+      // Allow a brief moment for the rendering tree inside the iframe to settle
+      await new Promise((r) => setTimeout(r, 40));
+
+      const scaleFactor = canvasWidth / designWidth;
+      
+      // Perform html2canvas on the element within its isolated iframe context.
+      // This is extremely fast because the iframe has a tiny DOM (just the cloned receipt)!
+      rawCanvas = await html2canvas(clone, {
+        scale: scaleFactor,
+        width: designWidth,
+        windowWidth: designWidth,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        imageTimeout: 200,
+        window: iframe.contentWindow || window,
+        document: iframeDoc
+      } as any);
       
       const renderDuration = performance.now() - renderStartTime;
-      console.log(`[BLEPrinterDriver] html-to-image render succeeded in ${renderDuration.toFixed(1)}ms`);
-      PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي فوراً وبسرعة فائقة (${renderDuration.toFixed(1)}ms). أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements instantly via html-to-image in ${renderDuration.toFixed(1)}ms. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
+      console.log(`[BLEPrinterDriver] Isolated iframe html2canvas render succeeded in ${renderDuration.toFixed(1)}ms`);
+      PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي بدقة متناهية وبخطوطها الصحيحة (${renderDuration.toFixed(1)}ms). أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements inside isolated iframe with correct web fonts in ${renderDuration.toFixed(1)}ms. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
     } catch (err: any) {
-      console.warn('[BLEPrinterDriver] Fast html-to-image failed, falling back to html2canvas:', err);
+      console.warn('[BLEPrinterDriver] Isolated iframe html2canvas failed, trying standard fallback:', err);
       renderMethod = 'html2canvas-fallback';
       
       try {
+        // Appending clone to body as absolute fallback
+        if (!document.body.contains(clone)) {
+          document.body.appendChild(clone);
+        }
+        
         const scaleFactor = canvasWidth / designWidth;
         rawCanvas = await html2canvas(clone, {
           scale: scaleFactor,
@@ -378,22 +459,24 @@ export class BLEPrinterDriver {
           windowWidth: designWidth,
           backgroundColor: '#FFFFFF',
           logging: false,
-          useCORS: false,
+          useCORS: true,
+          allowTaint: true,
           imageTimeout: 150
         } as any);
         
         const renderDuration = performance.now() - renderStartTime;
-        console.log(`[BLEPrinterDriver] html2canvas fallback render succeeded in ${renderDuration.toFixed(1)}ms`);
-        PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي عبر المحرك البديل في ${renderDuration.toFixed(1)}ms. أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements via fallback html2canvas in ${renderDuration.toFixed(1)}ms. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
+        console.log(`[BLEPrinterDriver] Standard html2canvas fallback render succeeded in ${renderDuration.toFixed(1)}ms`);
+        PrintDiagnostics.updateStep('render_html', 'success', `تم توليد الرسم النقطي عبر المحرك الاحتياطي في ${renderDuration.toFixed(1)}ms. أبعاد الصورة الملتقطة: ${rawCanvas.width}x${rawCanvas.height} بكسل.`, `Successfully rendered elements via standard fallback html2canvas in ${renderDuration.toFixed(1)}ms. Canvas size: ${rawCanvas.width}x${rawCanvas.height} px.`);
       } catch (fallbackErr: any) {
-        console.error('[BLEPrinterDriver] Both html-to-image and html2canvas failed:', fallbackErr);
+        console.error('[BLEPrinterDriver] Both isolated iframe and fallback html2canvas failed:', fallbackErr);
         PrintDiagnostics.updateStep('render_html', 'failed', `فشل تحويل عناصر الصفحة إلى صورة: ${fallbackErr?.message || fallbackErr}`, `Visual capture failed: ${fallbackErr?.message || fallbackErr}`);
-        if (document.body.contains(clone)) {
-          document.body.removeChild(clone);
-        }
         return false;
       }
     } finally {
+      // Ensure thorough DOM cleanup of temporary elements to prevent memory leaks
+      if (iframe && document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
       if (document.body.contains(clone)) {
         document.body.removeChild(clone);
       }
