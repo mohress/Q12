@@ -423,7 +423,7 @@ function renderAppLogs() {
 
 const customSvgs = {
   'onion_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="onionGrad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#f472b6"/><stop offset="40%" stop-color="#db2777"/><stop offset="80%" stop-color="#9d174d"/><stop offset="100%" stop-color="#4c0519"/></radialGradient><linearGradient id="onionStem" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#78350f"/></linearGradient></defs><path d="M 42,83 Q 36,94 40,99 M 48,84 Q 48,97 47,100 M 54,84 Q 60,95 56,99 M 36,80 Q 28,90 32,95 M 62,80 Q 70,90 66,95" stroke="#fed7aa" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M 50,12 C 16,36 14,75 32,85 C 50,94 50,94 68,85 C 86,75 84,36 50,12 Z" fill="url(#onionGrad)"/><path d="M 50,12 C 28,34 26,68 38,84 M 50,12 C 38,36 36,70 48,86 M 50,12 C 46,36 44,70 50,86 M 50,12 C 54,36 56,70 52,86 M 50,12 C 62,36 64,70 52,86 M 50,12 C 72,34 74,68 62,84" stroke="rgba(253,242,248,0.32)" stroke-width="1.8" fill="none"/><path d="M 50,12 L 46,2 Q 51,-2 53,4 L 50,12 Z" fill="url(#onionStem)"/><ellipse cx="28" cy="38" rx="8" ry="16" transform="rotate(-30 28 38)" fill="rgba(255,255,255,0.45)" filter="blur(1px)"/></svg>`,
-  'bell_pepper_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="pepperGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#fca5a5"/><stop offset="35%" stop-color="#dc2626"/><stop offset="80%" stop-color="#991b1b"/><stop offset="100%" stop-color="#450a0a"/></radialGradient><linearGradient id="pepperStem" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#15803d"/></linearGradient></defs><path d="M 50,22 Q 42,2 28,6 Q 36,15 48,22 Z" fill="url(#pepperStem)"/><path d="M 50,22 C 24,19 10,32 10,60 C 10,87 32,96 46,92 C 43,70 46,40 50,22 Z" fill="url(#pepperGrad)"/><path d="M 50,22 C 76,19 90,32 90,60 C 90,87 68,96 54,92 C 57,70 54,40 50,22 Z" fill="url(#pepperGrad)"/><path d="M 50,22 C 32,23 20,35 20,62 C 20,88 38,96 50,96 C 62,96 80,88 80,62 C 80,35 68,23 50,22 Z" fill="url(#pepperGrad)"/><ellipse cx="32" cy="38" rx="6" ry="14" transform="rotate(-25 32 38)" fill="rgba(255,255,255,0.55)" filter="blur(1px)"/><ellipse cx="68" cy="40" rx="5" ry="12" transform="rotate(25 68 40)" fill="rgba(255,255,255,0.4)" filter="blur(1px)"/><ellipse cx="50" cy="32" rx="12" ry="4" fill="rgba(255,255,255,0.25)" filter="blur(1px)"/></svg>`,
+  'bell_pepper_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.28));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bpBodyGrad" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#bef264"/><stop offset="25%" stop-color="#4ade80"/><stop offset="65%" stop-color="#16a34a"/><stop offset="88%" stop-color="#14532d"/><stop offset="100%" stop-color="#052e16"/></radialGradient><radialGradient id="bpCenterLobe" cx="48%" cy="38%" r="58%"><stop offset="0%" stop-color="#dcfce7"/><stop offset="30%" stop-color="#22c55e"/><stop offset="75%" stop-color="#15803d"/><stop offset="100%" stop-color="#0b451e"/></radialGradient><radialGradient id="bpLeftLobe" cx="28%" cy="40%" r="60%"><stop offset="0%" stop-color="#a7f3d0"/><stop offset="35%" stop-color="#16a34a"/><stop offset="80%" stop-color="#14532d"/><stop offset="100%" stop-color="#052e16"/></radialGradient><radialGradient id="bpRightLobe" cx="72%" cy="40%" r="60%"><stop offset="0%" stop-color="#a7f3d0"/><stop offset="35%" stop-color="#16a34a"/><stop offset="80%" stop-color="#14532d"/><stop offset="100%" stop-color="#052e16"/></radialGradient><linearGradient id="bpStemGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#bbf7d0"/><stop offset="30%" stop-color="#4ade80"/><stop offset="70%" stop-color="#16a34a"/><stop offset="100%" stop-color="#093816"/></linearGradient><radialGradient id="bpStemCut" cx="45%" cy="45%" r="55%"><stop offset="0%" stop-color="#dcfce7"/><stop offset="70%" stop-color="#86efac"/><stop offset="100%" stop-color="#22c55e"/></radialGradient><linearGradient id="bpCalyxGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#86efac"/><stop offset="40%" stop-color="#22c55e"/><stop offset="85%" stop-color="#15803d"/><stop offset="100%" stop-color="#093816"/></linearGradient><filter id="bpBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2"/></filter><filter id="bpSoftBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter></defs><ellipse cx="50" cy="94" rx="36" ry="4.5" fill="rgba(0,0,0,0.32)" filter="url(#bpBlur)"/><path d="M 26,26 C 36,24 44,32 50,32 C 56,32 64,24 74,26 C 84,28 88,38 88,52 C 88,72 80,88 66,90 C 58,91 54,86 50,86 C 46,86 42,91 34,90 C 20,88 12,72 12,52 C 12,38 16,28 26,26 Z" fill="url(#bpBodyGrad)"/><path d="M 26,26 C 16,28 12,38 12,52 C 12,72 20,88 34,90 C 40,89 42,78 42,58 C 42,40 38,28 26,26 Z" fill="url(#bpLeftLobe)"/><path d="M 74,26 C 84,28 88,38 88,52 C 88,72 80,88 66,90 C 60,89 58,78 58,58 C 58,40 62,28 74,26 Z" fill="url(#bpRightLobe)"/><path d="M 30,28 C 24,42 24,68 32,85 C 38,91 62,91 68,85 C 76,68 76,42 70,28 C 62,26 38,26 30,28 Z" fill="url(#bpCenterLobe)"/><path d="M 31,30 C 25,48 26,72 35,86" fill="none" stroke="#03200e" stroke-width="3" opacity="0.7" filter="url(#bpBlur)"/><path d="M 69,30 C 75,48 74,72 65,86" fill="none" stroke="#03200e" stroke-width="3" opacity="0.7" filter="url(#bpBlur)"/><path d="M 44,88 C 47,86 53,86 56,88" fill="none" stroke="#02170a" stroke-width="2.2" opacity="0.75"/><ellipse cx="50" cy="32" rx="15" ry="6.5" fill="#03200e"/><path d="M 50,32 C 45,28 35,26 28,30 C 34,33 42,34 48,32 Z" fill="url(#bpCalyxGrad)"/><path d="M 50,32 C 55,28 65,26 72,30 C 66,33 58,34 52,32 Z" fill="url(#bpCalyxGrad)"/><path d="M 50,32 C 44,35 36,40 34,46 C 41,43 47,38 49,33 Z" fill="url(#bpCalyxGrad)"/><path d="M 50,32 C 56,35 64,40 66,46 C 59,43 53,38 51,33 Z" fill="url(#bpCalyxGrad)"/><path d="M 50,32 C 46,37 48,45 50,48 C 52,45 54,37 50,32 Z" fill="url(#bpCalyxGrad)"/><ellipse cx="50" cy="32" rx="5" ry="2.5" fill="#15803d"/><path d="M 46,32 C 45,22 38,13 28,7 C 24,5 26,3 30,2 C 35,1 41,3 45,6 C 52,12 54,22 54,32 Z" fill="url(#bpStemGrad)"/><path d="M 48,31 C 47,21 40,14 31,8" fill="none" stroke="#bbf7d0" stroke-width="1.2" opacity="0.75"/><path d="M 51,31 C 50,23 45,17 38,12" fill="none" stroke="#093816" stroke-width="1" opacity="0.5"/><ellipse cx="28" cy="5" rx="4" ry="2" transform="rotate(-30 28 5)" fill="url(#bpStemCut)" stroke="#16a34a" stroke-width="0.8"/><circle cx="27.5" cy="5" r="1" fill="#15803d" opacity="0.6"/><path d="M 36,36 C 32,48 32,65 36,76 C 38,76 41,60 40,46 Z" fill="rgba(255,255,255,0.65)" filter="url(#bpBlur)"/><path d="M 37,38 C 34,48 34,60 37,70" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.8" filter="url(#bpBlur)"/><ellipse cx="20" cy="48" rx="4.5" ry="16" transform="rotate(-22 20 48)" fill="rgba(255,255,255,0.4)" filter="url(#bpBlur)"/><ellipse cx="80" cy="48" rx="4" ry="15" transform="rotate(22 80 48)" fill="rgba(255,255,255,0.35)" filter="url(#bpBlur)"/><ellipse cx="30" cy="28" rx="6" ry="2.5" fill="rgba(255,255,255,0.5)" filter="url(#bpBlur)"/><ellipse cx="70" cy="28" rx="5" ry="2.2" fill="rgba(255,255,255,0.45)" filter="url(#bpBlur)"/><path d="M 28,84 C 40,90 60,90 72,84" fill="none" stroke="rgba(220,252,231,0.45)" stroke-width="2" filter="url(#bpBlur)"/></svg>`,
   'garlic_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.22));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="garlicGrad" cx="45%" cy="45%" r="55%"><stop offset="0%" stop-color="#ffffff"/><stop offset="65%" stop-color="#f8fafc"/><stop offset="85%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#cbd5e1"/></radialGradient><linearGradient id="garlicStem" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#cbd5e1"/><stop offset="100%" stop-color="#a8a29e"/></linearGradient></defs><path d="M 40,84 Q 34,95 38,99 M 50,85 Q 50,97 51,100 M 60,84 Q 66,95 62,99 M 45,85 Q 42,93 44,97 M 55,85 Q 58,93 56,97" stroke="#a8a29e" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M 50,15 C 18,22 10,55 14,74 C 18,88 38,90 50,90 C 62,90 82,88 86,74 C 90,55 82,22 50,15 Z" fill="url(#garlicGrad)"/><path d="M 50,15 C 36,28 32,58 38,87 M 50,15 C 64,28 68,58 62,87 M 50,15 C 50,38 50,82 50,90" stroke="#cbd5e1" stroke-width="2" fill="none"/><path d="M 50,15 C 22,30 22,65 28,82 M 50,15 C 78,30 78,65 72,82" stroke="#e2e8f0" stroke-width="1.5" fill="none"/><path d="M 50,20 Q 38,32 36,70 M 50,20 Q 62,32 64,70 M 50,24 Q 45,35 44,75 M 50,24 Q 55,35 56,75" stroke="rgba(147,51,234,0.22)" stroke-width="1.5" fill="none"/><path d="M 50,15 L 46,3 Q 51,-1 53,4 L 50,15 Z" fill="url(#garlicStem)"/><ellipse cx="32" cy="42" rx="6" ry="14" transform="rotate(-25 32 42)" fill="rgba(255,255,255,0.75)" filter="blur(1px)"/></svg>`,
   'ginger_svg': `<svg viewBox="0 0 100 100" width="1.75em" height="1.75em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.25));" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="gingerGrad" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#fef08a"/><stop offset="30%" stop-color="#f59e0b"/><stop offset="75%" stop-color="#d97706"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient></defs><path d="M 35,45 C 20,40 10,55 18,70 C 25,80 40,75 42,65 Z" fill="url(#gingerGrad)"/><path d="M 60,35 C 55,20 75,10 85,22 C 92,30 85,45 75,45 Z" fill="url(#gingerGrad)"/><path d="M 30,60 C 20,70 25,90 45,90 C 65,90 75,70 65,50 C 55,40 40,45 30,60 Z" fill="url(#gingerGrad)"/><circle cx="26" cy="52" r="14" fill="url(#gingerGrad)"/><circle cx="68" cy="54" r="16" fill="url(#gingerGrad)"/><circle cx="48" cy="42" r="12" fill="url(#gingerGrad)"/><path d="M 18,52 Q 25,48 30,54 M 20,62 Q 28,57 33,64 M 36,70 Q 46,65 50,73 M 42,83 Q 52,79 56,86 M 60,48 Q 66,43 72,50 M 65,62 Q 72,57 77,65 M 42,46 Q 48,41 52,48 M 74,32 Q 80,28 84,34" stroke="#7c2d12" stroke-width="2" fill="none" opacity="0.65" stroke-linecap="round"/><ellipse cx="38" cy="54" rx="5" ry="12" transform="rotate(-30 38 54)" fill="rgba(255,255,255,0.35)" filter="blur(1px)"/><ellipse cx="70" cy="46" rx="4" ry="10" transform="rotate(15 70 46)" fill="rgba(255,255,255,0.25)" filter="blur(1px)"/></svg>`,
   'grapes_svg': `<svg viewBox="0 0 100 100" width="1.4em" height="1.4em" style="vertical-align: middle; display: inline-block; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.2));" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="grapeStem" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/></linearGradient><radialGradient id="grapeGrad" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#d8b4fe"/><stop offset="40%" stop-color="#a855f7"/><stop offset="85%" stop-color="#6b21a8"/><stop offset="100%" stop-color="#3b0764"/></radialGradient></defs><path d="M 50,25 C 45,10 55,5 50,5" stroke="url(#grapeStem)" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M 50,20 C 30,10 25,25 45,28 C 50,25 45,15 50,20" fill="#22c55e"/><g fill="url(#grapeGrad)"><circle cx="38" cy="35" r="10"/><circle cx="62" cy="35" r="10"/><circle cx="50" cy="40" r="11"/><circle cx="28" cy="48" r="10"/><circle cx="72" cy="48" r="10"/><circle cx="50" cy="56" r="11"/><circle cx="38" cy="62" r="10"/><circle cx="62" cy="62" r="10"/><circle cx="50" cy="72" r="10"/><circle cx="42" cy="82" r="9"/><circle cx="58" cy="82" r="9"/><circle cx="50" cy="90" r="8"/></g><g fill="rgba(255,255,255,0.45)"><circle cx="35" cy="32" r="2.5"/><circle cx="59" cy="32" r="2.5"/><circle cx="47" cy="37" r="3"/><circle cx="25" cy="45" r="2.5"/><circle cx="69" cy="45" r="2.5"/><circle cx="47" cy="53" r="3"/><circle cx="35" cy="59" r="2.5"/><circle cx="59" cy="59" r="2.5"/><circle cx="47" cy="69" r="2.5"/></g></svg>`,
@@ -1575,13 +1575,427 @@ function dbDelete(storeName, id) {
 // ==============================================
 // 4. PREPOPULATE DEMO DATA
 // ==============================================
+async function clearAllDataStores() {
+  const storesToClear = [
+    'farmers', 'customers', 'import_invoices', 'import_items',
+    'sale_invoices', 'sale_items', 'debts', 'farmer_dues',
+    'porter_payouts', 'daily_expenses', 'personal_expenses', 'losses'
+  ];
+
+  for (const store of storesToClear) {
+    invalidateDbCache(store);
+    if (isInMemoryFallback) {
+      memoryDB[store] = [];
+    } else if (db) {
+      try {
+        const tx = db.transaction(store, 'readwrite');
+        const objectStore = tx.objectStore(store);
+        await new Promise((resolve) => {
+          const req = objectStore.clear();
+          req.onsuccess = () => resolve();
+          req.onerror = () => resolve();
+        });
+      } catch (e) {
+        console.warn('Error clearing store:', store, e);
+      }
+    }
+  }
+}
+
+async function populateFullDemoData(forceClear = false) {
+  if (forceClear) {
+    await clearAllDataStores();
+  }
+
+  // 1. Seed 10 Farmers
+  const farmersList = [
+    { name: "أبو محمد العمري", phone: "07701112233", address: "ديالى - الخالص" },
+    { name: "الحاج محمود البصري", phone: "07802223344", address: "البصرة - الزبير" },
+    { name: "الشيخ عبد القادر الكناني", phone: "07713334455", address: "واسط - النعمانية" },
+    { name: "أبو فهد الدليمي", phone: "07814445566", address: "الأنبار - الرمادي" },
+    { name: "مزرعة النخيل الذهبية", phone: "07725556677", address: "بابل - الحلة" },
+    { name: "مزارع الخضراء الوطنية", phone: "07826667788", address: "بغداد - التاجي" },
+    { name: "أبو جاسم الحلي", phone: "07737778899", address: "بابل - المحاويل" },
+    { name: "أبو أحمد التكريتي", phone: "07838889900", address: "صلاح الدين - العوجة" },
+    { name: "أبو علي النجفي", phone: "07749990011", address: "النجف - الكوفة" },
+    { name: "أبو يوسف الكربلائي", phone: "07850001122", address: "كربلاء - الهندية" }
+  ];
+
+  const farmerIds = [];
+  for (const f of farmersList) {
+    const fid = await dbAdd('farmers', { ...f, created_at: Date.now() - 30 * 86400000 });
+    farmerIds.push(fid);
+  }
+
+  // 2. Seed 15 Customers
+  const customersList = [
+    { name: "أسواق السلام والبركة", phone: "07709988776", address: "بغداد - جميلة" },
+    { name: "مطعم ودواجن بغداد", phone: "07808877665", address: "بغداد - الكرادة" },
+    { name: "أسواق الأمل الكبرى", phone: "07507766554", address: "بغداد - المنصور" },
+    { name: "أبو حيدر لبيع التجزئة", phone: "07716655443", address: "بغداد - المكاسب" },
+    { name: "سوبرماركت الرافدين", phone: "07815544332", address: "بغداد - زيونة" },
+    { name: "محلات الزهراء للفواكه", phone: "07724433221", address: "النجف الأشرف" },
+    { name: "أسواق الفردوس", phone: "07823322110", address: "كربلاء المقدسة" },
+    { name: "مطعم دجلة والفرات", phone: "07512211009", address: "الحلة - باب المشهد" },
+    { name: "أسواق الكوثر", phone: "07731100998", address: "بعقوبة - السوق" },
+    { name: "أبو عمر لبيع الجملة", phone: "07830099887", address: "الرمادي - شارع 17" },
+    { name: "أسواق الهداية", phone: "07749988776", address: "سامراء المقدسة" },
+    { name: "سوبرماركت النور", phone: "07848877665", address: "بغداد - الشعب" },
+    { name: "أسواق الحكمة", phone: "07527766554", address: "بغداد - الدورة" },
+    { name: "مطعم وقاع النخيل", phone: "07756655443", address: "البصرة - العشار" },
+    { name: "تجار جملة الجنوب", phone: "07855544332", address: "ميسان - العمارة" }
+  ];
+
+  const customerIds = [];
+  for (const c of customersList) {
+    const cid = await dbAdd('customers', { ...c, created_at: Date.now() - 30 * 86400000 });
+    customerIds.push(cid);
+  }
+
+  // Vehicles pool
+  const vehicles = ["بيك أب", "لوري كيا", "ستوتة", "شاحنة ايسوزو", "شيفروليه دبل كابين", "تريلة", "دباب كيا"];
+
+  // Import notes
+  const importNotesPool = [
+    "شحنة ممتازة درجة أولى",
+    "وصول صباحي طازج من المزرعة",
+    "محصول قطفة أولى نخب ممتاز",
+    "مكفول من العيوب والنظافة عالية",
+    "حسب الاتفاق مع الفلاح",
+    "وجبة خضار مشكلة طازجة"
+  ];
+
+  // Crop catalog
+  const cropCatalog = [
+    { crop_type: "طماطة", unit: "kg", avgBoxWeight: 25, basePrice: 750, isSpecial: false },
+    { crop_type: "خيار", unit: "kg", avgBoxWeight: 20, basePrice: 1000, isSpecial: false },
+    { crop_type: "باذنجان", unit: "kg", avgBoxWeight: 18, basePrice: 850, isSpecial: false },
+    { crop_type: "بصل", unit: "kg", avgBoxWeight: 30, basePrice: 650, isSpecial: false },
+    { crop_type: "فلفل بارد", unit: "kg", avgBoxWeight: 15, basePrice: 1250, isSpecial: false },
+    { crop_type: "ثوم", unit: "kg", avgBoxWeight: 15, basePrice: 2000, isSpecial: false },
+    { crop_type: "بامية", unit: "kg", avgBoxWeight: 12, basePrice: 3500, isSpecial: false },
+    { crop_type: "بتيتة", unit: "kg", avgBoxWeight: 30, basePrice: 700, isSpecial: false },
+    { crop_type: "شجر", unit: "kg", avgBoxWeight: 18, basePrice: 900, isSpecial: false },
+    { crop_type: "تفاح احمر", unit: "kg", avgBoxWeight: 18, basePrice: 1750, isSpecial: false },
+    { crop_type: "موز", unit: "kg", avgBoxWeight: 20, basePrice: 1500, isSpecial: false },
+    { crop_type: "عناب", unit: "kg", avgBoxWeight: 15, basePrice: 2250, isSpecial: false },
+    { crop_type: "رمان", unit: "kg", avgBoxWeight: 22, basePrice: 1200, isSpecial: false },
+    { crop_type: "برتقال", unit: "kg", avgBoxWeight: 25, basePrice: 1000, isSpecial: false },
+    { crop_type: "ليمون حامض", unit: "kg", avgBoxWeight: 15, basePrice: 1800, isSpecial: false },
+    { crop_type: "بطيخ أحمر", unit: "kg", avgBoxWeight: 0, basePrice: 400, isSpecial: true },
+    { crop_type: "بطيخ أصفر", unit: "kg", avgBoxWeight: 20, basePrice: 650, isSpecial: false },
+    { crop_type: "عنب", unit: "kg", avgBoxWeight: 12, basePrice: 2500, isSpecial: false },
+    { crop_type: "فراولة", unit: "count", avgBoxWeight: 8, basePrice: 3000, isSpecial: false },
+    { crop_type: "خوخ", unit: "kg", avgBoxWeight: 15, basePrice: 2000, isSpecial: false },
+    { crop_type: "عرموط", unit: "kg", avgBoxWeight: 16, basePrice: 1800, isSpecial: false },
+    { crop_type: "زنجبيل", unit: "kg", avgBoxWeight: 10, basePrice: 4000, isSpecial: false },
+    { crop_type: "كاكا", unit: "kg", avgBoxWeight: 12, basePrice: 2200, isSpecial: false },
+    { crop_type: "طماطة عنقودية", unit: "count", avgBoxWeight: 10, basePrice: 2500, isSpecial: false }
+  ];
+
+  const nowMs = Date.now();
+  const dayMs = 86400000;
+
+  // 3. Generate exactly 20 Import Invoices
+  const createdImportInvoices = [];
+
+  for (let i = 0; i < 20; i++) {
+    const daysAgo = 25 - Math.floor((i / 20) * 24);
+    const invoiceTime = nowMs - daysAgo * dayMs + Math.floor(Math.random() * 3600000);
+
+    const farmerId = farmerIds[i % farmerIds.length];
+    const vehicle = vehicles[i % vehicles.length];
+    const note = importNotesPool[i % importNotesPool.length];
+
+    const impId = await dbAdd('import_invoices', {
+      farmer_id: farmerId,
+      vehicle_type: vehicle,
+      notes: note,
+      invoice_date: invoiceTime,
+      is_settled: false,
+      created_at: invoiceTime
+    });
+
+    const cropCount = (i % 3) + 1;
+    const importItems = [];
+
+    for (let c = 0; c < cropCount; c++) {
+      const cropInfo = cropCatalog[(i * 3 + c) % cropCatalog.length];
+      const isWatermelon = cropInfo.crop_type === 'بطيخ أحمر';
+      const isCount = cropInfo.unit === 'count';
+
+      let boxCount = 0;
+      let weightKg = 0;
+
+      if (isWatermelon) {
+        weightKg = 1500 + (i * 120) % 2500;
+        boxCount = 0;
+      } else if (isCount) {
+        boxCount = 40 + (i * 15) % 120;
+        weightKg = 0;
+      } else {
+        boxCount = 30 + (i * 10) % 100;
+        weightKg = boxCount * cropInfo.avgBoxWeight;
+      }
+
+      const itemId = await dbAdd('import_items', {
+        invoice_id: impId,
+        crop_type: cropInfo.crop_type,
+        weight_kg: weightKg,
+        agreed_price_per_kg: 0,
+        unit: cropInfo.unit,
+        box_count: boxCount,
+        weight_per_box: cropInfo.avgBoxWeight
+      });
+
+      importItems.push({
+        id: itemId,
+        invoice_id: impId,
+        farmer_id: farmerId,
+        crop_type: cropInfo.crop_type,
+        unit: cropInfo.unit,
+        box_count: boxCount,
+        weight_kg: weightKg,
+        basePrice: cropInfo.basePrice,
+        isSpecial: cropInfo.isSpecial,
+        avgBoxWeight: cropInfo.avgBoxWeight,
+        remainingBoxes: boxCount,
+        remainingWeight: weightKg
+      });
+    }
+
+    createdImportInvoices.push({
+      id: impId,
+      farmer_id: farmerId,
+      created_at: invoiceTime,
+      items: importItems
+    });
+  }
+
+  const availableImportItems = [];
+  createdImportInvoices.forEach(imp => {
+    imp.items.forEach(it => availableImportItems.push(it));
+  });
+
+  // 4. Generate exactly 50 Sale Invoices
+  const saleNotesPool = [
+    "تسليم كامل ونخب أول",
+    "تم الفحص والعد بالكامل",
+    "شراء جملة - أسواق دائمية",
+    "خصم خاص للكمية",
+    "تم الاستلام والتحميل بحالة جيدة",
+    ""
+  ];
+
+  for (let s = 0; s < 50; s++) {
+    const daysAgo = 24 - Math.floor((s / 50) * 23);
+    const saleTime = nowMs - daysAgo * dayMs + Math.floor(Math.random() * 14400000);
+
+    const customerId = customerIds[s % customerIds.length];
+
+    const item1 = availableImportItems[s % availableImportItems.length];
+    const itemsToSell = [item1];
+
+    if (s % 3 === 0) {
+      const item2 = availableImportItems[(s + 7) % availableImportItems.length];
+      if (item2.id !== item1.id) {
+        itemsToSell.push(item2);
+      }
+    }
+
+    const isDebt = (s % 3 === 1 || s % 5 === 0);
+    const paymentType = isDebt ? 'debt' : 'cash';
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let orderId = '';
+    for (let k = 0; k < 6; k++) {
+      orderId += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    const saleInvoiceId = await dbAdd('sale_invoices', {
+      customer_id: customerId,
+      order_id: orderId,
+      total_amount: 0,
+      payment_type: paymentType,
+      bags_cost: 0,
+      notes: saleNotesPool[s % saleNotesPool.length],
+      created_at: saleTime
+    });
+
+    let grandTotal = 0;
+
+    for (const sourceItem of itemsToSell) {
+      const isCount = sourceItem.unit === 'count';
+      const isSpecial = sourceItem.isSpecial;
+
+      let soldBoxes = 0;
+      let soldWeight = 0;
+
+      if (isCount) {
+        soldBoxes = Math.min(Math.max(5, Math.floor(sourceItem.remainingBoxes * 0.25)), sourceItem.remainingBoxes || 10);
+        if (soldBoxes <= 0) soldBoxes = 5;
+        sourceItem.remainingBoxes = Math.max(0, sourceItem.remainingBoxes - soldBoxes);
+      } else if (isSpecial) {
+        soldWeight = Math.min(Math.max(100, Math.floor(sourceItem.remainingWeight * 0.2)), sourceItem.remainingWeight || 200);
+        soldBoxes = 0;
+        sourceItem.remainingWeight = Math.max(0, sourceItem.remainingWeight - soldWeight);
+      } else {
+        soldBoxes = Math.min(Math.max(3, Math.floor(sourceItem.remainingBoxes * 0.3)), sourceItem.remainingBoxes || 8);
+        if (soldBoxes <= 0) soldBoxes = 3;
+        soldWeight = soldBoxes * (sourceItem.avgBoxWeight || 20);
+        sourceItem.remainingBoxes = Math.max(0, sourceItem.remainingBoxes - soldBoxes);
+        sourceItem.remainingWeight = Math.max(0, sourceItem.remainingWeight - soldWeight);
+      }
+
+      const unitPrice = Math.round((sourceItem.basePrice * (0.95 + (s % 10) * 0.01)) / 50) * 50;
+      const agreedPrice = isCount ? (soldBoxes * unitPrice * 10) : Math.round(soldWeight * unitPrice);
+
+      const commissionAmount = isCount ? (soldBoxes * 500) : Math.round(agreedPrice * 0.07);
+      const porterFee = isSpecial ? 0 : (soldBoxes * 250);
+
+      const itemTotal = agreedPrice + commissionAmount + porterFee;
+      grandTotal += itemTotal;
+
+      const saleItemId = await dbAdd('sale_items', {
+        sale_invoice_id: saleInvoiceId,
+        import_invoice_id: sourceItem.invoice_id,
+        crop_type: sourceItem.crop_type,
+        weight_kg: isCount ? 0 : soldWeight,
+        box_count: soldBoxes,
+        agreed_price: agreedPrice,
+        unit: sourceItem.unit,
+        commission_amount: commissionAmount,
+        porter_fee: porterFee,
+        unit_price: unitPrice
+      });
+
+      const farmerDueAmount = agreedPrice + Math.round(agreedPrice * 0.02);
+      const isDuePaid = (s % 4 !== 0);
+      await dbAdd('farmer_dues', {
+        farmer_id: sourceItem.farmer_id,
+        import_invoice_id: sourceItem.invoice_id,
+        sale_invoice_id: saleInvoiceId,
+        sale_item_id: saleItemId,
+        crop_type: sourceItem.crop_type,
+        weight_kg: isCount ? 0 : soldWeight,
+        box_count: soldBoxes,
+        sold_price: agreedPrice,
+        commission_deducted: commissionAmount,
+        porter_deducted: 0,
+        net_due: farmerDueAmount,
+        is_paid: isDuePaid,
+        created_at: saleTime
+      });
+
+      if (porterFee > 0) {
+        const isPorterPaid = (s % 3 !== 0);
+        await dbAdd('porter_payouts', {
+          sale_invoice_id: saleInvoiceId,
+          sale_item_id: saleItemId,
+          crop_type: sourceItem.crop_type,
+          box_count: soldBoxes,
+          amount: porterFee,
+          is_paid: isPorterPaid,
+          created_at: saleTime
+        });
+      }
+    }
+
+    await dbPut('sale_invoices', {
+      id: saleInvoiceId,
+      customer_id: customerId,
+      order_id: orderId,
+      total_amount: grandTotal,
+      payment_type: paymentType,
+      bags_cost: 0,
+      notes: saleNotesPool[s % saleNotesPool.length],
+      created_at: saleTime
+    });
+
+    if (paymentType === 'debt') {
+      const dueDate = saleTime + 7 * dayMs;
+      const isDebtPaid = (s % 2 === 0);
+      await dbAdd('debts', {
+        customer_id: customerId,
+        sale_invoice_id: saleInvoiceId,
+        amount: grandTotal,
+        due_date: dueDate,
+        is_paid: isDebtPaid,
+        created_at: saleTime
+      });
+    }
+  }
+
+  // 5. Seed Daily Expenses, Personal Expenses, Losses
+  const sampleDailyExpenses = [
+    { subject: "رواتب عمال العلوة اليومية", amount: 85000, type: "salary" },
+    { subject: "شراء أكياس ومستلزمات تعبئة", amount: 45000, type: "general" },
+    { subject: "وقود مولدة العلوة", amount: 30000, type: "general" },
+    { subject: "ضيافة واستكانات شاي للزبائن", amount: 25000, type: "general" },
+    { subject: "صيانة الميزان الإلكتروني", amount: 15000, type: "general" },
+    { subject: "أجور تنظيف ساحة العلوة", amount: 20000, type: "general" },
+    { subject: "كارتات إنترنت ورصيد شحن", amount: 15000, type: "general" },
+    { subject: "أجور نقل مياه شرب ومستلزمات", amount: 12000, type: "general" }
+  ];
+
+  for (let e = 0; e < sampleDailyExpenses.length; e++) {
+    const expTime = nowMs - (15 - e) * dayMs;
+    await dbAdd('daily_expenses', {
+      subject: sampleDailyExpenses[e].subject,
+      amount: sampleDailyExpenses[e].amount,
+      expense_type: "daily",
+      type: sampleDailyExpenses[e].type,
+      created_at: expTime
+    });
+  }
+
+  const samplePersonalExpenses = [
+    { subject: "سحب شخصي لصاحب العلوة", amount: 100000 },
+    { subject: "مصاريف شخصية وقود سيارة", amount: 35000 },
+    { subject: "مشتريات منزلية", amount: 65000 }
+  ];
+
+  for (let p = 0; p < samplePersonalExpenses.length; p++) {
+    const pTime = nowMs - (12 - p) * dayMs;
+    await dbAdd('personal_expenses', {
+      subject: samplePersonalExpenses[p].subject,
+      amount: samplePersonalExpenses[p].amount,
+      expense_type: "personal",
+      created_at: pTime
+    });
+  }
+
+  const sampleLosses = [
+    { subject: "تلف 3 صناديق طماطة أثناء التفريغ", amount: 35000 },
+    { subject: "كسر صندوق رمان أسباب نقل", amount: 20000 }
+  ];
+
+  for (let l = 0; l < sampleLosses.length; l++) {
+    const lTime = nowMs - (8 - l) * dayMs;
+    await dbAdd('losses', {
+      subject: sampleLosses[l].subject,
+      amount: sampleLosses[l].amount,
+      created_at: lTime
+    });
+  }
+
+  await refreshGlobalCaches();
+  await refreshAllUI();
+
+  showToast(
+    currentLanguage === 'ar'
+      ? '🎉 تم تعبئة البيانات التجريبية الشاملة بنجاح! (20 استيراد + 50 مبيعة + حسابات الفلاحين والديون والحمالين)'
+      : '🎉 Demo data successfully generated (20 imports + 50 sales)!',
+    'check_circle'
+  );
+  playSound('success', true);
+}
+
 async function checkAndBootstrapData() {
-  const farmers = await dbGetAll('farmers');
-  if (farmers.length === 0) {
-    await dbAdd('farmers', { name: "أبو محمد الصبيح", phone: "07712345678" });
-    await dbAdd('farmers', { name: "أبو علي الكناني", phone: "07898765432" });
-    await dbAdd('customers', { name: "محل السلام (أبو حيدر)", phone: "07501234567", address: "جميلة" });
-    await dbAdd('customers', { name: "أسواق الهدى", phone: "07705555555", address: "الكرادة" });
+  const imports = await dbGetAll('import_invoices');
+  const sales = await dbGetAll('sale_invoices');
+  if (imports.length < 20 || sales.length < 50) {
+    await populateFullDemoData(true);
   }
 }
 
@@ -13639,10 +14053,26 @@ function checkUrlAdbActivation() {
       paper80.addEventListener('click', () => handleWidthClick('80'));
     }
 
-    // 16. Bind backup triggers
+    // 16. Bind backup and demo data triggers
     document.getElementById('btn-export-db').addEventListener('click', exportDatabaseToJSON);
     document.getElementById('btn-import-db').addEventListener('click', triggerImportDatabase);
     document.getElementById('db-import-file-input').addEventListener('change', importDatabaseFromJSON);
+
+    const btnGenerateDemo = document.getElementById('btn-generate-demo-data');
+    if (btnGenerateDemo) {
+      btnGenerateDemo.addEventListener('click', async () => {
+        const confirmMsg = currentLanguage === 'ar'
+          ? 'هل ترغب بتوليد وتعبئة البيانات التجريبية الشاملة (20 شحنة استيراد + 50 مبيعة + حسابات الفلاحين والديون)؟'
+          : 'Do you want to generate full demo dataset (20 imports + 50 sales)?';
+        const isConfirmed = await showCustomConfirm(
+          currentLanguage === 'ar' ? 'تأكيد تعبئة البيانات' : 'Confirm Demo Data Generation',
+          confirmMsg
+        );
+        if (isConfirmed) {
+          await populateFullDemoData(true);
+        }
+      });
+    }
 
     // 17. Bind printer action execution and diagnostics listener
     window.addEventListener('print-diagnostics-updated', renderPrintDiagnostics);
